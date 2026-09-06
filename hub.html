@@ -1,0 +1,270 @@
+<title>Стек знаний</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Karla:wght@400;500;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --bg:#f6f6f6;
+    --surface:#ffffff;
+    --text:#1d1d1d;
+    --text-dim:#626262;
+    --border:#e0e0e0;
+    --shadow: 0 1px 2px rgba(20,20,20,.06), 0 10px 28px rgba(20,20,20,.07);
+
+    --go:#00add8;
+    --go-soft:#e3f6fb;
+    --pg:#336791;
+    --pg-soft:#e6edf3;
+    --java:#d99e00;
+    --java-soft:#faf1dc;
+    --py:#2f8f4e;
+    --py-soft:#e8f3ec;
+    --algo:#7c5cbf;
+    --algo-soft:#efe9f8;
+    --sysd:#b5507a;
+    --sysd-soft:#f8e9ef;
+    --arch:#2f8f8f;
+    --arch-soft:#e5f2f2;
+    --git:#d1495b;
+    --git-soft:#fae7e9;
+    --kafka:#8a5a34;
+    --kafka-soft:#f2e8de;
+    --rabbit:#7a8f2f;
+    --rabbit-soft:#eef2e0;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#141414;
+      --surface:#1c1c1c;
+      --text:#eaeaea;
+      --text-dim:#9c9c9c;
+      --border:#2f2f2f;
+      --shadow: 0 1px 2px rgba(0,0,0,.35), 0 10px 28px rgba(0,0,0,.4);
+
+      --go:#4fd3f0;
+      --go-soft:#12333d;
+      --pg:#7fb0d6;
+      --pg-soft:#1a2c3a;
+      --java:#f0c352;
+      --java-soft:#332a10;
+      --py:#7dd396;
+      --py-soft:#152a1d;
+      --algo:#b49bdf;
+      --algo-soft:#251e35;
+      --sysd:#dd93b3;
+      --sysd-soft:#301c26;
+      --arch:#6bc9c9;
+      --arch-soft:#132726;
+      --git:#e0788a;
+      --git-soft:#331f22;
+      --kafka:#c99169;
+      --kafka-soft:#2c2016;
+      --rabbit:#b3cc5e;
+      --rabbit-soft:#232a13;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#141414;
+    --surface:#1c1c1c;
+    --text:#eaeaea;
+    --text-dim:#9c9c9c;
+    --border:#2f2f2f;
+    --shadow: 0 1px 2px rgba(0,0,0,.35), 0 10px 28px rgba(0,0,0,.4);
+
+    --go:#4fd3f0;
+    --go-soft:#12333d;
+    --pg:#7fb0d6;
+    --pg-soft:#1a2c3a;
+    --java:#f0c352;
+    --java-soft:#332a10;
+    --py:#7dd396;
+    --py-soft:#152a1d;
+    --algo:#b49bdf;
+    --algo-soft:#251e35;
+    --sysd:#dd93b3;
+    --sysd-soft:#301c26;
+    --arch:#6bc9c9;
+    --arch-soft:#132726;
+    --git:#e0788a;
+    --git-soft:#331f22;
+    --kafka:#c99169;
+    --kafka-soft:#2c2016;
+    --rabbit:#b3cc5e;
+    --rabbit-soft:#232a13;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:"Karla",system-ui,sans-serif;
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    padding:32px 20px;
+  }
+
+  .page{width:100%; max-width:900px; display:flex; flex-direction:column; align-items:center; gap:36px;}
+
+  .head{text-align:center; display:flex; flex-direction:column; gap:10px; max-width:520px;}
+  .kicker{
+    font-family:"JetBrains Mono"; font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--text-dim);
+  }
+  h1{
+    margin:0; font-family:"Sora"; font-weight:700; font-size:clamp(28px,5vw,38px);
+    text-wrap:balance; letter-spacing:-.01em;
+  }
+  .lede{margin:0; color:var(--text-dim); font-size:15px; line-height:1.55;}
+
+  .groups{width:100%; display:flex; flex-direction:column; gap:26px;}
+  .group{width:100%; display:flex; flex-direction:column; gap:13px;}
+  .group-title{
+    display:flex; align-items:center; gap:10px;
+    font-family:"JetBrains Mono"; font-size:11.5px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--text-dim); white-space:nowrap;
+  }
+  .group-title::after{content:""; flex:1; height:1px; background:var(--border);}
+
+  .row{width:100%; display:flex; flex-wrap:wrap; gap:16px;}
+
+  .card{
+    --tint: var(--text-dim);
+    --tint-soft: var(--border);
+    position:relative;
+    flex:0 1 200px;
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:22px 18px 18px; box-shadow:var(--shadow);
+    display:flex; flex-direction:column; align-items:flex-start; gap:14px;
+    text-decoration:none; color:var(--text);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  @media (max-width:480px){ .card{flex-basis:100%;} }
+  .card.live{ cursor:pointer; }
+  .card.live:hover{ transform:translateY(-3px); box-shadow:0 2px 4px rgba(20,20,20,.08), 0 16px 32px rgba(20,20,20,.1); }
+  .card.live:focus-visible{ outline:2px solid var(--tint); outline-offset:3px; }
+  .card.soon{
+    cursor:not-allowed; filter:grayscale(.55); opacity:.62;
+  }
+
+  .mono{
+    width:44px; height:44px; border-radius:11px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--tint-soft); color:var(--tint);
+    font-family:"JetBrains Mono"; font-weight:600; font-size:15px; letter-spacing:.01em;
+  }
+
+  .card-name{font-family:"Sora"; font-weight:600; font-size:16.5px;}
+  .card-desc{margin:-8px 0 0; font-size:12.5px; color:var(--text-dim); line-height:1.5;}
+
+  .status{
+    margin-top:auto; align-self:stretch;
+    display:flex; align-items:center; justify-content:space-between;
+    font-family:"JetBrains Mono"; font-size:11px; letter-spacing:.04em;
+  }
+  .status .go-cta{color:var(--tint); font-weight:600;}
+  .status .pill{
+    padding:3px 9px; border-radius:100px; background:var(--border); color:var(--text-dim);
+    text-transform:uppercase; font-size:10px; letter-spacing:.06em;
+  }
+
+  footer{color:var(--text-dim); font-size:12px; font-family:"JetBrains Mono";}
+</style>
+
+<div class="page">
+  <div class="head">
+    <div class="kicker">личная база подготовки</div>
+    <h1>Стек знаний</h1>
+    <p class="lede">Модули сгруппированы по типу: языки, базы данных, теория. Открыт пока только Go; остальные — в работе.</p>
+  </div>
+
+  <div class="groups">
+    <div class="group">
+      <div class="group-title">языки программирования</div>
+      <div class="row">
+        <a class="card live" style="--tint:var(--go); --tint-soft:var(--go-soft);"
+           href="https://claude.ai/code/artifact/f14b98cb-7fbf-407d-a18b-b7426a71a6c5" target="_blank" rel="noopener">
+          <div class="mono">Go</div>
+          <div class="card-name">Go</div>
+          <p class="card-desc">15 глав + флеш-карты для самопроверки, 147 вопросов.</p>
+          <div class="status"><span class="go-cta">Открыть →</span></div>
+        </a>
+
+        <div class="card soon" style="--tint:var(--java); --tint-soft:var(--java-soft);" aria-disabled="true" tabindex="-1">
+          <div class="mono">J</div>
+          <div class="card-name">Java</div>
+          <p class="card-desc">JVM, коллекции, конкурентность.</p>
+          <div class="status"><span class="pill">в разработке</span></div>
+        </div>
+
+        <div class="card soon" style="--tint:var(--py); --tint-soft:var(--py-soft);" aria-disabled="true" tabindex="-1">
+          <div class="mono">Py</div>
+          <div class="card-name">Python</div>
+          <p class="card-desc">GIL, генераторы, типизация.</p>
+          <div class="status"><span class="pill">в разработке</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="group-title">базы данных</div>
+      <div class="row">
+        <div class="card soon" style="--tint:var(--pg); --tint-soft:var(--pg-soft);" aria-disabled="true" tabindex="-1">
+          <div class="mono">Pg</div>
+          <div class="card-name">PostgreSQL</div>
+          <p class="card-desc">Индексы, MVCC, планы запросов.</p>
+          <div class="status"><span class="pill">в разработке</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="group-title">computer science</div>
+      <div class="row">
+        <div class="card soon" style="--tint:var(--algo); --tint-soft:var(--algo-soft);" aria-disabled="true" tabindex="-1">
+          <div class="mono">СД</div>
+          <div class="card-name">Алгоритмы и структуры данных</div>
+          <p class="card-desc">Сложность, деревья, графы, сортировки.</p>
+          <div class="status"><span class="pill">в разработке</span></div>
+        </div>
+
+        <div class="card soon" style="--tint:var(--sysd); --tint-soft:var(--sysd-soft);" aria-disabled="true" tabindex="-1">
+          <div class="mono">SD</div>
+          <div class="card-name">Системный дизайн</div>
+          <p class="card-desc">Масштабирование, очереди, консистентность.</p>
+          <div class="status"><span class="pill">в разработке</span></div>
+        </div>
+
+        <div class="card soon" style="--tint:var(--arch); --tint-soft:var(--arch-soft);" aria-disabled="true" tabindex="-1">
+          <div class="mono">ОС</div>
+          <div class="card-name">Архитектура и ОС</div>
+          <p class="card-desc">Память, кэши, конвейер; процессы, планировщик, файловые системы.</p>
+          <div class="status"><span class="pill">в разработке</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="group-title">инструменты и инфраструктура</div>
+      <div class="row">
+        <div class="card soon" style="--tint:var(--git); --tint-soft:var(--git-soft);" aria-disabled="true" tabindex="-1">
+          <div class="mono">Git</div>
+          <div class="card-name">Git</div>
+          <p class="card-desc">Ветвление, rebase, эффективная работа с историей.</p>
+          <div class="status"><span class="pill">в разработке</span></div>
+        </div>
+
+        <div class="card soon" style="--tint:var(--kafka); --tint-soft:var(--kafka-soft);" aria-disabled="true" tabindex="-1">
+          <div class="mono">Kf</div>
+          <div class="card-name">Kafka</div>
+          <p class="card-desc">Партиции, консьюмер-группы, доставка сообщений.</p>
+          <div class="status"><span class="pill">в разработке</span></div>
+        </div>
+
+        <div class="card soon" style="--tint:var(--rabbit); --tint-soft:var(--rabbit-soft);" aria-disabled="true" tabindex="-1">
+          <div class="mono">Rb</div>
+          <div class="card-name">RabbitMQ</div>
+          <p class="card-desc">Очереди, exchange, паттерны маршрутизации.</p>
+          <div class="status"><span class="pill">в разработке</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>обновляется по мере разбора источников</footer>
+</div>
