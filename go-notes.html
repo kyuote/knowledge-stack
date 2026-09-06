@@ -758,6 +758,45 @@ fmt.Println(small)          // 44 — молчаливое переполнен�
             <p class="tight">Конвертация <code class="inline">string</code> ↔ <code class="inline">[]byte</code>/<code class="inline">[]rune</code> — это всегда копирование памяти (O(n)), а не бесплатный reinterpret: строки в Go неизменяемы, слайсы — нет.</p>
           </div>
         </details>
+
+        <details class="deep">
+          <summary>Подробнее: string изнутри — заголовок, графемы и zero value <span class="tag">string</span><span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Внутри строка — не сами байты, а компактный заголовок (<code class="inline">stringHeader</code>) из двух слов: указатель на данные (<code class="inline">Data</code>) и длина в байтах (<code class="inline">Len</code>) — без поля ёмкости (<code class="inline">Cap</code>), в отличие от заголовка слайса. Именно поэтому <code class="inline">len(s)</code> всегда O(1) и всегда считает байты, а не «символы».</p>
+            <p class="tight">Байт (<code class="inline">byte</code>) — единица хранения UTF-8, руна (<code class="inline">rune</code>) — один code point Unicode, а то, что человек интуитивно называет «одним символом» — графема — может состоять из нескольких рун сразу (например «é», набранное как «e» + акцент, — это 2 руны, но 1 графема). Ни <code class="inline">len(s)</code>, ни <code class="inline">utf8.RuneCountInString</code> графемы не считают — оба останавливаются на уровне байт/рун; для графемно-осознанного подсчёта нужны сторонние библиотеки (например <code class="inline">rivo/uniseg</code>).</p>
+            <p class="tight">Отдельная тонкость: zero value строки — всегда пустая строка <code class="inline">""</code>, а не <code class="inline">nil</code>, в отличие от слайса/map/канала. В этом смысле <code class="inline">string</code> ведёт себя как обычный value type (сравнима через <code class="inline">==</code>, у неё нет «пустого/неинициализированного» состояния, отличного от <code class="inline">""</code>) — хотя физически внутри неё лежит указатель на данные.</p>
+          </div>
+        </details>
+
+        <details class="deep">
+          <summary>Подробнее: почему float — плохой выбор для денег <span class="tag">float32 / float64</span><span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight"><code class="inline">float32</code>/<code class="inline">float64</code> следуют стандарту IEEE 754 — двоичному представлению, которое точно хранит далеко не все десятичные дроби (та же проблема, что и в большинстве других языков со стандартным float). Классический пример — сложение <code class="inline">0.1</code> миллион раз через <code class="inline">float64</code> не даёт ровно <code class="inline">100000</code>: мелкие ошибки округления накапливаются на масштабе.</p>
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">money.go</span></div>
+              <pre><code class="language-go">var total float64
+for i := 0; i < 1_000_000; i++ {
+    total += 0.1
+}
+fmt.Println(total) // НЕ ровно 100000 — накопленная погрешность
+
+// правильно — целые единицы валюты (копейки/центы)
+var totalCents int64
+for i := 0; i < 1_000_000; i++ {
+    totalCents += 10 // 0.10 → 10 копеек
+}</code></pre>
+            </div>
+            <p class="tight">Практическое правило: для денег — либо целочисленный тип в минимальных неделимых единицах валюты (<code class="inline">int64</code> в копейках/центах), либо тип <code class="inline">NUMERIC</code>/<code class="inline">DECIMAL</code> на уровне БД/специализированная decimal-библиотека, но не «голый» <code class="inline">float32</code>/<code class="inline">float64</code>. Дробный литерал без явного приведения (<code class="inline">3.14</code>) в Go по умолчанию имеет тип именно <code class="inline">float64</code>, а не <code class="inline">float32</code> — это стоит держать в голове при работе со сторонними API, ожидающими <code class="inline">float32</code>.</p>
+          </div>
+        </details>
+
+        <details class="deep">
+          <summary>Подробнее: правда ли, что rune — знаковый int32 специально ради -1 как признака ошибки? <span class="tag">rune</span><span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">⚠ Популярное, но неточное объяснение — встречается в разных обучающих материалах: якобы <code class="inline">rune</code> сделали знаковым (<code class="inline">int32</code>, а не <code class="inline">uint32</code>) специально для того, чтобы функции декодирования могли возвращать <code class="inline">-1</code> как признак «невалидного символа». Это не так на практике: стандартная библиотека для этого использует не <code class="inline">-1</code>, а специальную руну <code class="inline">utf8.RuneError</code> (U+FFFD) — <code class="inline">unicode/utf8.DecodeRuneInString</code> возвращает <code class="inline">(RuneError, 0)</code> для пустой строки и <code class="inline">(RuneError, 1)</code> для невалидной кодировки, но никогда <code class="inline">-1</code>. Официальный блог-пост Go про строки лишь констатирует факт: «<code class="inline">rune</code> — это алиас для <code class="inline">int32</code>, чтобы в коде было явно видно, где значение представляет code point», не объясняя выбор знаковости.</p>
+            <p class="tight">Более скромное и проверяемое объяснение: одного code point Unicode достаточно 21 бита, поэтому естественным выбором стал 32-битный тип — а <code class="inline">int32</code>, а не <code class="inline">uint32</code>, просто следует общему соглашению Go по умолчанию использовать знаковые целые (как <code class="inline">int</code> для длин/индексов), а не потому что отрицательные руны специально задуманы как сигнал ошибки. <code class="inline">byte</code> (<code class="inline">uint8</code>), для сравнения, беззнаковый естественно — это просто единица хранения байта (0..255), а не Unicode-значение. <em>(проверено в этой сессии: go.dev/blog/strings, pkg.go.dev/unicode/utf8)</em></p>
+          </div>
+        </details>
       </section>
 
       <section class="topic" id="const">
