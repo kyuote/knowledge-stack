@@ -1,8 +1,3 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Заметки гофера</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Karla:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
@@ -487,10 +482,75 @@
     margin-top:26px; padding-top:14px; border-top:1px solid var(--border);
     font-size:11.5px; color:var(--text-dim);
   }
-</style>
-</head>
-<body>
 
+  .impl-groupline{
+    display:flex; align-items:center; gap:10px;
+    margin:30px 0 14px;
+  }
+  .impl-groupline:first-child{margin-top:2px;}
+  .impl-groupline .t{
+    font-family:"JetBrains Mono"; font-size:11px; letter-spacing:.07em; text-transform:uppercase;
+    color:var(--accent-strong); font-weight:700; white-space:nowrap;
+  }
+  .impl-groupline::after{content:""; flex:1; height:1px; background:var(--border);}
+
+  /* ---------- регистровые диаграммы (int8/16/32/64) ---------- */
+  .regfig{margin:18px 0 22px;}
+  .regfig-label{
+    font-family:"JetBrains Mono"; font-size:11px; color:var(--text-dim);
+    margin-bottom:12px; letter-spacing:.02em;
+  }
+  .regrow{margin-bottom:16px;}
+  .regrow:last-child{margin-bottom:0;}
+  .regrow-label{
+    font-family:"JetBrains Mono"; font-size:12.5px; font-weight:700;
+    color:var(--text-dim); margin-bottom:7px;
+  }
+  .regrow-bits{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .bitbyte{display:flex; gap:3px;}
+  .bit-sm{width:21px; height:24px; font-size:10.5px;}
+  .bit.is-ext{border-style:dashed; color:var(--text-dim); background:var(--surface);}
+  .reg-legend{
+    display:flex; gap:18px; flex-wrap:wrap; margin-top:12px;
+    font-family:"JetBrains Mono"; font-size:11px; color:var(--text-dim);
+  }
+  .reg-legend span{display:inline-flex; align-items:center; gap:6px;}
+  .reg-legend i{
+    width:14px; height:14px; border-radius:4px; border:1.5px solid var(--border); display:inline-block;
+  }
+  .reg-legend i.i-one{border-color:var(--accent); background:var(--accent-soft);}
+  .reg-legend i.i-ext{border-style:dashed; border-color:var(--accent);}
+
+  /* ---------- IEEE754 float — три поля вместо 0/1 ---------- */
+  .bit.is-fsign{border-color:var(--warn); color:var(--warn); background:var(--warn-soft); font-weight:700;}
+  .bit.is-fexp{border-color:var(--interview); color:var(--interview); background:var(--interview-soft); font-weight:700;}
+  .bit.is-fmant{border-color:var(--accent); color:var(--accent-strong); background:var(--accent-soft); font-weight:700;}
+  .reg-legend i.i-fsign{border-color:var(--warn); background:var(--warn-soft);}
+  .reg-legend i.i-fexp{border-color:var(--interview); background:var(--interview-soft);}
+  .reg-legend i.i-fmant{border-color:var(--accent); background:var(--accent-soft);}
+
+  /* ---------- string — заголовок (ptr+len) и байты данных ---------- */
+  .strfig{margin:18px 0 22px;}
+  .strfig-label{
+    font-family:"JetBrains Mono"; font-size:11px; color:var(--text-dim);
+    margin-bottom:12px; letter-spacing:.02em;
+  }
+  .strhead{display:flex; gap:10px; margin-bottom:8px;}
+  .strfield{flex:1; border:1.5px solid var(--border); border-radius:8px; padding:10px 14px; background:var(--surface-2);}
+  .strfield-name{font-family:"JetBrains Mono"; font-size:11px; color:var(--text-dim); margin-bottom:4px; letter-spacing:.02em;}
+  .strfield-val{font-family:"JetBrains Mono"; font-size:13.5px; font-weight:700; color:var(--accent-strong);}
+  .strarrow{font-family:"JetBrains Mono"; font-size:11px; color:var(--text-dim); text-align:left; margin:2px 0 10px;}
+  .strbytes{display:inline-block;}
+  .charrow{display:flex; gap:3px; margin-top:4px;}
+  .char-sm{width:21px; text-align:center; font-family:"JetBrains Mono"; font-size:12px; color:var(--text-dim);}
+  .strlen-brace{position:relative; height:12px; margin:10px 0 2px; border-bottom:1.5px solid var(--accent);}
+  .strlen-brace::before, .strlen-brace::after{
+    content:""; position:absolute; bottom:0; width:1.5px; height:7px; background:var(--accent);
+  }
+  .strlen-brace::before{left:0;}
+  .strlen-brace::after{right:0;}
+  .strlen-label{font-family:"JetBrains Mono"; font-size:10.5px; color:var(--accent-strong); margin:4px 0 2px;}
+</style>
 
 <div class="shell">
   <aside class="sidebar">
@@ -783,12 +843,11 @@ if x, err := f(); x > 0 { // := создаёт новую err!
           <table>
             <tr><th>Тип</th><th>Размер</th><th class="wrap">Комментарий</th><th>Реализация</th></tr>
             <tr><td><code class="inline">bool</code></td><td>1 байт</td><td class="wrap"><code class="inline">true</code> / <code class="inline">false</code></td><td><button type="button" class="impl-btn" onclick="openImpl('bool')">под капотом →</button></td></tr>
-            <tr><td><code class="inline">int8 / int16 / int32 / int64</code></td><td>1 / 2 / 4 / 8 байт</td><td class="wrap">знаковые, фиксированного размера</td><td><span class="impl-soon">скоро</span></td></tr>
-            <tr><td><code class="inline">uint8 (byte) … uint64</code></td><td>1–8 байт</td><td class="wrap">беззнаковые аналоги</td><td><span class="impl-soon">скоро</span></td></tr>
-            <tr><td><code class="inline">int / uint</code></td><td>4 или 8 байт</td><td class="wrap">размер зависит от платформы (32/64-бит)</td><td><span class="impl-soon">скоро</span></td></tr>
-            <tr><td><code class="inline">float32 / float64</code></td><td>4 / 8 байт</td><td class="wrap">дробный литерал по умолчанию — <code class="inline">float64</code></td><td><span class="impl-soon">скоро</span></td></tr>
-            <tr><td><code class="inline">string</code></td><td>—</td><td class="wrap">неизменяемая последовательность байт в UTF-8</td><td><span class="impl-soon">скоро</span></td></tr>
-            <tr><td><code class="inline">rune</code></td><td>= int32</td><td class="wrap">один Unicode code point</td><td><span class="impl-soon">скоро</span></td></tr>
+            <tr><td><code class="inline">int8 / int16 / int32 (rune) / int64</code></td><td>1 / 2 / 4 / 8 байт</td><td class="wrap">знаковые, фиксированного размера — <code class="inline">int32</code> в роли <code class="inline">rune</code> хранит один Unicode code point (символ текста)</td><td><button type="button" class="impl-btn" onclick="openImpl('int')">под капотом →</button></td></tr>
+            <tr><td><code class="inline">uint8 (byte) … uint64</code></td><td>1–8 байт</td><td class="wrap">беззнаковые аналоги — <code class="inline">uint8</code> в роли <code class="inline">byte</code> хранит сырой байт данных (I/O, хеши, бинарные протоколы)</td><td><button type="button" class="impl-btn" onclick="openImpl('int')">под капотом →</button></td></tr>
+            <tr><td><code class="inline">int / uint</code></td><td>4 или 8 байт</td><td class="wrap">размер зависит от платформы (32/64-бит)</td><td><button type="button" class="impl-btn" onclick="openImpl('int')">под капотом →</button></td></tr>
+            <tr><td><code class="inline">float32 / float64</code></td><td>4 / 8 байт</td><td class="wrap">дробный литерал по умолчанию — <code class="inline">float64</code></td><td><button type="button" class="impl-btn" onclick="openImpl('float')">под капотом →</button></td></tr>
+            <tr><td><code class="inline">string</code></td><td>—</td><td class="wrap">неизменяемая последовательность байт в UTF-8</td><td><button type="button" class="impl-btn" onclick="openImpl('string')">под капотом →</button></td></tr>
           </table>
         </div>
         <p class="tight" style="font-size:12.5px;color:var(--text-dim);">«Под капотом» — отдельная панель с разбором конкретной реализации: исходники рантайма/компилятора, байтовая раскладка в памяти, что реально менялось между версиями Go.</p>
@@ -808,7 +867,7 @@ if x, err := f(); x > 0 { // := создаёт новую err!
         <div class="codeblock">
           <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">runes.go</span></div>
           <pre><code class="language-go">s := "Go, гофер!"
-fmt.Println(len(s))          // 13 — длина в байтах, не в символах
+fmt.Println(len(s))          // 15 — длина в байтах, не в символах (10 рун, но кириллица — по 2 байта)
 
 for i, r := range s {
     fmt.Printf("%d:%c ", i, r) // range декодирует строку в rune'ы
@@ -878,6 +937,14 @@ for i := 0; i < 1_000_000; i++ {
           <div class="deep-body">
             <p class="tight">⚠ Популярное, но неточное объяснение — встречается в разных обучающих материалах: якобы <code class="inline">rune</code> сделали знаковым (<code class="inline">int32</code>, а не <code class="inline">uint32</code>) специально для того, чтобы функции декодирования могли возвращать <code class="inline">-1</code> как признак «невалидного символа». Это не так на практике: стандартная библиотека для этого использует не <code class="inline">-1</code>, а специальную руну <code class="inline">utf8.RuneError</code> (U+FFFD) — <code class="inline">unicode/utf8.DecodeRuneInString</code> возвращает <code class="inline">(RuneError, 0)</code> для пустой строки и <code class="inline">(RuneError, 1)</code> для невалидной кодировки, но никогда <code class="inline">-1</code>. Официальный блог-пост Go про строки лишь констатирует факт: «<code class="inline">rune</code> — это алиас для <code class="inline">int32</code>, чтобы в коде было явно видно, где значение представляет code point», не объясняя выбор знаковости.</p>
             <p class="tight">Более скромное и проверяемое объяснение: одного code point Unicode достаточно 21 бита, поэтому естественным выбором стал 32-битный тип — а <code class="inline">int32</code>, а не <code class="inline">uint32</code>, просто следует общему соглашению Go по умолчанию использовать знаковые целые (как <code class="inline">int</code> для длин/индексов), а не потому что отрицательные руны специально задуманы как сигнал ошибки. <code class="inline">byte</code> (<code class="inline">uint8</code>), для сравнения, беззнаковый естественно — это просто единица хранения байта (0..255), а не Unicode-значение. <em>(проверено в этой сессии: go.dev/blog/strings, pkg.go.dev/unicode/utf8)</em></p>
+          </div>
+        </details>
+
+        <details class="deep">
+          <summary>Подробнее: когда использовать byte, а когда rune <span class="tag">byte</span><span class="tag">rune</span><span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight"><code class="inline">byte</code> — для сырых данных, без понятия «символа»: ввод/вывод (<code class="inline">io.Reader</code>/<code class="inline">io.Writer</code> работают с <code class="inline">[]byte</code>), хеширование, шифрование, бинарные протоколы, индекс строки <code class="inline">s[i]</code>. <code class="inline">rune</code> — для текста, когда важен именно символ: перебор строки посимвольно (<code class="inline">for i, r := range s</code>), подсчёт длины в символах, а не в байтах (<code class="inline">utf8.RuneCountInString(s)</code> вместо <code class="inline">len(s)</code>), регистр и классы символов (<code class="inline">unicode.ToUpper</code>, <code class="inline">unicode.IsLetter</code>).</p>
+            <p class="tight">Правило простое: поток байт — <code class="inline">byte</code>; юникод-осознанный анализ текста — <code class="inline">rune</code>. Для ASCII разница незаметна, а вот кириллица (2 байта на символ в UTF-8) или эмодзи (обычно 4 байта) её сразу проявляют: <code class="inline">len("привет")</code> — это 12, а не 6. Резать строку по <code class="inline">s[:n]</code> безопасно, только если точно известно, что байт <code class="inline">n</code> не разрезает многобайтовый символ пополам.</p>
           </div>
         </details>
       </section>
@@ -5051,7 +5118,7 @@ func (s *Stack[T]) Push(v T) {
       bool: {
         title: 'bool — под капотом',
         html: `
-          <p class="tight">В спецификации Go <code class="inline">bool</code> — предопределённый именованный тип с двумя значениями (<code class="inline">true</code>/<code class="inline">false</code>), zero value — <code class="inline">false</code>. Операторов всего пять: <code class="inline">==</code>, <code class="inline">!=</code>, <code class="inline">&amp;&amp;</code>, <code class="inline">||</code>, <code class="inline">!</code> — операторов порядка (<code class="inline">&lt;</code>, <code class="inline">&gt;</code>) для bool нет, и неявных преобразований в/из чисел тоже нет.</p>
+          <p class="tight"><code class="inline">bool</code> — предопределённый тип с двумя значениями (<code class="inline">true</code>/<code class="inline">false</code>), zero value — <code class="inline">false</code>. Операторов пять: <code class="inline">==</code>, <code class="inline">!=</code>, <code class="inline">&amp;&amp;</code>, <code class="inline">||</code>, <code class="inline">!</code>. Операторов порядка и неявных преобразований в/из чисел нет.</p>
 
           <div class="codeblock">
             <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">src/builtin/builtin.go</span></div>
@@ -5091,7 +5158,7 @@ const (
             <p><b>Почему байт, а не бит?</b> Память адресуется побайтово — минимальная единица, у которой вообще есть адрес, это байт, а не бит. Если бы <code class="inline">bool</code> занимал 1 бит, взять его адрес (<code class="inline">&amp;flag</code>) было бы физически нечем — «адреса бита» в модели памяти не существует. Команды процессора для чтения/записи (<code class="inline">mov</code>, <code class="inline">ldr</code>/<code class="inline">str</code>) тоже оперируют минимум байтом за одну операцию.</p>
           </div>
 
-          <p class="tight">Упаковка нескольких булов в один байт технически возможна (так делают C-битовые поля через <code class="inline">unsigned x : 1</code>), но не бесплатна: обращение к отдельному биту — это уже не одно чтение, а «прочитать байт → сдвинуть → замаскировать», а запись — read-modify-write всего байта целиком (и источник гонки данных, если «разные» булевы поля на самом деле делят один байт между несколькими горутинами). Go битовых полей вообще не поддерживает — сознательно, ради простоты модели памяти и однозначно дешёвого доступа к каждому полю.</p>
+          <p class="tight">Упаковка нескольких булов в байт технически возможна (C-битовые поля через <code class="inline">unsigned x : 1</code>), но не бесплатна: чтение бита — «прочитать байт → сдвинуть → замаскировать», запись — read-modify-write всего байта (источник гонки, если разные булевы поля делят байт между горутинами). Go битовых полей не поддерживает — сознательно, ради простоты и дешёвого доступа к каждому полю.</p>
 
           <div class="codeblock">
             <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">src/sync/atomic/type.go</span></div>
@@ -5113,11 +5180,420 @@ func (x *Bool) Load() bool     { return LoadUint32(&x.v) != 0 }
 func (x *Bool) Store(val bool) { StoreUint32(&x.v, b32(val)) }</code></pre>
           </div>
 
-          <p class="tight">Даже добавляя в 2022 году «нормальный» атомарный булев тип, авторы рантайма не стали атомарно оперировать самим байтом напрямую — атомарные инструкции процессора исторически надёжно определены на размер машинного слова, а не на произвольный байт. <code class="inline">atomic.Bool</code> — это просто типобезопасный API поверх той же самой ручной техники (<code class="inline">uint32</code> + конвертация 0/1 через <code class="inline">b32()</code>), которую раньше все писали руками.</p>
+          <p class="tight">Даже добавив в 2022 «нормальный» атомарный bool, авторы не стали оперировать самим байтом напрямую — атомарные инструкции процессора надёжно определены на размер машинного слова, не на произвольный байт. <code class="inline">atomic.Bool</code> — типобезопасный API поверх той же ручной техники (<code class="inline">uint32</code> + <code class="inline">b32()</code>), которую раньше писали руками.</p>
 
           <div class="impl-sources">Источники: go.dev/ref/spec#Boolean_types · github.com/golang/go (src/builtin/builtin.go, src/sync/atomic/type.go) · go.dev/doc/go1.19</div>
         `
-      }
+      },
+
+  // ---------- "int" entry, appended to IMPL_DATA ----------
+      int: {
+        title: 'Целые числа — под капотом',
+        html: `
+          <p class="tight"><code class="inline">int8…int64</code>/<code class="inline">uint8…uint64</code> и платформозависимые <code class="inline">int</code>/<code class="inline">uint</code> устроены одинаково, разница только в ширине. Разбираем на <code class="inline">int8</code>, потом смотрим, что меняется при масштабировании.</p>
+
+          <div class="codeblock">
+            <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">src/builtin/builtin.go</span></div>
+            <pre><code class="language-go">// int8 is the set of all signed 8-bit integers.
+// Range: -128 through 127.
+type int8 int8
+
+// uint8 is the set of all unsigned 8-bit integers.
+// Range: 0 through 255.
+type uint8 uint8
+
+// int is a signed integer type that is at least 32 bits in size.
+// It is a distinct type, however, and not an alias for, say, int32.
+type int int</code></pre>
+          </div>
+
+          <p class="tight">Спецификация говорит «не меньше 32 бит», а не «32 или 64». На практике везде ровно 32 или 64 бита в зависимости от <code class="inline">GOARCH</code> — но это свойство реализаций, а не гарантия спецификации.</p>
+
+          <div class="bytefig">
+            <div class="bytefig-label">int8 в памяти — дополнительный код (two's complement), 1 байт</div>
+            <div class="byterow">
+              <span class="byte-state">127</span>
+              <div class="bits"><div class="bitbyte"><span class="bit is-highlight">0</span><span class="bit is-one">1</span><span class="bit is-one">1</span><span class="bit is-one">1</span><span class="bit is-one">1</span><span class="bit is-one">1</span><span class="bit is-one">1</span><span class="bit is-one">1</span></div></div>
+              <span class="byte-tag">0x7F</span>
+            </div>
+            <div class="byterow">
+              <span class="byte-state">-1</span>
+              <div class="bits"><div class="bitbyte"><span class="bit is-one is-highlight">1</span><span class="bit is-one">1</span><span class="bit is-one">1</span><span class="bit is-one">1</span><span class="bit is-one">1</span><span class="bit is-one">1</span><span class="bit is-one">1</span><span class="bit is-one">1</span></div></div>
+              <span class="byte-tag">0xFF</span>
+            </div>
+            <div class="byterow">
+              <span class="byte-state">-128</span>
+              <div class="bits"><div class="bitbyte"><span class="bit is-one is-highlight">1</span><span class="bit">0</span><span class="bit">0</span><span class="bit">0</span><span class="bit">0</span><span class="bit">0</span><span class="bit">0</span><span class="bit">0</span></div></div>
+              <span class="byte-tag">0x80</span>
+            </div>
+          </div>
+
+          <div class="callout interview">
+            <div class="mark">спецификация</div>
+            <p>«The value of an n-bit integer is n bits wide and represented using two's complement arithmetic» — старший бит (выделен рамкой) одновременно и знаковый, и часть обычной битовой записи числа, отдельного «флага знака» физически не существует.</p>
+          </div>
+
+          <div class="regfig">
+            <div class="regfig-label">та же схема, но шире — int32, значение -1 (все биты — единицы)</div>
+            <div class="regrow">
+              <div class="regrow-bits"><div class="bitbyte"><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span></div><div class="bitbyte"><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span></div></div>
+            </div>
+            <div class="regrow">
+              <div class="regrow-bits"><div class="bitbyte"><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span></div><div class="bitbyte"><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span></div><span class="byte-tag">0xFFFFFFFF</span></div>
+            </div>
+          </div>
+          <p class="tight">Для <code class="inline">int16</code>/<code class="inline">int64</code> — тот же принцип, просто больше байтовых групп. Ничего концептуально нового с ростом ширины.</p>
+
+          <div class="callout warn">
+            <div class="mark">переполнение</div>
+            <p>Спецификация (раздел «Integer overflow»): для беззнаковых — <code class="inline">+ - * &lt;&lt;</code> считаются по модулю 2ⁿ; для знаковых — результат переполнения «detereministically defined by the signed integer representation, the operation, and its operands» и явно: <b>«Overflow does not cause a run-time panic»</b>. В отличие от C/C++, где переполнение знаковых целых — undefined behavior (компилятор вправе оптимизировать код в предположении, что оно не случится), в Go оно детерминировано специфицировано.</p>
+          </div>
+
+          <p class="tight">Конвертация между размерами — отдельная механика. Спецификация («Conversions»): «if the value is a signed integer, it is sign extended to implicit infinite precision; otherwise it is zero extended. It is then truncated to fit in the result type's size». Пример из спецификации по байтам:</p>
+
+          <div class="regfig">
+            <div class="regfig-label">uint16(0x10F0) → int8(v) → uint32(...) == 0xFFFFFFF0</div>
+            <div class="regrow">
+              <div class="regrow-label">uint16(0x10F0)</div>
+              <div class="regrow-bits"><div class="bitbyte"><span class="bit">0</span><span class="bit">0</span><span class="bit">0</span><span class="bit is-one">1</span><span class="bit">0</span><span class="bit">0</span><span class="bit">0</span><span class="bit">0</span></div><div class="bitbyte"><span class="bit is-one">1</span><span class="bit is-one">1</span><span class="bit is-one">1</span><span class="bit is-one">1</span><span class="bit">0</span><span class="bit">0</span><span class="bit">0</span><span class="bit">0</span></div><span class="byte-tag">0x10F0</span></div>
+            </div>
+            <div class="regrow">
+              <div class="regrow-label">int8(v) — усечение до младшего байта</div>
+              <div class="regrow-bits"><div class="bitbyte"><span class="bit is-one is-highlight">1</span><span class="bit is-one">1</span><span class="bit is-one">1</span><span class="bit is-one">1</span><span class="bit">0</span><span class="bit">0</span><span class="bit">0</span><span class="bit">0</span></div><span class="byte-tag">0xF0 (= -16)</span></div>
+            </div>
+            <div class="regrow">
+              <div class="regrow-label">uint32(int8(v)) — знаковое расширение, затем усечение до 32 бит</div>
+              <div class="regrow-bits"><div class="bitbyte"><span class="bit bit-sm is-ext">1</span><span class="bit bit-sm is-ext">1</span><span class="bit bit-sm is-ext">1</span><span class="bit bit-sm is-ext">1</span><span class="bit bit-sm is-ext">1</span><span class="bit bit-sm is-ext">1</span><span class="bit bit-sm is-ext">1</span><span class="bit bit-sm is-ext">1</span></div><div class="bitbyte"><span class="bit bit-sm is-ext">1</span><span class="bit bit-sm is-ext">1</span><span class="bit bit-sm is-ext">1</span><span class="bit bit-sm is-ext">1</span><span class="bit bit-sm is-ext">1</span><span class="bit bit-sm is-ext">1</span><span class="bit bit-sm is-ext">1</span><span class="bit bit-sm is-ext">1</span></div></div>
+            </div>
+            <div class="regrow">
+              <div class="regrow-bits"><div class="bitbyte"><span class="bit bit-sm is-ext">1</span><span class="bit bit-sm is-ext">1</span><span class="bit bit-sm is-ext">1</span><span class="bit bit-sm is-ext">1</span><span class="bit bit-sm is-ext">1</span><span class="bit bit-sm is-ext">1</span><span class="bit bit-sm is-ext">1</span><span class="bit bit-sm is-ext">1</span></div><div class="bitbyte"><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm is-one">1</span><span class="bit bit-sm">0</span><span class="bit bit-sm">0</span><span class="bit bit-sm">0</span><span class="bit bit-sm">0</span></div><span class="byte-tag">0xFFFFFFF0</span></div>
+            </div>
+            <div class="reg-legend">
+              <span><i class="i-one"></i>исходные биты числа</span>
+              <span><i class="i-ext"></i>добавлено sign extension (копия знакового бита)</span>
+            </div>
+          </div>
+          <p class="tight">Знаковый бит младшего байта (<code class="inline">1</code> в <code class="inline">0xF0</code>) размножается влево на все новые биты — это и есть «implicit infinite precision»: копирование идёт, пока не наберётся ширина результата, потом всё усекается по ней.</p>
+
+          <div class="callout warn">
+            <div class="mark">int128?</div>
+            <p>В трекере есть предложение <code class="inline">golang/go#9455</code> добавить встроенные <code class="inline">int128</code>/<code class="inline">uint128</code>. Формально не отклонено, но помечено <code class="inline">Milestone: Unplanned</code> — то есть де-факто не планируется. Для 128-битной арифметики используют <code class="inline">math/bits.Mul64</code>/<code class="inline">Add64</code> вручную либо сторонние пакеты.</p>
+          </div>
+
+          <div class="codeblock">
+            <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">src/builtin/builtin.go</span></div>
+            <pre><code class="language-go">// byte is an alias for uint8 — просто другое имя, не отдельный тип
+type byte = uint8
+
+// rune is an alias for int32 — тоже просто алиас
+type rune = int32</code></pre>
+          </div>
+
+          <p class="tight" style="font-size:12.5px;color:var(--text-dim);">Историческая деталь: сама раскладка в памяти не менялась никогда — а вот в Go 1.13 добавили новые форматы литералов (<code class="inline">0b1011</code>, <code class="inline">0o660</code>, разделитель <code class="inline">1_000_000</code>) и убрали требование, чтобы счётчик сдвига в <code class="inline">&lt;&lt;</code> / <code class="inline">&gt;&gt;</code> был обязательно <code class="inline">uint</code>.</p>
+
+          <div class="impl-sources">Источники: go.dev/ref/spec (Numeric types, Integer overflow, Conversions) · github.com/golang/go (src/builtin/builtin.go) · github.com/golang/go/issues/9455 · boldlygo.tech (точные цитаты из спецификации) · go.dev/doc/go1.13</div>
+        `
+      },
+
+  // ---------- "float" entry, appended to IMPL_DATA ----------
+      float: {
+        title: 'Float — под капотом',
+        html: `
+          <p class="tight">В отличие от целых, у <code class="inline">float32</code>/<code class="inline">float64</code> раскладка в памяти — это не Go-специфика, а прямое повторение стандарта IEEE 754. Байты внутри те же, что в любом другом языке, который следует этому стандарту.</p>
+
+          <div class="codeblock">
+            <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">src/builtin/builtin.go</span></div>
+            <pre><code class="language-go">// float32 is the set of all IEEE 754 32-bit floating-point numbers.
+type float32 float32
+
+// float64 is the set of all IEEE 754 64-bit floating-point numbers.
+type float64 float64</code></pre>
+          </div>
+
+          <p class="tight">32 бита делятся на три поля: 1 бит знака, 8 бит экспоненты (со смещением/bias 127) и 23 бита мантиссы. У <code class="inline">float64</code> тот же принцип, только шире — 1 + 11 + 52 = 64 бита, bias экспоненты 1023.</p>
+
+          <div class="regfig">
+            <div class="regfig-label">float32(1.5) = 0x3FC00000 — знак · экспонента (bias 127) · мантисса</div>
+            <div class="regrow">
+              <div class="regrow-bits">
+                <div class="bitbyte"><span class="bit bit-sm is-fsign">0</span><span class="bit bit-sm is-fexp">0</span><span class="bit bit-sm is-fexp">1</span><span class="bit bit-sm is-fexp">1</span><span class="bit bit-sm is-fexp">1</span><span class="bit bit-sm is-fexp">1</span><span class="bit bit-sm is-fexp">1</span><span class="bit bit-sm is-fexp">1</span></div><div class="bitbyte"><span class="bit bit-sm is-fexp">1</span><span class="bit bit-sm is-fmant">1</span><span class="bit bit-sm is-fmant">0</span><span class="bit bit-sm is-fmant">0</span><span class="bit bit-sm is-fmant">0</span><span class="bit bit-sm is-fmant">0</span><span class="bit bit-sm is-fmant">0</span><span class="bit bit-sm is-fmant">0</span></div>
+              </div>
+            </div>
+            <div class="regrow">
+              <div class="regrow-bits">
+                <div class="bitbyte"><span class="bit bit-sm is-fmant">0</span><span class="bit bit-sm is-fmant">0</span><span class="bit bit-sm is-fmant">0</span><span class="bit bit-sm is-fmant">0</span><span class="bit bit-sm is-fmant">0</span><span class="bit bit-sm is-fmant">0</span><span class="bit bit-sm is-fmant">0</span><span class="bit bit-sm is-fmant">0</span></div><div class="bitbyte"><span class="bit bit-sm is-fmant">0</span><span class="bit bit-sm is-fmant">0</span><span class="bit bit-sm is-fmant">0</span><span class="bit bit-sm is-fmant">0</span><span class="bit bit-sm is-fmant">0</span><span class="bit bit-sm is-fmant">0</span><span class="bit bit-sm is-fmant">0</span><span class="bit bit-sm is-fmant">0</span></div><span class="byte-tag">0x3FC00000</span>
+              </div>
+            </div>
+            <div class="reg-legend">
+              <span><i class="i-fsign"></i>знак — 0 = положительное</span>
+              <span><i class="i-fexp"></i>экспонента <code class="inline">01111111</code> = 127 → со смещением 127 это степень 2⁰</span>
+              <span><i class="i-fmant"></i>мантисса <code class="inline">1.1₂</code> (неявная единица + сохранённая дробная часть)</span>
+            </div>
+          </div>
+
+          <p class="tight">Итог: <code class="inline">1.1₂ × 2⁰ = 1.5</code>. Неявная единица перед точкой в мантиссу не пишется — это часть формата (нормализованная запись), поэтому 23 бита мантиссы реально кодируют 24 бита точности.</p>
+
+          <div class="codeblock">
+            <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">math</span></div>
+            <pre><code class="language-go">func Float32bits(f float32) uint32     // побитовое представление f
+func Float32frombits(b uint32) float32 // Float32frombits(Float32bits(x)) == x
+
+func Float64bits(f float64) uint64
+func Float64frombits(b uint64) float64
+
+func Signbit(x float64) bool // отрицательное число или отрицательный ноль</code></pre>
+          </div>
+
+          <div class="callout warn">
+            <div class="mark">+0 и -0</div>
+            <p>IEEE 754 различает два нуля на уровне битов — <code class="inline">+0</code> (все биты 0) и <code class="inline">-0</code> (бит знака поднят, остальное 0). Обычное сравнение <code class="inline">+0 == -0</code> даёт <code class="inline">true</code>, но <code class="inline">math.Signbit(x)</code> их различает, а <code class="inline">math.Max(-0, -0) == -0</code> — то есть биты реально разные, просто язык их не разводит через <code class="inline">==</code>.</p>
+          </div>
+
+          <div class="callout warn">
+            <div class="mark">деньги</div>
+            <p><code class="inline">var a, b float64 = 0.1, 0.2; a + b == 0.3</code> — <code class="inline">false</code> (получится <code class="inline">0.30000000000000004</code>). Причина не в багах Go, а в том, что 0.1 и 0.2 не представимы точно в двоичной дроби — как 1/3 не представим точно в десятичной. Стандартный совет для денег — хранить целые копейки/центы как <code class="inline">int64</code> либо использовать <code class="inline">big.Rat</code>/decimal-пакеты, а не <code class="inline">float64</code>.</p>
+          </div>
+
+          <div class="callout interview">
+            <div class="mark">собес</div>
+            <p>Деление на 0 для float — не паника (в отличие от int): <code class="inline">1.0/0.0 = +Inf</code>, <code class="inline">-1.0/0.0 = -Inf</code>, <code class="inline">0.0/0.0 = NaN</code>. При этом <code class="inline">NaN != NaN</code> всегда <code class="inline">true</code> — классический gotcha при сравнениях и при использовании <code class="inline">NaN</code> как ключа <code class="inline">map</code> (положить можно, найти обратно по значению — нельзя).</p>
+          </div>
+
+          <div class="impl-sources">Источники: github.com/golang/go (src/builtin/builtin.go) · pkg.go.dev/math (Float32bits/frombits, Float64bits/frombits, Signbit, Max) · IEEE 754 (общий стандарт)</div>
+        `
+      },
+
+  // ---------- "string" entry, appended to IMPL_DATA ----------
+      string: {
+        title: 'String — под капотом',
+        html: `
+          <div class="impl-groupline"><span class="t">Заголовок</span></div>
+
+          <p class="tight"><code class="inline">string</code> — не «байты как есть», а <b>заголовок</b>: маленькая карточка фиксированного размера с координатами данных, без единого байта текста внутри. Карточка лежит там же, где обычная переменная (стек, регистр, поле структуры), а сами байты текста — отдельно, в куче. Это единственный базовый тип, где важнее устройство карточки, а не содержимое ячейки.</p>
+
+          <div class="codeblock">
+            <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">src/builtin/builtin.go</span></div>
+            <pre><code class="language-go">// string is the set of all strings of 8-bit bytes, conventionally but not
+// necessarily representing UTF-8-encoded text. A string may be empty, but
+// not nil. Values of string type are immutable.
+type string string</code></pre>
+          </div>
+
+          <p class="tight" style="font-size:11.5px;color:var(--text-dim);">Это лишь заглушка для <code class="inline">godoc</code>. Настоящий заголовок — <code class="inline">stringStruct</code> в исходниках рантайма:</p>
+
+          <div class="codeblock">
+            <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">src/runtime/string.go</span></div>
+            <pre><code class="language-go">type stringStruct struct {
+    str unsafe.Pointer
+    len int
+}</code></pre>
+          </div>
+
+          <p class="tight" style="font-size:11.5px;color:var(--text-dim);">Всего 2 поля, без комментариев в оригинале — разбор ниже мой.</p>
+
+          <p class="tight"><code class="inline">str</code> — <code class="inline">unsafe.Pointer</code>: не массив байт внутри структуры, а просто адрес, сами байты — отдельно в куче. <code class="inline">len</code> — обычный <code class="inline">int</code>, счётчик байт. В заголовке нет ни одного байта текста, только адрес и число.</p>
+
+          <div class="impl-groupline"><span class="t">Длина: как определяется и когда пишется</span></div>
+
+          <div class="callout interview">
+            <div class="mark">собес</div>
+            <p><b>Как строка узнаёт, где заканчивается?</b> Только по полю <code class="inline">len</code> — счётчику байт в заголовке. В C конец строки определяется терминирующим байтом-нулём (<code class="inline">\0</code>), поэтому такая строка не может содержать байт <code class="inline">0x00</code> как часть данных — он будет принят за конец. Go-строка хранит длину явно и заранее, поэтому внутри неё <code class="inline">0x00</code> — совершенно обычный байт данных, а не признак конца: <code class="inline">len("a\x00b")</code> честно вернёт <code class="inline">3</code>, тогда как эквивалентная C-строка оборвалась бы на первом байте.</p>
+          </div>
+
+          <p class="tight" style="font-size:11.5px;color:var(--text-dim);"><code class="inline">len</code> не вычисляется на лету — его пишут один раз, при создании строки, а дальше она неизменяема. Для литерала компилятор знает число байт UTF-8 ещё на этапе сборки и зашивает его в бинарник. Для строки из конкатенации (<code class="inline">s + "!"</code>) — рантайм-функция <code class="inline">concatstrings</code> суммирует длины кусков (<code class="inline">l += len(x)</code>) и пишет сумму как <code class="inline">len</code> результата.</p>
+
+          <div class="callout interview">
+            <div class="mark">собес</div>
+            <p><b>Почему <code class="inline">len</code> — это <code class="inline">int</code>, а не <code class="inline">uint</code>? Длина ведь не может быть отрицательной.</b> Не может — но всё равно <code class="inline">int</code>, сознательно: сигнатура встроенной <code class="inline">len()</code> буквально <code class="inline">func len(v Type) int</code>. Причина — паттерн обратного цикла <code class="inline">for i := len(a)-1; i >= 0; i--</code>: будь <code class="inline">len</code> типа <code class="inline">uint</code>, при пустом <code class="inline">a</code> выражение <code class="inline">len(a)-1</code> не дало бы -1, а переполнилось бы в огромное число, и <code class="inline">i >= 0</code> стало бы вечной правдой — бесконечный цикл. Плюс общий принцип Go: <code class="inline">uint</code> — для битовых масок, <code class="inline">int</code> — для количеств, даже неотрицательных.</p>
+          </div>
+
+          <div class="impl-groupline"><span class="t">Размер заголовка</span></div>
+
+          <p class="tight">2 поля → общий размер (это и есть <code class="inline">unsafe.Sizeof(string)</code> — вес самой переменной, без байт текста в куче). <code class="inline">str</code> — просто число-адрес, но чтобы дотянуться до любого байта в адресном пространстве, оно шириной в <b>машинное слово платформы</b> — разрядность регистров процессора: 4 байта на 32-битных системах, 8 — на 64-битных. Не догадка, а прямое следствие исходников —</p>
+
+          <div class="codeblock">
+            <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">src/internal/goarch/goarch.go</span></div>
+            <pre><code class="language-go">// PtrSize is the size of a pointer in bytes - unsafe.Sizeof(uintptr(0))
+// but as an ideal constant.
+// It is also the size of the machine's native word size
+// (that is, 4 on 32-bit systems, 8 on 64-bit).
+const PtrSize = 4 << (^uintptr(0) >> 63)</code></pre>
+          </div>
+
+          <p class="tight">— и <code class="inline">int</code> (поле <code class="inline">len</code>) той же ширины. <code class="inline">int</code> — <b>не</b> <code class="inline">int64</code>: отдельный платформо-зависимый тип (см. таблицу типов выше), который лишь совпадает с <code class="inline">int64</code> на 64-битных системах — на 32-битных оба по 4 байта. Итого: 2 поля × слово → <b>16 байт на 64-битной платформе (amd64/arm64), 8 — на 32-битной (386/arm)</b>. Третьего поля, <code class="inline">cap</code>, как у слайса, здесь нет — строка не растёт по месту, ёмкость не нужна.</p>
+
+          <div class="strfig">
+            <div class="strfig-label">string header — 2 слова, указывают на отдельный блок байт (пример на 64-бит)</div>
+            <div class="strhead">
+              <div class="strfield">
+                <div class="strfield-name">str (указатель)</div>
+                <div class="strfield-val">0x… (пример, не из реального запуска)</div>
+              </div>
+              <div class="strfield">
+                <div class="strfield-name">len</div>
+                <div class="strfield-val">15</div>
+              </div>
+            </div>
+            <div class="strarrow">↓ поле <code class="inline">str</code> хранит адрес именно этой ячейки — байта под индексом 0 (первого байта данных)</div>
+            <p class="tight" style="font-size:11.5px;color:var(--text-dim);margin:0 0 8px;">Байты данных — в hex: 1 hex-разряд = 4 бита, байт = 2 hex-цифры. Например <code class="inline">47</code> = <code class="inline">0100 0111</code> = 71 = символ <code class="inline">G</code> по ASCII. Короче, чем 8 бит на байт — поэтому сырые байты обычно смотрят именно в hex (отладчики, <code class="inline">hexdump</code>).</p>
+
+            <p class="tight" style="font-size:11.5px;color:var(--text-dim);margin:0 0 8px;">Биты сами по себе не знаковые и не беззнаковые — знак задаёт тип чтения. Go отдаёт байты строки как <code class="inline">byte</code> (= <code class="inline">uint8</code>), поэтому <code class="inline">D0</code> на схеме — 208, не отрицательное число.</p>
+            <div class="strbytes">
+              <div class="bits">
+                <div class="bitbyte"><span class="bit bit-sm is-highlight">47</span><span class="bit bit-sm">6F</span><span class="bit bit-sm">2C</span><span class="bit bit-sm">20</span><span class="bit bit-sm is-ext">D0</span><span class="bit bit-sm is-ext">B3</span><span class="bit bit-sm is-ext">D0</span><span class="bit bit-sm is-ext">BE</span></div><div class="bitbyte"><span class="bit bit-sm is-ext">D1</span><span class="bit bit-sm is-ext">84</span><span class="bit bit-sm is-ext">D0</span><span class="bit bit-sm is-ext">B5</span><span class="bit bit-sm is-ext">D1</span><span class="bit bit-sm is-ext">80</span><span class="bit bit-sm">21</span></div>
+              </div>
+              <div class="charrow">
+                <div class="bitbyte"><span class="char-sm">G</span><span class="char-sm">o</span><span class="char-sm">,</span><span class="char-sm">␣</span><span class="char-sm">г</span><span class="char-sm">г</span><span class="char-sm">о</span><span class="char-sm">о</span></div><div class="bitbyte"><span class="char-sm">ф</span><span class="char-sm">ф</span><span class="char-sm">е</span><span class="char-sm">е</span><span class="char-sm">р</span><span class="char-sm">р</span><span class="char-sm">!</span></div>
+              </div>
+              <div class="strlen-brace"></div>
+            </div>
+            <div class="strlen-label">↑ <code class="inline">len</code> = 15 — здесь и заканчивается строка, ПО СЧЁТЧИКУ, а не потому что встретился какой-то особый байт-«стоп»</div>
+            <p class="tight" style="font-size:11.5px;color:var(--text-dim);margin-top:8px;">Под байтами — какой символ они хранят. Сплошная рамка — байт-ASCII, сам по себе символ (<code class="inline">G o , (space) !</code>). Пунктирная — половина кириллического символа в UTF-8 (буквы «г о ф е р» повторяются под парой байтов — это один символ на 2 байта). Итого 15 байт на 10 символов — отсюда разница <code class="inline">len(s)</code> и числа символов.</p>
+          </div>
+
+          <div class="impl-groupline"><span class="t">Неизменяемость и []byte ↔ string</span></div>
+
+          <p class="tight">Иммутабельность — гарантия языка, не аппаратная защита: <code class="inline">s[0] = 'x'</code> не компилируется, но байты по <code class="inline">str</code> — обычная память кучи, и через <code class="inline">unsafe</code> их технически можно изменить (уже undefined behavior, но физически ничего не мешает — в отличие от read-only страницы памяти на уровне ОС).</p>
+
+          <p class="tight"><code class="inline">[]byte ↔ string</code> в общем случае обязана копировать — иначе мутация слайса ломала бы иммутабельность расшаренной строки. Но компилятор знает 3 паттерна без копирования:</p>
+
+          <div class="tablewrap">
+            <table>
+              <tr><th>Паттерн</th><th class="wrap">Почему без аллокации</th></tr>
+              <tr><td><code class="inline">m[string(b)]</code></td><td class="wrap">поиск в <code class="inline">map[string]T</code> хеширует байты слайса напрямую</td></tr>
+              <tr><td><code class="inline">for i, c := range []byte(s)</code></td><td class="wrap">конвертация только «для чтения по диапазону» не материализуется</td></tr>
+              <tr><td><code class="inline">string(b1) == string(b2)</code></td><td class="wrap">сравнение и упорядочивание байтов напрямую, без временных строк</td></tr>
+            </table>
+          </div>
+
+          <div class="impl-groupline"><span class="t">Конкатенация</span></div>
+
+          <p class="tight"><code class="inline">+</code> компилируется в <code class="inline">runtime.concatstrings</code>: считает суммарную длину и, если результат не «убегает» за пределы стека (это решает escape-анализ компилятора), пишет во временный буфер на стеке, а не в куче:</p>
+
+          <div class="codeblock">
+            <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">src/runtime/string.go</span></div>
+            <pre><code class="language-go">const tmpStringBufSize = 32
+
+// rawstringtmp использует buf (32 байта на стеке), если результат туда влезает,
+// иначе аллоцирует в куче через rawstring(l)
+func rawstringtmp(buf *tmpBuf, l int) (s string, b []byte)</code></pre>
+          </div>
+
+          <p class="tight">Если строка одна и копировать не нужно — <code class="inline">concatstrings</code> возвращает её как есть, без аллокаций. Частный случай: <code class="inline">[]byte → string</code> в 1 байт вообще не аллоцируется — все 256 однобайтовых строк переиспользуют общий статический массив <code class="inline">staticuint64s</code>.</p>
+
+          <div class="callout warn">
+            <div class="mark">камень</div>
+            <p><b><code class="inline">+=</code> в цикле</b> — ловушка: строки неизменяемы, каждая итерация копирует всё заново. <code class="inline">O(n²)</code> вместо <code class="inline">O(n)</code>.</p>
+          </div>
+
+          <div class="codeblock">
+            <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">concat_slow.go</span></div>
+            <pre><code class="language-go">var s string
+for _, w := range words {
+    s += w // каждая итерация: новая аллокация + копия всего s целиком
+}</code></pre>
+          </div>
+
+          <p class="tight">Правильно — <code class="inline">strings.Builder</code>: пишет в растущий буфер, <code class="inline">.String()</code> отдаёт готовую строку без лишней копии. <code class="inline">O(n)</code>.</p>
+
+          <div class="codeblock">
+            <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">concat_fast.go</span></div>
+            <pre><code class="language-go">var b strings.Builder
+for _, w := range words {
+    b.WriteString(w) // дозапись в общий буфер
+}
+s := b.String() // готовая строка, без лишней копии</code></pre>
+          </div>
+
+          <div class="tablewrap">
+            <table>
+              <tr><th>Версия</th><th class="wrap">Что изменилось</th></tr>
+              <tr><td>Go 1.10</td><td class="wrap"><code class="inline">strings.Builder</code> (выше) — урезанный аналог <code class="inline">bytes.Buffer</code> специально для сборки строк</td></tr>
+              <tr><td>Go 1.18</td><td class="wrap"><code class="inline">strings.Clone(s)</code> — явно копирует строку так, что результат физически не ссылается на память оригинала</td></tr>
+              <tr><td>Go 1.20</td><td class="wrap"><code class="inline">unsafe.String(ptr, len)</code> / <code class="inline">unsafe.StringData(s)</code> — безопасный(ее) способ конструировать/разбирать строку из сырых байтов без завязки на внутреннее представление; заодно объявлен deprecated старый <code class="inline">reflect.StringHeader</code></td></tr>
+            </table>
+          </div>
+
+          <div class="impl-groupline"><span class="t">Подстрока и алиасинг памяти</span></div>
+
+          <div class="callout interview">
+            <div class="mark">собес</div>
+            <p><b>Подстрока держит в памяти весь оригинал.</b> Слайсинг не копирует байты — <code class="inline">sub := big[:10]</code> создаёт новый заголовок (<code class="inline">str</code>+<code class="inline">len</code>), указывающий в ту же память, что и <code class="inline">big</code>. Пока жив <code class="inline">sub</code>, GC не может освободить весь backing-массив <code class="inline">big</code>, даже если сам <code class="inline">big</code> больше не используется — классический скрытый memory leak: прочитали гигабайтный файл, вытащили 10-байтовый заголовок, а гигабайт всё ещё висит в памяти. Скопировать байты физически — <code class="inline">strings.Clone</code> (Go 1.18+).</p>
+          </div>
+
+          <figure>
+            <svg viewBox="0 0 600 190" role="img" aria-label="big и sub — два разных заголовка (str, len), указывающие в разные места одного и того же большого блока памяти. Пока жив sub, весь блок big остаётся в памяти.">
+              <defs>
+                <marker id="arr-str-alias" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+                  <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+                </marker>
+              </defs>
+              <rect x="20" y="14" width="170" height="54" rx="9" fill="none" stroke="currentColor" opacity="0.4"/>
+              <text x="36" y="36" font-family="JetBrains Mono" font-size="13" fill="currentColor">big</text>
+              <text x="36" y="54" font-family="JetBrains Mono" font-size="10.5" fill="currentColor" opacity="0.7">str, len=1 000 000</text>
+
+              <rect x="410" y="14" width="170" height="54" rx="9" fill="none" stroke="currentColor" opacity="0.4"/>
+              <text x="426" y="36" font-family="JetBrains Mono" font-size="13" fill="currentColor">sub</text>
+              <text x="426" y="54" font-family="JetBrains Mono" font-size="10.5" fill="currentColor" opacity="0.7">str, len=10</text>
+
+              <rect x="20" y="140" width="560" height="30" rx="6" fill="none" stroke="currentColor" opacity="0.4"/>
+              <rect x="470" y="140" width="34" height="30" rx="4" style="fill:var(--accent-soft); stroke:var(--accent); stroke-width:1.5;"/>
+
+              <line x1="60" y1="68" x2="35" y2="140" stroke="currentColor" opacity="0.55" marker-end="url(#arr-str-alias)"/>
+              <line x1="470" y1="68" x2="487" y2="140" stroke="currentColor" opacity="0.55" marker-end="url(#arr-str-alias)"/>
+
+              <text x="30" y="185" font-family="JetBrains Mono" font-size="10.5" fill="currentColor" opacity="0.7">общий backing-массив, ≈1 000 000 байт</text>
+            </svg>
+            <figcaption><code class="inline">big</code> и <code class="inline">sub</code> — разные заголовки, указывающие в один и тот же блок памяти на разном смещении. Пока жив хотя бы один, GC не освобождает блок целиком.</figcaption>
+          </figure>
+
+          <div class="impl-groupline"><span class="t">UTF-8 и руны</span></div>
+
+          <p class="tight">UTF-8 — это соглашение, а не то, что рантайм проверяет силой: строка — просто байты, туда можно записать что угодно, хоть другую кодировку. Разница видна только когда байты пробуют читать как UTF-8 (<code class="inline">range</code>, <code class="inline">[]rune(s)</code>, <code class="inline">RuneCountInString</code>) — невалидные байты заменяются на <code class="inline">U+FFFD</code> («&#xFFFD;», константа <code class="inline">utf8.RuneError</code>), без паники.</p>
+
+          <p class="tight">Посимвольно — <code class="inline">for i, r := range s</code>: за итерацию декодирует одну руну, без аллокаций. <code class="inline">i</code> — байтовый индекс начала руны, <code class="inline">r</code> — сама руна (<code class="inline">rune</code> = <code class="inline">int32</code>).</p>
+
+          <div class="callout interview">
+            <div class="mark">собес</div>
+            <p><b><code class="inline">utf8.RuneCountInString(s)</code> vs <code class="inline">len([]rune(s))</code></b> — оба дают число рун. <code class="inline">RuneCountInString</code> просто считает, без аллокаций. <code class="inline">[]rune(s)</code> аллоцирует новый слайс (4 байта на руну) просто чтобы взять <code class="inline">len()</code>. Нужна только цифра — бери <code class="inline">RuneCountInString</code>; <code class="inline">[]rune</code> — если сами руны ещё понадобятся.</p>
+          </div>
+
+          <p class="tight"><code class="inline">[]rune(s)</code> — не «байт в руну», а декодирование UTF-8: рантайм разбирает байты по 1–4 за символ, невалидное заменяет на <code class="inline">RuneError</code>. Память растёт: «Go, гофер!» — 15 байт как <code class="inline">string</code>, 40 байт как <code class="inline">[]rune</code> (10 рун × 4 байта).</p>
+
+          <details class="deep">
+            <summary>Практика: разворот строки (reverse) <span class="tag">practice</span></summary>
+            <div class="deep-body">
+              <p class="tight">Наивный разворот байтов ломает многобайтовые символы — порядок байт внутри символа тоже переставляется, UTF-8 портится.</p>
+
+              <div class="codeblock">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">reverse_wrong.go</span></div>
+                <pre><code class="language-go">b := []byte(s)
+for i, j := 0, len(b)-1; i < j; i, j = i+1, j-1 {
+    b[i], b[j] = b[j], b[i]
+}
+reversed := string(b) // ломает многобайтовые символы</code></pre>
+              </div>
+
+              <p class="tight">Правильно — переставлять руны: руна — целый code point фиксированного размера, её можно двигать как единое целое.</p>
+
+              <div class="codeblock">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">reverse_right.go</span></div>
+                <pre><code class="language-go">r := []rune(s)
+for i, j := 0, len(r)-1; i < j; i, j = i+1, j-1 {
+    r[i], r[j] = r[j], r[i]
+}
+reversed := string(r) // корректно</code></pre>
+              </div>
+
+              <p class="tight">Но это разворот рун, не графем: «é» из двух рун (<code class="inline">e</code> + акцент) распадётся неправильно — тут снова нужны библиотеки уровня графем.</p>
+            </div>
+          </details>
+
+          <p class="tight" style="font-size:11.5px;color:var(--text-dim);">На практике: чаще просто <code class="inline">range</code>. <code class="inline">[]rune</code> — только для доступа по индексу или разворота. <code class="inline">RuneCountInString</code> — если нужна только цифра. <code class="inline">strings.Builder</code> — вместо <code class="inline">+=</code> в цикле.</p>
+
+          <div class="impl-sources">Источники: github.com/golang/go (src/builtin/builtin.go, src/runtime/string.go, src/internal/goarch/goarch.go) · pkg.go.dev/builtin (len) · go.dev/ref/spec#Index_expressions (тип s[i] — byte) · groups.google.com/g/golang-nuts (обсуждение «why len returns int and not uint») · go.dev/wiki/CompilerOptimizations · go.dev/doc/go1.10 · go.dev/doc/go1.18 · go.dev/doc/go1.20 · pkg.go.dev/unsafe · pkg.go.dev/reflect#StringHeader · pkg.go.dev/strings#Builder · pkg.go.dev/unicode/utf8 (RuneError, RuneCountInString) · go.dev/blog/strings</div>
+        `
+      },
     };
 
     var overlay = document.getElementById('implOverlay');
@@ -5149,6 +5625,3 @@ func (x *Bool) Store(val bool) { StoreUint32(&x.v, b32(val)) }</code></pre>
     }
   })();
 </script>
-
-</body>
-</html>
