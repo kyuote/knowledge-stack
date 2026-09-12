@@ -1,0 +1,294 @@
+      <div class="kicker"><span class="line"></span>Глава 03</div>
+      <h1 class="title">Функции</h1>
+      <p class="lede">Сигнатуры, множественный возврат вместо исключений, замыкания и то, почему в Go «передача по ссылке» — это иллюзия.</p>
+
+      <div class="depth-toggle">
+        <button type="button" class="depth-btn" data-action="expand">▾ развернуть все «подробнее»</button>
+        <button type="button" class="depth-btn" data-action="collapse">▴ свернуть всё</button>
+      </div>
+
+      <section class="topic" id="decl">
+        <h2><span class="idx">3.1</span>Объявление</h2>
+        <p class="tight">Соседние параметры одного типа можно не повторять:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">func.go</span></div>
+          <pre><code class="language-go">func add(a, b int) int {
+    return a + b
+}
+
+func greet(name string, times int) { // без возвращаемого значения
+    for i := 0; i < times; i++ {
+        fmt.Println("Привет,", name)
+    }
+}</code></pre>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: функция — это тоже тип <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Сигнатуру функции можно использовать как обычный тип — параметр, поле структуры, возвращаемое значение:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">funcvalue.go</span></div>
+              <pre><code class="language-go">type Operation func(a, b int) int
+
+func apply(op Operation, a, b int) int {
+    return op(a, b)
+}
+
+apply(func(a, b int) int { return a + b }, 2, 3) // 5</code></pre>
+            </div>
+
+            <p class="tight">Это то же самое свойство «функция — значение первого класса», которое дальше используется для замыканий (3.5) и для <code class="inline">http.HandlerFunc</code> в главе 10 — обычная функция подходящей сигнатуры сама становится значением нужного функционального типа без явного оборачивания в класс/интерфейс, как в языках без функций как значений.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="multiret">
+        <h2><span class="idx">3.2</span>Множественный возврат</h2>
+        <p class="tight">Самое частое применение — значение плюс ошибка вторым аргументом:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">divide.go</span></div>
+          <pre><code class="language-go">func divide(a, b int) (int, error) {
+    if b == 0 {
+        return 0, errors.New("деление на ноль")
+    }
+    return a / b, nil
+}
+
+q, err := divide(10, 2)
+if err != nil {
+    log.Fatal(err)
+}</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Почему в Go нет try/catch?</b> Ошибка — обычное возвращаемое значение, а не отдельный механизм контроля потока. Множественный возврат <code class="inline">(значение, error)</code> делает это возможным без исключений. Подробно — в главе про обработку ошибок.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: игнорировать значение можно, ошибку — не стоит <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Любое из множественных возвращаемых значений можно явно отбросить через <code class="inline">_</code>:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">discard.go</span></div>
+              <pre><code class="language-go">q, _ := divide(10, 2) // осознанно игнорируем ошибку</code></pre>
+            </div>
+
+            <p class="tight">Компилятор это разрешает без единого предупреждения — Go не заставляет обработать ошибку синтаксически, в отличие от checked exceptions в Java. Именно поэтому игнорирование <code class="inline">error</code> — одна из самых частых находок статических линтеров (<code class="inline">errcheck</code>, входит в <code class="inline">golangci-lint</code>, глава 13): язык не мешает выстрелить себе в ногу, дисциплина обеспечивается инструментами поверх компилятора, а не самим компилятором.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="named">
+        <h2><span class="idx">3.3</span>Именованные результаты</h2>
+        <p class="tight">Результаты можно назвать заранее — тогда <code class="inline">return</code> без аргументов («naked return») вернёт их текущие значения:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">split.go</span></div>
+          <pre><code class="language-go">func split(sum int) (x, y int) {
+    x = sum * 4 / 9
+    y = sum - x
+    return // вернёт x и y
+}</code></pre>
+        </div>
+
+        <div class="callout warn">
+          <div class="mark">камень</div>
+          <p>Naked return удобен в маленьких функциях, но в длинных — вредит читаемости: не видно, что именно возвращается, без прокрутки к сигнатуре. В Effective Go и большинстве линтеров его советуют избегать за пределами коротких функций.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: главная практическая польза именованных результатов — не naked return, а defer <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Именованные результаты доступны и изменяемы внутри <code class="inline">defer</code>-функции уже после выполнения тела, но до фактического возврата управления вызывающей стороне — это и есть тот самый механизм, который в главе 2 позволяет <code class="inline">recover()</code> подменить возвращаемую ошибку по итогам восстановления после паники. Без именованного результата такой трюк невозможен — обычный (безымянный) результат уже «зафиксирован» на момент выполнения <code class="inline">defer</code>, и правка внутри отложенной функции на него не повлияет.</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">named_return_defer.go</span></div>
+              <pre><code class="language-go">// ✅ именованный результат — defer может его поменять
+func withNamed() (err error) {
+    defer func() {
+        if r := recover(); r != nil {
+            err = fmt.Errorf("поймали: %v", r) // работает
+        }
+    }()
+    panic("упс")
+}
+
+// ❌ безымянный — defer не может повлиять на результат
+func withoutNamed() error {
+    defer func() {
+        if r := recover(); r != nil {
+            // некуда записать — результат уже зафиксирован
+        }
+    }()
+    panic("упс") // вернёт nil, хотя была паника
+}</code></pre>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="variadic">
+        <h2><span class="idx">3.4</span>Вариативные функции</h2>
+        <p class="tight">Внутри функции <code class="inline">nums</code> — обычный <code class="inline">[]int</code>, слайс можно распаковать при вызове через <code class="inline">...</code>:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">variadic.go</span></div>
+          <pre><code class="language-go">func sum(nums ...int) int {
+    total := 0
+    for _, n := range nums {
+        total += n
+    }
+    return total
+}
+
+sum(1, 2, 3)          // 6
+nums := []int{1, 2, 3}
+sum(nums...)          // тот же результат — распаковка слайса</code></pre>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: только последний параметр может быть вариативным <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">В сигнатуре функции вариативным может быть только самый последний параметр — <code class="inline">func f(a int, nums ...int, b string)</code> не скомпилируется. Вызов вариативной функции вообще без аргументов на этом месте — валиден, внутри функции слайс будет просто <code class="inline">nil</code>-слайсом с <code class="inline">len == 0</code>, а не паникой:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">variadic_empty.go</span></div>
+              <pre><code class="language-go">sum() // 0 — nums внутри nil, но range по nil-слайсу просто не выполнится ни разу</code></pre>
+            </div>
+
+            <p class="tight">Сам встроенный <code class="inline">append(s, vs...)</code> — вариативная функция, устроенная точно так же: <code class="inline">...</code> при вызове распаковывает существующий слайс в отдельные аргументы, это симметрично объявлению функции с <code class="inline">...T</code> в сигнатуре.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="closures">
+        <h2><span class="idx">3.5</span>Функции как значения и замыкания</h2>
+        <p class="tight">Функция — значение первого класса: её можно вернуть из другой функции, и она «захватывает» переменные из внешней области видимости:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">counter.go</span></div>
+          <pre><code class="language-go">func makeCounter() func() int { // возвращает функцию, которая вернёт int
+    count := 0
+    return func() int {
+        count++
+        return count
+    }
+}
+
+c1 := makeCounter()
+c2 := makeCounter()
+c1() // 1
+c1() // 2
+c2() // 1 — свой, независимый счётчик</code></pre>
+        </div>
+
+        <figure>
+          <svg viewBox="0 0 580 200" role="img" aria-label="Каждый вызов makeCounter создаёт свою переменную count, которая переживает возврат функции благодаря замыканию, и два счётчика не делят состояние.">
+            <defs>
+              <marker id="arr3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+              </marker>
+            </defs>
+            <text x="150" y="18" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.6">c1 := makeCounter()</text>
+            <text x="430" y="18" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.6">c2 := makeCounter()</text>
+
+            <rect x="30" y="28" width="240" height="30" rx="7" fill="none" stroke="currentColor" stroke-dasharray="3 4" opacity="0.45"/>
+            <text x="45" y="48" font-size="11.5" fill="currentColor" opacity="0.7">стек makeCounter — исчезает</text>
+
+            <line x1="150" y1="58" x2="150" y2="86" stroke="currentColor" opacity="0.45" marker-end="url(#arr3)"/>
+
+            <rect x="60" y="90" width="180" height="36" rx="8" fill="none" stroke="#3b7ec9"/>
+            <text x="150" y="112" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="#3b7ec9">count (на heap)</text>
+
+            <line x1="150" y1="126" x2="150" y2="152" stroke="currentColor" opacity="0.45" marker-end="url(#arr3)"/>
+            <rect x="60" y="156" width="180" height="32" rx="16" fill="none" stroke="currentColor" opacity="0.6"/>
+            <text x="150" y="177" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="currentColor">c1() → 1, 2, 3…</text>
+
+            <rect x="310" y="28" width="240" height="30" rx="7" fill="none" stroke="currentColor" stroke-dasharray="3 4" opacity="0.45"/>
+            <text x="325" y="48" font-size="11.5" fill="currentColor" opacity="0.7">стек makeCounter — исчезает</text>
+
+            <line x1="430" y1="58" x2="430" y2="86" stroke="currentColor" opacity="0.45" marker-end="url(#arr3)"/>
+
+            <rect x="340" y="90" width="180" height="36" rx="8" fill="none" stroke="#3b7ec9"/>
+            <text x="430" y="112" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="#3b7ec9">count (на heap)</text>
+
+            <line x1="430" y1="126" x2="430" y2="152" stroke="currentColor" opacity="0.45" marker-end="url(#arr3)"/>
+            <rect x="340" y="156" width="180" height="32" rx="16" fill="none" stroke="currentColor" opacity="0.6"/>
+            <text x="430" y="177" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="currentColor">c2() → 1, 2, 3…</text>
+          </svg>
+          <figcaption>Переменная <code class="inline">count</code> обычно живёт на стеке и исчезает вместе с кадром функции — но раз на неё ссылается возвращённое замыкание, компилятор размещает её на heap (escape analysis). У каждого вызова <code class="inline">makeCounter</code> — своя копия.</figcaption>
+        </figure>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Почему <code class="inline">count</code> не удаляется после <code class="inline">return</code>?</b> Компилятор Go проводит escape-анализ: если на локальную переменную остаётся живая ссылка (здесь — из замыкания), она «убегает» на heap вместо стека и живёт, пока жива хотя бы одна ссылка на неё.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: замыкание по ссылке на переменную, а не по значению на момент создания <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">Замыкание захватывает саму переменную (её адрес), а не снимок её значения на момент объявления функции — если после создания замыкания внешняя переменная меняется, замыкание увидит уже новое значение:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">closure_ref.go</span></div>
+              <pre><code class="language-go">x := 1
+f := func() { fmt.Println(x) }
+x = 2
+f() // печатает 2, а не 1 — захвачена переменная, а не её старое значение</code></pre>
+            </div>
+
+            <p class="tight">Это ровно та же механика, что стоит за ловушкой захвата переменной цикла в горутине (глава 2): до Go 1.22 все итерации <code class="inline">range</code> делили одну и ту же переменную, поэтому все замыкания, созданные в разных итерациях, видели её финальное значение. Полезное практическое применение той же механики — счётчики/кэши на замыканиях (как <code class="inline">makeCounter</code> выше) и мемоизация: замыкание может держать состояние между вызовами, не выставляя его наружу как поле структуры.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="byvalue">
+        <h2><span class="idx">3.6</span>Всё передаётся по значению</h2>
+        <p class="tight">В Go нет передачи по ссылке — только по значению. Даже когда «похоже», что передан оригинал:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">byvalue.go</span></div>
+          <pre><code class="language-go">func double(n int) {
+    n *= 2 // копия n — на оригинал не влияет
+}
+
+func appendOne(s []int) {
+    s = append(s, 1) // может не повлиять на оригинальный слайс!
+}</code></pre>
+        </div>
+
+        <div class="callout warn">
+          <div class="mark">камень</div>
+          <p>Слайс — это маленький заголовок <code class="inline">{ptr, len, cap}</code>, который тоже копируется по значению. Пока хватает <code class="inline">cap</code>, <code class="inline">append</code> пишет в тот же массив — но как только вместимость кончается, функция получает новый массив, а заголовок вызывающего кода остаётся указывать на старый. Разбор с диаграммой — в главе про слайсы.</p>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Значит, указатели в Go не нужны?</b> Нужны — если функция должна менять сам оригинал (а не то, на что он указывает), единственный способ — передать <code class="inline">*T</code>. Указателям посвящена отдельная глава.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: что именно копируется для каждого составного типа <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">«Передача по значению» не значит «копируется всё, что физически есть в памяти» — для составных типов копируется ровно их заголовок:</p>
+
+            <div class="tablewrap">
+              <table>
+                <tr><th>Тип</th><th class="wrap">Что копируется при передаче</th></tr>
+                <tr><td><code class="inline">[N]T</code> (массив)</td><td class="wrap">весь массив целиком, все N элементов — дорого для больших N</td></tr>
+                <tr><td><code class="inline">[]T</code> (слайс)</td><td class="wrap">только заголовок {ptr, len, cap} — 24 байта; базовый массив общий</td></tr>
+                <tr><td><code class="inline">map[K]V</code></td><td class="wrap">только внутренний указатель на хеш-таблицу</td></tr>
+                <tr><td><code class="inline">struct</code></td><td class="wrap">все поля целиком — включая заголовки вложенных слайсов/map (shallow copy)</td></tr>
+              </table>
+            </div>
+
+            <p class="tight">Именно поэтому большую структуру с горячим путём вызовов часто передают через указатель — не чтобы «избежать копирования» в абстрактном смысле, а чтобы скопировать 8 байт адреса вместо, скажем, нескольких сотен байт полей.</p>
+          </div>
+        </details>
+      </section>

@@ -1,0 +1,189 @@
+      <div class="kicker"><span class="line"></span>Глава 13</div>
+      <h1 class="title">Идиомы и best practices</h1>
+      <p class="lede">Как отличить код, написанный «на Go», от кода, просто скомпилированного компилятором Go. И чек-лист всех ловушек из прошлых глав в одном месте.</p>
+
+      <div class="depth-toggle">
+        <button type="button" class="depth-btn" data-action="expand">▾ развернуть все «подробнее»</button>
+        <button type="button" class="depth-btn" data-action="collapse">▴ свернуть всё</button>
+      </div>
+
+      <section class="topic" id="naming">
+        <h2><span class="idx">13.1</span>Именование</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">naming.go</span></div>
+          <pre><code class="language-go">const MaxRetries = 3 // MixedCaps, не MAX_RETRIES и не max_retries
+
+func (u User) Name() string { return u.name } // геттер — без "Get"
+
+type Stringer interface { // интерфейс на один метод — по методу + "-er"
+    String() string
+}</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p>В маленькой области видимости — короткие имена (<code class="inline">i</code>, <code class="inline">n</code>, <code class="inline">err</code> в цикле из трёх строк), в широкой — говорящие. Обратная пропорция удивляет новичков из других языков, но это осознанное соглашение Go, а не небрежность.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: инициализмы, и почему не <code class="inline">GetName()</code> <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Официальный гайд Go по именованию требует единый регистр для инициализмов целиком: <code class="inline">URL</code>, <code class="inline">ID</code>, <code class="inline">HTTP</code>, <code class="inline">API</code> — а не <code class="inline">Url</code>, <code class="inline">Id</code>. Отсюда <code class="inline">userID</code>, <code class="inline">ServeHTTP</code>, <code class="inline">parseURL</code> — и характерная проблема при переходе с других языков, где принято <code class="inline">Id</code>/<code class="inline">Url</code>. <code class="inline">golangci-lint</code> и <code class="inline">staticcheck</code> отдельно проверяют это правило (линтер <code class="inline">ST1003</code>/<code class="inline">revive</code>).</p>
+            <p class="tight">Отказ от префикса <code class="inline">Get</code> для геттеров — тоже не случайность, а официальная рекомендация: если метод <code class="inline">Name()</code> просто возвращает поле без побочных эффектов, приставка <code class="inline">Get</code> ничего не добавляет к пониманию кода и только удлиняет каждый вызов. Исключение — когда операция реально что-то «получает» с side-эффектом (сходить в сеть, за файл), там `Get`-подобное имя уместно, потому что сигнализирует, что вызов не бесплатный.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="acceptiface">
+        <h2><span class="idx">13.2</span>Accept interfaces, return structs</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">accept.go</span></div>
+          <pre><code class="language-go">// хорошо: принимает узкий интерфейс — подойдёт любой источник данных
+func Copy(dst io.Writer, src io.Reader) (int64, error)
+
+// хуже: требует конкретный тип, хотя нужен только один метод
+func Save(f *os.File, data []byte) error</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p>Принимая интерфейс, функция работает с чем угодно, реализующим нужное поведение — включая фейки в тестах (глава 11). Возвращая конкретный тип, а не интерфейс, вы даёте вызывающему доступ ко всем его методам, а не только к урезанному подмножеству.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: почему возврат интерфейса «на будущее» обычно вредит <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Соблазн вернуть интерфейс из конструктора («а вдруг понадобится другая реализация») на практике почти всегда лишний: вызывающий код теряет доступ к конкретным методам и полям возвращаемого типа, которых нет в интерфейсе, а сам интерфейс приходится расширять при каждом новом методе — то есть интерфейс, объявленный «на стороне поставщика», в итоге пытается предугадать все нужды потребителей и либо разрастается, либо режет функциональность. Согласуется с идиомой из главы 6 («interface declared on consumer side»): именно потребитель кода должен объявить у себя узкий интерфейс под свои нужды, а не поставщик — заранее «широкий» интерфейс от поставщика.</p>
+            <p class="tight">Практическое правило: возвращать интерфейс из функции стоит только тогда, когда действительно нужно скрыть за одной сигнатурой несколько взаимозаменяемых реализаций уже сейчас (фабрика, возвращающая разные бэкенды по конфигу) — а не «про запас».</p>
+          </div>
+        </details>
+
+        <details class="deep">
+          <summary>Подробнее: SOLID применительно к Go — без классов, но не без принципов <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">В Go нет классов и наследования, но все пять принципов SOLID переносятся на структуры/интерфейсы почти без искажений:</p>
+            <div class="tablewrap">
+              <table>
+                <tr><th>Принцип</th><th class="wrap">Как выглядит в Go</th></tr>
+                <tr><td><b>S</b> — Single Responsibility</td><td class="wrap">пакет или тип решает одну узкую задачу и решает её хорошо — в духе Unix-философии, а не «богатого» типа на всё сразу</td></tr>
+                <tr><td><b>O</b> — Open/Closed</td><td class="wrap">код открыт расширению через добавление новой реализации интерфейса и закрыт для модификации уже написанных и протестированных реализаций</td></tr>
+                <tr><td><b>L</b> — Liskov Substitution</td><td class="wrap">без иерархии классов принцип превращается в требование к контракту интерфейса: реализация не должна вести себя так, что нарушает ожидания вызывающего кода (не паниковать там, где интерфейс это не предполагает, не менять смысл метода)</td></tr>
+                <tr><td><b>I</b> — Interface Segregation</td><td class="wrap">ровно идиома этой главы (13.2, выше) — маленькие интерфейсы на стороне потребителя лучше одного большого «на все случаи»</td></tr>
+                <tr><td><b>D</b> — Dependency Inversion</td><td class="wrap">зависеть от интерфейсов, а не от конкретных реализаций; зависимости явно передаются через конструктор (constructor injection), а не создаются внутри самого типа</td></tr>
+              </table>
+            </div>
+            <p class="tight">На практике I и D в Go получаются «бесплатно» из-за самой структурной типизации и идиомы «интерфейс объявляется у потребителя» (глава 6.3) — именно поэтому Go-код часто выглядит SOLID-совместимым, даже когда никто сознательно не следовал этой аббревиатуре. <em>(источник: habr.com/ru/articles/658623/)</em></p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="gofmt">
+        <h2><span class="idx">13.3</span>gofmt</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">terminal</span></div>
+          <pre><code class="language-bash">gofmt -l .      # показать неотформатированные файлы
+gofmt -w .      # отформатировать на месте
+goimports -w .  # + сортирует импорты, добавляет/убирает неиспользуемые</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p>В Go нет холивара про табы/пробелы или расположение скобок — <code class="inline">gofmt</code> один на весь язык и не настраивается. Это часть тулчейна, а не линтер на вкус проекта.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: gofmt работает по AST, а не по текстовым правилам <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight"><code class="inline">gofmt</code> не «причёсывает» исходный текст построчно регулярками, а полностью парсит файл в абстрактное синтаксическое дерево (AST) и заново печатает его в канонической форме — поэтому он не может случайно сломать код (в отличие от текстовых автоформаттеров, у которых бывают крайние случаи с некорректным результатом), и попутно нормализует то, что находится за пределами «стиля» в узком смысле — например, автоматически выравнивает соседние строки в блоке констант/структур по табуляции.</p>
+            <p class="tight"><code class="inline">gofmt -s</code> дополнительно упрощает код там, где это возможно без потери смысла (убирает избыточные преобразования типов, упрощает <code class="inline">[]T{T{...}}</code> до <code class="inline">[]T{{...}}</code>). Именно потому, что форматирование детерминировано и не настраивается, ревью в Go-командах почти никогда не тратит время на обсуждение стиля кода — весь этот класс споров устранён на уровне тулчейна.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="vetlint">
+        <h2><span class="idx">13.4</span>go vet и линтеры</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">terminal</span></div>
+          <pre><code class="language-bash">go vet ./...        # неверные verb'ы в Printf, копирование Mutex и т.п.
+golangci-lint run   # агрегатор: staticcheck, errcheck, unused…</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><code class="inline">go vet</code> — часть официального тулчейна и автоматически запускается перед <code class="inline">go test</code>. <code class="inline">golangci-lint</code> — отдельный инструмент поверх, объединяющий десятки линтеров с одной конфигурацией.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: чем vet отличается от линтера, и что ловит staticcheck <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Разница в философии: <code class="inline">go vet</code> проверяет только конструкции, которые компилируются, но почти гарантированно являются ошибкой — неверное число или тип аргументов в <code class="inline">Printf</code>-подобной функции, копирование значения, содержащего <code class="inline">sync.Mutex</code> (что делает копию мьютекса независимой блокировкой — классическая скрытая гонка), недостижимый код после <code class="inline">return</code>. Поэтому он входит в официальный тулчейн и запускается автоматически. Сторонние линтеры (<code class="inline">golangci-lint</code> как агрегатор поверх <code class="inline">staticcheck</code>, <code class="inline">errcheck</code>, <code class="inline">unused</code>, <code class="inline">gosec</code> и десятков других) идут дальше и ловят стилистические и потенциально проблемные, но не гарантированно ошибочные вещи — неиспользуемые переменные и импорты, непроверенные ошибки, потенциальные уязвимости, избыточно сложные функции.</p>
+            <p class="tight"><code class="inline">staticcheck</code> отдельно славится проверками уровня «это технически работает, но почти наверняка не то, что вы хотели» — например, бесполезное сравнение <code class="inline">x != nil</code> для типа, который не может быть <code class="inline">nil</code>, или неиспользуемый результат вызова без побочных эффектов.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="mistakes">
+        <h2><span class="idx">13.5</span>Чек-лист частых ошибок</h2>
+        <p class="tight">Всё это уже разобрано в прошлых главах — здесь просто сводка, чтобы быстро себя проверить:</p>
+
+        <div class="tablewrap">
+          <table>
+            <tr><th>Ошибка</th><th class="wrap">Где разобрано</th></tr>
+            <tr><td>Забыли переприсвоить <code class="inline">s = append(s, …)</code></td><td class="wrap">глава 4 — слайсы</td></tr>
+            <tr><td>Сравнение ошибки через <code class="inline">==</code> вместо <code class="inline">errors.Is</code></td><td class="wrap">глава 7 — обработка ошибок</td></tr>
+            <tr><td>Возврат типизированного nil-указателя как <code class="inline">error</code></td><td class="wrap">глава 6 — ловушка nil-интерфейса</td></tr>
+            <tr><td>Запись в <code class="inline">nil</code>-map без <code class="inline">make</code></td><td class="wrap">глава 4 — map</td></tr>
+            <tr><td><code class="inline">wg.Add(1)</code> внутри горутины, а не до неё</td><td class="wrap">глава 8 — sync.WaitGroup</td></tr>
+            <tr><td>Захват переменной цикла в горутине/подтесте (до Go 1.22)</td><td class="wrap">главы 2 и 11</td></tr>
+            <tr><td>Pointer-метод на неадресуемом значении</td><td class="wrap">глава 6 — method sets</td></tr>
+          </table>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: ещё три частых ошибки, не разобранных выше <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Дополняющий список — вещи, которые не попали в предыдущие главы явным разбором, но регулярно всплывают на практике и на собеседованиях:</p>
+            <div class="tablewrap">
+              <table>
+                <tr><th>Ошибка</th><th class="wrap">В чём подвох</th></tr>
+                <tr><td>Игнорирование ошибки <code class="inline">defer file.Close()</code></td><td class="wrap">запись в файл может не завершиться (буферизация ОС), а ошибка <code class="inline">Close()</code> — единственный способ это узнать; на практике часто действительно можно проигнорировать для файлов, открытых только на чтение, но не для файлов на запись</td></tr>
+                <tr><td>Утечка горутин без пути к завершению</td><td class="wrap">горутина, заблокированная на канале, который никто не закроет и не запишет, живёт вечно и держит связанную с ней память — нужен явный путь остановки (контекст, закрытие канала, таймаут)</td></tr>
+                <tr><td>Сравнение слайсов/map через <code class="inline">==</code></td><td class="wrap">оба типа не поддерживают <code class="inline">==</code> вообще (кроме сравнения с <code class="inline">nil</code>) — компилятор просто не даст скомпилировать код; нужны <code class="inline">slices.Equal</code>/<code class="inline">maps.Equal</code> или <code class="inline">reflect.DeepEqual</code></td></tr>
+              </table>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="packages">
+        <h2><span class="idx">13.6</span>Организация пакетов</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">packages.go</span></div>
+          <pre><code class="language-go">// плохо: package util / common / helpers — свалка всего подряд
+
+// хорошо: имя пакета — то, что он предоставляет
+package validator
+
+func Email(s string) error { /* … */ }
+// снаружи читается как validator.Email(...)</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p>Имя пакета — неявный префикс для всего экспортированного из него. <code class="inline">validator.Email(...)</code> читается как связное предложение; <code class="inline">utils.ValidateEmail(...)</code> — нет. Пакеты <code class="inline">util</code>/<code class="inline">common</code> обычно сигнал, что модуль не нашёл своей ответственности.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: internal/, layout проекта и циклические импорты <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">Каталог с зарезервированным именем <code class="inline">internal/</code> — единственный механизм видимости пакетов на уровне модуля, встроенный прямо в тулчейн: пакет <code class="inline">myapp/internal/db</code> можно импортировать только из кода, лежащего внутри <code class="inline">myapp</code> (точнее — внутри дерева, корень которого — родитель <code class="inline">internal</code>); попытка импортировать его из другого модуля — ошибка компиляции, а не просто соглашение об именовании. Это единственный официальный способ пометить пакет как «не для внешнего использования».</p>
+            <p class="tight">Общепринятый (хотя формально не навязанный тулчейном) layout — неофициальный стандарт <code class="inline">golang-standards/project-layout</code>: <code class="inline">cmd/</code> — точки входа (<code class="inline">main</code>-пакеты, обычно тонкие), <code class="inline">internal/</code> — приватная бизнес-логика, <code class="inline">pkg/</code> — код, специально предназначенный для переиспользования извне модуля (спорная директория — многие проекты обходятся без неё, если ничего действительно не рассчитано на внешних потребителей).</p>
+            <p class="tight">Циклический импорт (пакет A импортирует B, а B — A) — ошибка компиляции, а не предупреждение; типичное лечение — выделить общий код, от которого зависят оба, в третий пакет, либо объединить A и B в один пакет, если они настолько тесно связаны, что тянут друг на друга.</p>
+          </div>
+        </details>
+      </section>

@@ -1,0 +1,344 @@
+      <div class="kicker"><span class="line"></span>Глава 14</div>
+      <h1 class="title">БД, инфраструктура, системный дизайн</h1>
+      <p class="lede">Материал, который на бэкенд-собесах спрашивают наравне с самим языком: индексы и транзакции БД, Redis и Kafka, поведение Go-рантайма внутри контейнера с CPU-лимитом, наблюдаемость и типовые кейсы системного дизайна.</p>
+
+      <div class="depth-toggle">
+        <button type="button" class="depth-btn" data-action="expand">▾ развернуть все «подробнее»</button>
+        <button type="button" class="depth-btn" data-action="collapse">▴ свернуть всё</button>
+      </div>
+
+      <section class="topic" id="dbindexes">
+        <h2><span class="idx">14.1</span>Индексы БД и диагностика медленных запросов</h2>
+        <p class="tight">Индекс — вспомогательная структура, ускоряющая поиск ценой дополнительной памяти и замедления записи (индекс тоже обновляется при каждом <code class="inline">INSERT</code>/<code class="inline">UPDATE</code>/<code class="inline">DELETE</code>):</p>
+
+        <div class="tablewrap">
+          <table>
+            <tr><th>Тип индекса</th><th class="wrap">Когда применим</th></tr>
+            <tr><td>B-tree (B+tree)</td><td class="wrap">индекс по умолчанию, O(log n), поддерживает диапазоны и сортировку — универсальный выбор для большинства колонок</td></tr>
+            <tr><td>Hash</td><td class="wrap">O(1) в среднем, но только точное совпадение — не поддерживает диапазоны</td></tr>
+            <tr><td>GiST / R-tree</td><td class="wrap">пространственные/геометрические данные — «что рядом» (GIS)</td></tr>
+            <tr><td>GIN</td><td class="wrap">полнотекстовый поиск, массивы, JSONB — инвертированный индекс</td></tr>
+            <tr><td>BRIN</td><td class="wrap">очень большие таблицы с физической корреляцией значения и порядка на диске (типично — временные ряды); на порядки компактнее B-tree</td></tr>
+            <tr><td>Bitmap</td><td class="wrap">низкая кардинальность (пол/статус); плохо ведёт себя под конкурентной записью — область OLAP</td></tr>
+          </table>
+        </div>
+
+        <p class="tight">Отдельно — <b>покрывающий индекс</b> (<code class="inline">CREATE INDEX ... (col) INCLUDE (a, b)</code>) даёт index-only scan без обращения к таблице, а <b>частичный индекс</b> (<code class="inline">WHERE</code> в самом индексе) строится только по нужному подмножеству строк.</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">explain.sql</span></div>
+          <pre><code class="language-sql">EXPLAIN ANALYZE
+SELECT * FROM orders WHERE user_id = 42;
+-- Seq Scan (сканирование всей таблицы) на большой таблице — тревожный знак
+-- Index Scan / Index Only Scan — индекс используется
+-- сильное расхождение оценки и факта — устаревшая статистика, нужен ANALYZE</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Индекс есть, а не используется — почему?</b> Частая причина — не-SARGable условие: функция над колонкой в условии (<code class="inline">WHERE UPPER(email) = 'X'</code>) мешает использовать обычный индекс по этой колонке без отдельного функционального индекса; вторая частая причина — несовпадение типов данных в сравнении.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: воронка диагностики медленной БД — от дешёвого к дорогому <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">Показательный порядок ответа на собесе «прод тормозит на БД, с чего начать» — не хаотичный список техник, а последовательность от дешёвых точечных решений к дорогим архитектурным: (1) проверить индексы через <code class="inline">EXPLAIN</code>/<code class="inline">EXPLAIN ANALYZE</code>; (2) оптимизировать сами запросы (не <code class="inline">SELECT *</code>, устранить N+1); (3) тюнинг параметров СУБД (<code class="inline">shared_buffers</code>, <code class="inline">work_mem</code>); (4) HDD→SSD, если узкое место — диск; (5) партиционирование по дате/диапазону; (6) репликация (read-реплики); (7) шардирование; (8) кэширование (Redis/Memcached) перед БД; (9) денормализация схемы; (10) специализированное хранилище под конкретный паттерн доступа (колоночное — для аналитики, time-series — для метрик). Переход сразу к шардированию до того, как исчерпаны более дешёвые шаги — типичная поспешность, которую интервьюеры отдельно отмечают.</p>
+            <p class="tight">Расширенный вызов <code class="inline">EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)</code> дополнительно показывает статистику буферного кэша (сколько страниц прочитано из <code class="inline">shared_buffers</code> против диска) и отдаёт план в JSON для автоматического парсинга. Поскольку <code class="inline">EXPLAIN ANALYZE</code> реально выполняет запрос — для <code class="inline">INSERT</code>/<code class="inline">UPDATE</code>/<code class="inline">DELETE</code> это значит реальное изменение данных; безопасный способ снять план без побочных эффектов — обернуть в <code class="inline">BEGIN; EXPLAIN ANALYZE ...; ROLLBACK;</code>.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="dbtx">
+        <h2><span class="idx">14.2</span>Транзакции и уровни изоляции (ACID)</h2>
+        <p class="tight">Транзакция — атомарная единица работы: либо целиком <code class="inline">COMMIT</code>, либо целиком <code class="inline">ROLLBACK</code>. ACID: Atomicity, Consistency, Isolation, Durability.</p>
+
+        <div class="tablewrap">
+          <table>
+            <tr><th>Уровень изоляции</th><th class="wrap">Что допускает</th></tr>
+            <tr><td>Read Uncommitted</td><td class="wrap">видны незакоммиченные данные («грязное чтение») — в PostgreSQL синтаксически принимается, но реально работает как Read Committed</td></tr>
+            <tr><td>Read Committed <i>(дефолт в PostgreSQL)</i></td><td class="wrap">видны только закоммиченные данные, но повторное чтение той же строки может дать другой результат</td></tr>
+            <tr><td>Repeatable Read</td><td class="wrap">консистентный снэпшот на старте транзакции — но возможны «фантомные» новые строки</td></tr>
+            <tr><td>Serializable</td><td class="wrap">эквивалентно последовательному выполнению транзакций — самый строгий и самый дорогой</td></tr>
+          </table>
+        </div>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">tx.go</span></div>
+          <pre><code class="language-go">tx, err := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
+if err != nil {
+    return err
+}
+defer tx.Rollback() // no-op после успешного Commit
+
+if _, err := tx.ExecContext(ctx, "UPDATE accounts SET balance = balance - $1 WHERE id = $2", amount, from); err != nil {
+    return err
+}
+if _, err := tx.ExecContext(ctx, "UPDATE accounts SET balance = balance + $1 WHERE id = $2", amount, to); err != nil {
+    return err
+}
+return tx.Commit()</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Классический пример — денежный перевод.</b> Списание с одного счёта и зачисление на другой должны либо оба применяться, либо ни один. Практический совет: <code class="inline">defer tx.Rollback()</code> сразу после открытия транзакции — надёжнее против забытых веток отката, чем расставлять его вручную по каждой ошибке.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: MVCC на уровне строки — <code class="inline">xmin</code>/<code class="inline">xmax</code> <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">Каждая физическая версия строки в PostgreSQL несёт служебные поля <code class="inline">xmin</code> (ID транзакции, создавшей эту версию) и <code class="inline">xmax</code> (ID транзакции, пометившей версию устаревшей, если применимо). Читающая транзакция видит только те версии, чей <code class="inline">xmin</code> завершился раньше начала её собственного снэпшота, и чей <code class="inline">xmax</code> либо не установлен, либо принадлежит ещё не завершившейся транзакции. Именно за счёт этого читатели работают с согласованным снэпшотом, вообще не блокируя писателей (и наоборот) — а старые версии с уже неактуальным <code class="inline">xmax</code> остаются на диске до прохода <code class="inline">VACUUM</code> (те самые dead tuples).</p>
+            <p class="tight">И Repeatable Read, и Serializable в PostgreSQL реализованы через единый механизм SSI (Serializable Snapshot Isolation) — Serializable дополнительно отслеживает предикатные блокировки поверх снэпшота, чтобы ловить и фантомные аномалии. Практический ориентир: Read Committed достаточен для типичной OLTP-нагрузки, более высокие уровни — там, где цена ошибки высока (финансы/биллинг), с обязательным retry при ошибке сериализации (код <code class="inline">40001</code>) на прикладном уровне.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="locking">
+        <h2><span class="idx">14.3</span>Блокировки: pessimistic vs optimistic</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">locking.sql</span></div>
+          <pre><code class="language-sql">-- пессимистичная: блокирует строку сразу, на всё время транзакции
+SELECT balance FROM accounts WHERE id = $1 FOR UPDATE;
+
+-- оптимистичная: конфликт обнаруживается только в момент записи
+UPDATE accounts
+SET balance = $1, version = version + 1
+WHERE id = $2 AND version = $3;</code></pre>
+        </div>
+
+        <div class="callout warn">
+          <div class="mark">камень</div>
+          <p>Если оптимистичный <code class="inline">UPDATE</code> вернул <code class="inline">RowsAffected() == 0</code> — значит кто-то другой уже обновил эту строку между чтением и записью; приложение обязано перечитать актуальное состояние и повторить попытку, а не считать это обычной ошибкой.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: почему для баланса счёта не всегда нужен Serializable <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">Контраргумент для конкретно банковского сценария «списать деньги со счёта» — не всегда правильный ответ «бери уровень построже». Для точечного изменения баланса одного известного счёта часто предпочтительнее именно Read Committed (дефолт) в сочетании с явной блокировкой конкретной строки через <code class="inline">SELECT balance FROM accounts WHERE id = $1 FOR UPDATE</code> перед проверкой достаточности средств — блокировка ложится точно на нужную строку, конкурентные транзакции над <b>другими</b> счетами продолжают работать без взаимных помех, и не возникает ошибок сериализации, которые пришлось бы ретраить целиком на уровне приложения при более строгом уровне изоляции.</p>
+            <p class="tight">Дополнительная защитная мера на уровне самой схемы — ограничение <code class="inline">CHECK (balance &gt;= 0)</code> прямо на колонке баланса: отдельный барьер против ухода в минус, не зависящий от прикладной логики, даже при ошибке в коде приложения. Пессимистичная блокировка при захвате нескольких строк разными транзакциями рискует дедлоком — стандартное лечение то же, что и для мьютексов (глава 8): фиксированный глобальный порядок захвата.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="rediscache">
+        <h2><span class="idx">14.4</span>Redis и кэширование</h2>
+        <p class="tight">In-memory хранилище с задержками порядка микросекунд — типично как кэш перед основной БД. Поддерживает персистентность (RDB-снапшоты, AOF-журнал), но это компромисс, а не полная надёжность; данные ограничены объёмом RAM.</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">cache.go</span></div>
+          <pre><code class="language-go">// Lazy Read-Through: кэш заполняется приложением при промахе
+func GetPromo(ctx context.Context, code string) (*Promo, error) {
+    if v, err := rdb.Get(ctx, "promo:"+code).Result(); err == nil {
+        return decode(v), nil
+    }
+    promo, err := db.FetchPromo(ctx, code) // промах — идём в БД
+    if err != nil {
+        return nil, err
+    }
+    rdb.Set(ctx, "promo:"+code, encode(promo), 5*time.Minute)
+    return promo, nil
+}</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Точный счётчик уникальных значений на большом объёме?</b> <code class="inline">HyperLogLog</code> — вероятностная структура, сильно экономит память ценой небольшой погрешности в счёте, в противовес точному <code class="inline">Set</code>. Компромисс «точность vs память» стоит явно проговаривать на собесе, а не молча выбирать один вариант.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: cache stampede и защита через SET NX / singleflight <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">При истечении TTL популярного ключа множество параллельных запросов одновременно промахиваются мимо кэша и все синхронно бьют в БД («эффект грозовой тучи», thundering herd). Два рабочих способа защиты: на уровне процесса — <code class="inline">golang.org/x/sync/singleflight</code> схлопывает несколько одновременных запросов одного и того же ключа в один реальный поход за данными; на уровне распределённого кэша — атомарная установка ключа-«замка» <code class="inline">SET key value NX</code> (только если ключа ещё нет), дающая ровно одному инстансу право пойти в БД, пока остальные ждут или отдают чуть устаревшее значение.</p>
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">singleflight.go</span></div>
+              <pre><code class="language-go">var g singleflight.Group
+
+func GetUserData(ctx context.Context, id string) (Result, error) {
+    v, err, _ := g.Do(id, func() (interface{}, error) {
+        return doFetch(ctx, id) // реально выполнится только один раз на все параллельные вызовы с этим id
+    })
+    return v.(Result), err
+}</code></pre>
+            </div>
+            <p class="tight">Многоуровневое кэширование — L1 (in-memory, <code class="inline">sync.Map</code> или <code class="inline">ristretto</code>/<code class="inline">bigcache</code>) для самых горячих данных с TTL и лимитом объёма, L2 (Redis/Memcached) — общий на все инстансы сервиса, чтобы реплики не дублировали одни и те же дорогие запросы. Негативное кэширование (кратковременно кэшировать и сами ошибки вроде <code class="inline">404</code>) экономит повторные обращения за заведомо несуществующим ресурсом.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="kafkamq">
+        <h2><span class="idx">14.5</span>Kafka и очереди сообщений</h2>
+
+        <div class="tablewrap">
+          <table>
+            <tr><th></th><th class="wrap">Kafka</th><th class="wrap">RabbitMQ</th></tr>
+            <tr><td>Сильная сторона</td><td class="wrap">высокий throughput, непрерывный поток событий, строгий порядок по ключу</td><td class="wrap">сложная маршрутизация, приоритеты очередей</td></tr>
+            <tr><td>Типичный случай</td><td class="wrap">события ордеров, котировки, метрики</td><td class="wrap">email-уведомления, генерация отчётов</td></tr>
+          </table>
+        </div>
+
+        <p class="tight">Порядок сообщений гарантирован <b>только внутри одной партиции</b> (монотонный offset). Чтобы связанные события обрабатывались строго по порядку — задают им одинаковый ключ: консистентное хеширование ключа направляет все сообщения с этим ключом в одну партицию.</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">producer.go</span></div>
+          <pre><code class="language-go">w := &kafka.Writer{
+    Addr:     kafka.TCP("localhost:9092"),
+    Topic:    "orders",
+    Balancer: &kafka.Hash{}, // сообщения с одним Key — в одну партицию
+}
+w.WriteMessages(ctx, kafka.Message{
+    Key:   []byte(orderID), // ключ определяет партицию
+    Value: payload,
+})</code></pre>
+        </div>
+
+        <div class="callout warn">
+          <div class="mark">камень</div>
+          <p>Гарантия доставки по умолчанию — at-least-once (то же сообщение может прийти повторно), поэтому обработчик обязан быть идемпотентным. Exactly-once достижимо только через транзакционный API Kafka.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: Dead Letter Queue и надёжность продюсера <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">Наивное «залогировать ошибку и продвинуть offset дальше» означает молчаливую потерю сообщения. Паттерн Dead Letter Queue: проблемное сообщение публикуется в отдельный топик-DLQ с сохранением исходного контекста (топик/партиция/offset оригинала, текст ошибки, счётчик попыток), а не отбрасывается. Важное разграничение перед retry: фатальная ошибка (неразбираемый формат — повторная попытка не поможет, сразу в DLQ) против временной (сетевой таймаут — ограниченное число ретраев с растущей задержкой, прежде чем уйти в DLQ). Offset коммитится только после успешной обработки или осознанной отправки в DLQ.</p>
+            <p class="tight">Настройки надёжности продюсера: <code class="inline">min.insync.replicas</code> — минимальное число реплик-подтверждений записи перед тем, как она считается зафиксированной; <code class="inline">enable.idempotence=true</code> — присваивает сообщениям порядковые номера и защищает от дублей при внутренних ретраях самого продюсера после сетевого сбоя (это защита именно от дублей на уровне транспорта, а не замена идемпотентности потребителя). Kafka-транзакции дают атомарную запись сразу в несколько партиций/топиков одним махом.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="outbox">
+        <h2><span class="idx">14.6</span>Transactional Outbox и идемпотентность</h2>
+        <p class="tight">Проблема двойной записи (dual write): нельзя атомарно и записать в БД, и опубликовать в Kafka одной операцией — при сбое между двумя шагами возможна либо потеря события, либо публикация без соответствующего изменения в БД.</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">outbox.sql</span></div>
+          <pre><code class="language-sql">BEGIN;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+INSERT INTO outbox (aggregate_id, event_type, payload, status)
+VALUES (1, 'BalanceChanged', '{"delta": -100}', 'pending');
+COMMIT;
+-- отдельный фоновый процесс вычитывает outbox и публикует в Kafka:
+SELECT * FROM outbox WHERE status = 'pending'
+  ORDER BY created_at FOR UPDATE SKIP LOCKED LIMIT 100;</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Идемпотентный ключ:</b> клиент сам генерирует UUID конкретной попытки операции и передаёт с каждым запросом, включая повторные. Сервер при первом получении ключа выполняет операцию и сохраняет результат вместе с ключом; при повторном — сразу возвращает сохранённый результат. В PostgreSQL — атомарно через <code class="inline">INSERT ... ON CONFLICT (idempotency_key) DO NOTHING</code>.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: <code class="inline">FOR UPDATE SKIP LOCKED</code> и альтернатива через CDC <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight"><code class="inline">FOR UPDATE SKIP LOCKED</code> — ключевой приём для горизонтального масштабирования нескольких инстансов relay-процесса без дублирования работы: каждый инстанс блокирует и забирает свою порцию строк, не мешая другим, вместо конкуренции за одни и те же строки. Тот же приём применим к любой задаче «несколько инстансов безопасно разбирают общий пул задач без гонки» — предпочтительнее хрупких схем разбиения по offset/диапазону между инстансами, поскольку не требует заранее фиксировать, какой инстанс какой диапазон обрабатывает.</p>
+            <p class="tight">Полноценный exactly-once для outbox достижим либо через транзакционный API самой Kafka, либо через переход на CDC (Change Data Capture, например Debezium) — при CDC отдельная outbox-таблица и polling вообще не нужны: инструмент читает журнал транзакций самой БД (WAL в PostgreSQL) напрямую и публикует события из него, снимая накладные расходы на ручной polling.</p>
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">idempotent_handler.go</span></div>
+              <pre><code class="language-go">existing, err := s.repo.GetByHash(ctx, tx.Hash)
+if err != nil && !errors.Is(err, sql.ErrNoRows) {
+    return fmt.Errorf("get tx: %w", err)
+}
+if existing != nil {
+    return nil // уже обработано — идемпотентный no-op
+}</code></pre>
+            </div>
+            <p class="tight">Здесь ключом идемпотентности выступает хэш самой транзакции (естественно уникальный для данных), а не отдельно сгенерированный UUID попытки — уместно, когда доменная сущность уже несёт достаточно уникальности сама по себе.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="k8sinfra">
+        <h2><span class="idx">14.7</span>Docker/Kubernetes в проде</h2>
+        <p class="tight">Многоступенчатая сборка (multi-stage build) — один этап компилирует бинарник в полноценном образе с тулчейном, финальный образ несёт только сам бинарник поверх минимальной базы (<code class="inline">scratch</code>/<code class="inline">alpine</code>), кардинально уменьшая размер:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Dockerfile</span></div>
+          <pre><code class="language-bash">FROM golang:1.23 AS build
+WORKDIR /src
+COPY . .
+RUN CGO_ENABLED=0 go build -o /app ./cmd/server
+
+FROM scratch
+COPY --from=build /app /app
+ENTRYPOINT ["/app"]</code></pre>
+        </div>
+
+        <div class="tablewrap">
+          <table>
+            <tr><th>Проба</th><th class="wrap">Что проверяет</th><th class="wrap">Реакция при провале</th></tr>
+            <tr><td>readiness</td><td class="wrap">готов ли Pod принимать трафик прямо сейчас</td><td class="wrap">временное исключение из балансировки, без рестарта</td></tr>
+            <tr><td>liveness</td><td class="wrap">жив ли процесс вообще</td><td class="wrap">Kubernetes перезапускает контейнер</td></tr>
+          </table>
+        </div>
+
+        <div class="callout warn">
+          <div class="mark">камень</div>
+          <p>Рантайм Go по умолчанию видит <b>все</b> ядра хост-машины и выставляет <code class="inline">GOMAXPROCS</code> под них, даже если контейнеру по cgroup-лимиту выделена лишь часть CPU — рантайм создаёт больше системных потоков, чем реально может исполняться под квотой, что даёт CPU throttling. Решение — <code class="inline">_ "go.uber.org/automaxprocs"</code>: автоматически считывает реальный cgroup-лимит и выставляет <code class="inline">GOMAXPROCS</code> под него при старте.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: как выглядит throttling на метриках, и OOM Killer <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">Throttling по cgroup CFS-квоте не линейно замедляет, а даёт скачкообразные задержки сразу по всем горутинам процесса — весь процесс «замирает» до начала следующего периода квоты. Конкретные метрики диагностики: <code class="inline">container_cpu_cfs_throttled_periods_total</code> (сколько периодов планирования контейнер был принудительно приторможен) и <code class="inline">container_cpu_cfs_throttled_seconds_total</code> (суммарное время в throttled-состоянии) — рост этих метрик при внешне невысокой средней загрузке CPU однозначно указывает на троттлинг, а не на общую нехватку ресурсов. Практический ориентир — резервировать 10–20% CPU-бюджета сверх заявленного <code class="inline">GOMAXPROCS</code>, а не выставлять лимиты впритык.</p>
+            <p class="tight">Отдельная подсистема — OOM Killer: когда физическая память (с учётом cgroup-лимита) исчерпана, ядро Linux завершает процесс-жертву (<code class="inline">SIGKILL</code>) по показателю <code class="inline">oom_score</code>; в Kubernetes это видно как <code class="inline">OOMKilled</code> в статусе контейнера. Throttling и OOM Killer работают на разных уровнях (планировщик CPU vs подсистема памяти ядра) и требуют разных метрик для диагностики: throttling не убивает процесс, лишь замедляет, OOM Killer убивает безвозвратно.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="observability">
+        <h2><span class="idx">14.8</span>Наблюдаемость: метрики, логи, трейсы</h2>
+        <p class="tight">Мнемоника для разграничения трёх сигналов: метрики отвечают «что именно сломалось» (агрегированные числа), логи — «почему» (детали конкретного события), трейсинг — «где именно в цепочке вызовов».</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">metrics.go</span></div>
+          <pre><code class="language-go">var dbLatency = prometheus.NewHistogram(prometheus.HistogramOpts{
+    Name:    "db_query_duration_seconds",
+    Buckets: prometheus.ExponentialBuckets(0.001, 2, 12),
+})
+
+start := time.Now()
+defer func() { dbLatency.Observe(time.Since(start).Seconds()) }()</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>RED vs USE?</b> RED (Rate/Errors/Duration) — методология для сервисов-запросчиков; USE (Utilization/Saturation/Errors) — для ресурсов (диск, CPU, память). Prometheus работает по pull-модели — сам с заданным интервалом опрашивает <code class="inline">/metrics</code>-эндпоинт каждого инстанса.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: Histogram vs Summary, и опасность высокой кардинальности лейблов <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">Для измерения задержки операции предпочтительнее <b>Histogram</b>, а не <b>Summary</b>: Histogram считает попадания в заранее заданные бакеты и позволяет агрегировать перцентили постфактум на стороне сервера запросов — можно пересчитать p95/p99 по любому окну и просуммировать данные с разных инстансов. Summary считает квантили уже на стороне клиента метрики в момент наблюдения — они не агрегируются корректно между несколькими инстансами (нельзя просто усреднить уже посчитанные на разных инстансах перцентили). Поэтому для метрик, которые нужно агрегировать по всему флоту — Histogram почти всегда предпочтительнее.</p>
+            <p class="tight">Высокая кардинальность меток (labels) — если добавить, например, <code class="inline">user_id</code> как label — практический риск: каждое уникальное сочетание значений labels создаёт отдельный временной ряд, и их бесконтрольный рост может исчерпать память самого Prometheus. Для распределённого трейсинга — стандарт W3C Trace Context (заголовок <code class="inline">traceparent</code>), сквозной correlation ID через весь путь запроса связывает конкретную строку лога с конкретным трейсом. Стратегии сэмплирования: head-based (решение принимается сразу на входе, дёшево) vs tail-based (откладывается до завершения трейса — можно осознанно оставлять именно медленные/ошибочные трейсы, но дороже по инфраструктуре).</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="sysdesign">
+        <h2><span class="idx">14.9</span>Паттерны системного дизайна</h2>
+        <p class="tight">Монолит: проще стартовать, лучше производительность (вызовы в процессе), полноценные ACID-транзакции. Микросервисы: автономность команд, гранулярное масштабирование, изоляция отказов — ценой сетевой сложности.</p>
+
+        <div class="tablewrap">
+          <table>
+            <tr><th>Паттерн</th><th class="wrap">Суть</th></tr>
+            <tr><td>CQRS</td><td class="wrap">разделение модели записи и модели чтения на отдельные пути, вплоть до отдельных хранилищ</td></tr>
+            <tr><td>Event Sourcing</td><td class="wrap">состояние — не снимок, а последовательность неизменяемых событий; текущее состояние вычисляется их проигрыванием</td></tr>
+            <tr><td>Saga (orchestration)</td><td class="wrap">центральный координатор явно вызывает шаги и знает, как компенсировать каждый при сбое</td></tr>
+            <tr><td>Saga (choreography)</td><td class="wrap">децентрализовано — каждый сервис реагирует на события сам, без дирижёра</td></tr>
+          </table>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Когда резать монолит на сервисы?</b> Практический ориентир — «start with monolith, split when it hurts»: начинать с монолита, переходить к микросервисам только при реальной, а не гипотетической необходимости. Промежуточные варианты — модульный монолит или паттерн Strangler Fig (постепенный вынос кусков монолита в отдельные сервисы).</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: stateless vs stateful, и осознанная декомпозиция по DDD <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">Stateless-сервис не хранит критичное для бизнес-логики состояние пользователя в памяти между запросами — благодаря этому его можно свободно масштабировать горизонтально и перезапускать без координированной миграции состояния (большинство прикладных backend-сервисов и должны проектироваться именно так, вынося состояние во внешнее хранилище — БД, Redis, брокер). Stateful-компоненты (сами БД, брокеры, хранилища сессий) — исключение: они обязаны хранить состояние по определению и требуют репликации и согласованной обработки отказов (кворумы, лидер-выборы).</p>
+            <p class="tight">Принципы осознанной декомпозиции монолита (в противовес дроблению «потому что модно»): доменные границы по DDD (bounded context — сервис отвечает ровно за одну связную предметную область), высокая связность внутри сервиса при слабой связанности между сервисами, независимость деплоя каждого сервиса, изоляция данных (каждый сервис владеет своей БД), разные профили масштабирования и нагрузки как повод для отдельного сервиса, изоляция отказов (сбой в одном домене не должен ронять соседние), стабильные версионированные интерфейсы между сервисами.</p>
+            <p class="tight">И CQRS, и Event Sourcing, и Saga добавляют архитектурную сложность — оправданы не по умолчанию, а именно там, где эта сложность окупается требованиями предметной области (типично — финансовые/учётные домены, где важен полный аудиторский след движений).</p>
+          </div>
+        </details>
+      </section>

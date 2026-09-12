@@ -1,0 +1,228 @@
+      <div class="kicker"><span class="line"></span>Глава 10</div>
+      <h1 class="title">Стандартная библиотека</h1>
+      <p class="lede">Беглый, но практичный обзор пакетов, которые нужны почти в каждом проекте — без глубокого нырка в каждый.</p>
+
+      <div class="depth-toggle">
+        <button type="button" class="depth-btn" data-action="expand">▾ развернуть все «подробнее»</button>
+        <button type="button" class="depth-btn" data-action="collapse">▴ свернуть всё</button>
+      </div>
+
+      <section class="topic" id="fmt">
+        <h2><span class="idx">10.1</span>fmt</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">fmt.go</span></div>
+          <pre><code class="language-go">fmt.Println("привет")                   // с переносом строки
+fmt.Printf("%s весит %d кг\n", "кот", 5) // форматированный вывод
+s := fmt.Sprintf("%d-%d", 1, 2)          // в строку, не в stdout</code></pre>
+        </div>
+
+        <div class="tablewrap">
+          <table>
+            <tr><th>Verb</th><th class="wrap">Значение</th></tr>
+            <tr><td><code class="inline">%v</code></td><td class="wrap">значение в формате по умолчанию</td></tr>
+            <tr><td><code class="inline">%+v</code></td><td class="wrap">для структур — с именами полей</td></tr>
+            <tr><td><code class="inline">%T</code></td><td class="wrap">тип значения</td></tr>
+            <tr><td><code class="inline">%d %s %f %q %t</code></td><td class="wrap">int, строка, float, строка в кавычках, bool</td></tr>
+            <tr><td><code class="inline">%w</code></td><td class="wrap">только в <code class="inline">Errorf</code> — оборачивание ошибки (глава 7)</td></tr>
+          </table>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: <code class="inline">Stringer</code> и почему <code class="inline">%v</code> сам вызывает <code class="inline">String()</code> <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Пакет <code class="inline">fmt</code> перед выводом любого значения проверяет через приведение типа, реализует ли оно интерфейс <code class="inline">fmt.Stringer</code> (<code class="inline">String() string</code>) — если да, <code class="inline">%v</code>, <code class="inline">%s</code> и <code class="inline">Println</code> используют именно этот метод вместо вывода полей структуры по умолчанию. Это тот же механизм, что и с <code class="inline">error</code> (интерфейс с <code class="inline">Error() string</code>) — <code class="inline">fmt</code> одинаково умеет распознавать оба.</p>
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">stringer.go</span></div>
+              <pre><code class="language-go">type Status int
+
+const (
+    StatusOK Status = iota
+    StatusError
+)
+
+func (s Status) String() string {
+    switch s {
+    case StatusOK:
+        return "ok"
+    case StatusError:
+        return "error"
+    }
+    return "unknown"
+}
+
+fmt.Println(StatusOK) // выведет "ok", а не "0"</code></pre>
+            </div>
+            <p class="tight">Частая опасность: если внутри <code class="inline">String()</code> случайно форматировать сам получатель через <code class="inline">%v</code> (например, <code class="inline">fmt.Sprintf("%v", s)</code> вместо явного разбора полей) — получится бесконечная рекурсия и переполнение стека, потому что <code class="inline">%v</code> снова вызовет тот же <code class="inline">String()</code>.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="strings">
+        <h2><span class="idx">10.2</span>strings / strconv</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">strings.go</span></div>
+          <pre><code class="language-go">strings.Contains(s, "go")
+strings.Split(s, ",")
+strings.Join(parts, "-")
+strings.TrimSpace(s)
+
+n, err := strconv.Atoi("42")        // строка → int
+s := strconv.Itoa(42)                // int → строка
+f, err := strconv.ParseFloat("3.14", 64)</code></pre>
+        </div>
+
+        <div class="callout warn">
+          <div class="mark">камень</div>
+          <p>Строки неизменяемы (глава 1) — конкатенация через <code class="inline">+</code> в цикле каждый раз создаёт новую строку, это <code class="inline">O(n²)</code> на больших объёмах. Для многих склеек — <code class="inline">strings.Builder</code>:</p>
+        </div>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">builder.go</span></div>
+          <pre><code class="language-go">var b strings.Builder
+for i := 0; i < 1000; i++ {
+    b.WriteString("x")
+}
+result := b.String() // одна финальная аллокация вместо тысяч</code></pre>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: почему <code class="inline">Builder</code> быстрее, и разница строка/[]byte/[]rune <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight"><code class="inline">strings.Builder</code> внутри — просто растущий <code class="inline">[]byte</code> (с той же логикой роста, что и у слайсов, глава 4), плюс защита от копирования через встроенный <code class="inline">noCopy</code>-детектор (паника при go vet, если <code class="inline">Builder</code> скопировали по значению после первой записи). В отличие от <code class="inline">s += "x"</code>, где каждая конкатенация выделяет новую строку целиком и копирует старое содержимое, <code class="inline">Builder</code> переиспользует один и тот же буфер и лишь изредка перевыделяет его при росте — отсюда амортизированная <code class="inline">O(n)</code> вместо <code class="inline">O(n²)</code>.</p>
+            <p class="tight">Ещё один частый вопрос на собеседовании — разница между <code class="inline">[]byte(s)</code> и <code class="inline">[]rune(s)</code>: строка в Go — это последовательность байт в UTF-8, а не рун. <code class="inline">[]byte(s)</code> просто копирует сырые байты (длина совпадает с <code class="inline">len(s)</code>); <code class="inline">[]rune(s)</code> декодирует UTF-8 и даёт по одному элементу на кодовую точку Unicode — для строки с кириллицей или эмодзи <code class="inline">len([]rune(s))</code> обычно меньше, чем <code class="inline">len(s)</code>, потому что не-ASCII символы занимают 2–4 байта, но всего одну руну. Индексирование строки <code class="inline">s[i]</code> всегда возвращает байт, а не символ — для посимвольного (по рунам) прохода нужен <code class="inline">for i, r := range s</code> или явное приведение к <code class="inline">[]rune</code>.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="time">
+        <h2><span class="idx">10.3</span>time</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">time.go</span></div>
+          <pre><code class="language-go">d := 2 * time.Second
+time.Sleep(d)
+
+now := time.Now()
+later := now.Add(time.Hour)
+diff := later.Sub(now) // time.Duration
+
+fmt.Println(now.Format("2006-01-02 15:04:05"))</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Почему формат — «2006-01-02», а не «YYYY-MM-DD»?</b> В Go форматы строятся не буквами-плейсхолдерами, а через <b>опорную дату</b>: <code class="inline">Mon Jan 2 15:04:05 MST 2006</code>. Мнемоника — это просто числа по порядку: <code class="inline">01/02 03:04:05PM '06 -0700</code> → месяц-день-час-минута-секунда-год-таймзона, 1 2 3 4 5 6 7. Запоминаете один раз — и подставляете нужные части этой даты в любом порядке.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: <code class="inline">time.Time</code> vs <code class="inline">time.Duration</code>, и почему нельзя сравнивать время через <code class="inline">==</code> <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight"><code class="inline">time.Duration</code> — это просто <code class="inline">int64</code>-наносекунды с собственным типом и методом <code class="inline">String()</code> (отсюда красивый вывод вроде <code class="inline">1h30m0s</code>), а <code class="inline">time.Time</code> — структура, хранящая момент времени с точностью до наносекунды плюс информацию о часовом поясе (<code class="inline">*time.Location</code>) и, для времён, полученных через <code class="inline">time.Now()</code>, ещё monotonic-компонент — отдельный «счётчик тиков» ядра, не привязанный к настенным часам.</p>
+            <p class="tight">Именно из-за monotonic-компонента <code class="inline">t1 == t2</code> для двух значений <code class="inline">time.Time</code> — плохая идея: у двух логически одинаковых моментов может отличаться представление часового пояса или отсутствовать monotonic-часть (например, после <code class="inline">Round</code>/десериализации), и <code class="inline">==</code> сравнит все поля структуры буквально. Правильный способ сравнения — метод <code class="inline">t1.Equal(t2)</code>, который сравнивает именно момент времени, игнорируя представление зоны; для упорядочивания — <code class="inline">t1.Before(t2)</code> / <code class="inline">t1.After(t2)</code>.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="os">
+        <h2><span class="idx">10.4</span>os</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">os.go</span></div>
+          <pre><code class="language-go">args := os.Args[1:]          // аргументы без имени программы
+home := os.Getenv("HOME")
+
+data, err := os.ReadFile("config.txt")
+err = os.WriteFile("out.txt", []byte("привет"), 0644)</code></pre>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: коды выхода, сигналы и <code class="inline">os.Exit</code> vs <code class="inline">return</code> из <code class="inline">main</code> <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight"><code class="inline">os.Exit(code)</code> завершает процесс немедленно — в отличие от обычного выхода из <code class="inline">main()</code>, он <b>не выполняет отложенные <code class="inline">defer</code></b> ни в текущей, ни в других горутинах: если в коде есть <code class="inline">defer file.Close()</code> или <code class="inline">defer wg.Wait()</code>, они просто не сработают при вызове <code class="inline">os.Exit</code>. Поэтому <code class="inline">os.Exit</code> используют только в самом конце <code class="inline">main</code>, когда все важные <code class="inline">defer</code> уже точно отработали (типичный паттерн — вынести логику в отдельную функцию, которая возвращает код ошибки, и вызвать <code class="inline">os.Exit</code> только в самом <code class="inline">main</code>, после того как эта функция вернула управление).</p>
+            <p class="tight">По конвенции код <code class="inline">0</code> — успех, любое ненулевое значение — ошибка (конкретное число обычно не стандартизировано в самой программе, кроме общеупотребимых 1 — общая ошибка, 2 — неверные аргументы). Пакет <code class="inline">os/signal</code> с <code class="inline">signal.Notify</code> позволяет перехватить сигналы вроде <code class="inline">SIGINT</code>/<code class="inline">SIGTERM</code> и грациозно завершить работу (закрыть соединения, дождаться текущих запросов) вместо мгновенного убийства процесса.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="json">
+        <h2><span class="idx">10.5</span>encoding/json</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">json.go</span></div>
+          <pre><code class="language-go">type User struct {
+    Name string `json:"name"`
+    Age  int    `json:"age,omitempty"`
+}
+
+u := User{Name: "Аня", Age: 25}
+data, _ := json.Marshal(u)   // {"name":"Аня","age":25}
+
+var u2 User
+json.Unmarshal(data, &u2)    // JSON → struct</code></pre>
+        </div>
+
+        <div class="callout warn">
+          <div class="mark">камень</div>
+          <p>Снова регистр первой буквы (главы 1 и 4): неэкспортированное поле <code class="inline">encoding/json</code> просто не увидит через <code class="inline">reflect</code> — ни при <code class="inline">Marshal</code>, ни при <code class="inline">Unmarshal</code>, без единой ошибки.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: теги, <code class="inline">omitempty</code>, и почему <code class="inline">Marshal</code>/<code class="inline">Unmarshal</code> медленнее, чем кажется <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">Теги вида <code class="inline">`json:"name,omitempty"`</code> — это обычная строка в бэктиках, синтаксически часть объявления поля структуры, но не проверяемая компилятором семантически (опечатка в имени тега просто тихо не сработает). <code class="inline">omitempty</code> опускает поле при сериализации, если оно равно zero value своего типа — важный нюанс: для указателей, слайсов, map и интерфейсов «пусто» означает <code class="inline">nil</code>, а не «пустая, но не nil» коллекция; пустой, но не-nil слайс (<code class="inline">[]int{}</code>) всё равно попадёт в JSON как <code class="inline">[]</code>, если явно не сравнить его отдельно.</p>
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">json_tags.go</span></div>
+              <pre><code class="language-go">type Config struct {
+    Name    string `json:"name"`
+    APIKey  string `json:"-"`           // никогда не сериализуется
+    Tags    []string `json:"tags,omitempty"`
+    Timeout int      `json:"timeout_ms,omitempty"`
+}</code></pre>
+            </div>
+            <p class="tight"><code class="inline">encoding/json</code> из стандартной библиотеки исторически работает через <code class="inline">reflect</code> и заметно медленнее, чем кодогенерируемые альтернативы (<code class="inline">easyjson</code>, <code class="inline">ffjson</code>) или основанные на <code class="inline">unsafe</code>/SIMD библиотеки вроде <code class="inline">json-iterator/go</code> и <code class="inline">segmentio/encoding/json</code> — на высоконагруженных сервисах с большим объёмом JSON это частая точка оптимизации. В сообществе Go давно обсуждается переработанная версия пакета (нацеленная в том числе на производительность и более гибкую настройку тегов) — стоит свериться с актуальной документацией, попала ли она уже в стандартную библиотеку на момент собеседования.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="nethttp">
+        <h2><span class="idx">10.6</span>net/http</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">server.go</span></div>
+          <pre><code class="language-go">func handler(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintln(w, "Привет из Go!")
+}
+
+func main() {
+    http.HandleFunc("/", handler)
+    http.ListenAndServe(":8080", nil)
+}</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Почему у обработчика именно такая сигнатура?</b> <code class="inline">http.Handler</code> — интерфейс с одним методом <code class="inline">ServeHTTP(w, r)</code> (привет, глава 6). <code class="inline">http.HandlerFunc</code> — тип-обёртка над обычной функцией, который сам реализует этот метод, вызывая внутри себя саму функцию. Так обычная <code class="inline">func(w, r)</code> становится валидным <code class="inline">http.Handler</code> без лишнего кода.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: middleware как обёртка над <code class="inline">http.Handler</code> <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Именно потому, что <code class="inline">http.Handler</code> — обычный интерфейс, middleware в Go — это не отдельный механизм фреймворка, а просто функция, принимающая один <code class="inline">http.Handler</code> и возвращающая другой, который что-то делает до/после вызова исходного:</p>
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">middleware.go</span></div>
+              <pre><code class="language-go">func Logging(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        start := time.Now()
+        next.ServeHTTP(w, r)
+        log.Printf("%s %s — %v", r.Method, r.URL.Path, time.Since(start))
+    })
+}
+
+http.Handle("/", Logging(http.HandlerFunc(handler)))</code></pre>
+            </div>
+            <p class="tight">Несколько middleware комбинируются вложенной оборачиваемостью (<code class="inline">Logging(Auth(RateLimit(handler)))</code>) — порядок оборачивания определяет порядок выполнения «до» вызова и обратный порядок «после». <code class="inline">http.ListenAndServe</code> в проде почти никогда не используют напрямую без обёртки: базовый <code class="inline">net/http</code>-сервер по умолчанию не задаёт тайм-ауты чтения/записи, что уязвимо к Slowloris-атакам — production-код обычно явно настраивает <code class="inline">http.Server{ReadTimeout: ..., WriteTimeout: ..., IdleTimeout: ...}</code> вместо голого <code class="inline">ListenAndServe</code>.</p>
+          </div>
+        </details>
+      </section>

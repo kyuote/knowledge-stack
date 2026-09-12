@@ -1,0 +1,182 @@
+      <div class="kicker"><span class="line"></span>Глава 11</div>
+      <h1 class="title">Тестирование</h1>
+      <p class="lede">Пакет testing, идиома table-driven tests и то, как маленькие интерфейсы из главы 6 делают код тестируемым без библиотек для моков.</p>
+
+      <div class="depth-toggle">
+        <button type="button" class="depth-btn" data-action="expand">▾ развернуть все «подробнее»</button>
+        <button type="button" class="depth-btn" data-action="collapse">▴ свернуть всё</button>
+      </div>
+
+      <section class="topic" id="basictest">
+        <h2><span class="idx">11.1</span>Базовый тест</h2>
+        <p class="tight">Файл <code class="inline">*_test.go</code>, функция <code class="inline">TestXxx(t *testing.T)</code>, запуск — <code class="inline">go test</code>:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">math_test.go</span></div>
+          <pre><code class="language-go">func TestAdd(t *testing.T) {
+    got := Add(2, 3)
+    want := 5
+    if got != want {
+        t.Errorf("Add(2, 3) = %d, хотим %d", got, want)
+    }
+}</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>t.Errorf vs t.Fatalf?</b> <code class="inline">Errorf</code> помечает тест проваленным и продолжает выполнение (можно собрать несколько ошибок за один прогон), <code class="inline">Fatalf</code> сразу останавливает текущий тест — используйте его, когда без прерванного шага (например, без успешного открытия файла) продолжать бессмысленно.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: почему <code class="inline">Fatalf</code> нельзя вызывать не из горутины теста <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight"><code class="inline">t.Fatalf</code> (и <code class="inline">t.FailNow</code>, на котором он основан) внутри вызывает <code class="inline">runtime.Goexit()</code> — специальную функцию, которая завершает текущую горутину, предварительно прогнав все её <code class="inline">defer</code>, но не завершая всю программу. Именно поэтому <code class="inline">Fatalf</code> нельзя вызывать из горутины, запущенной внутри теста (например, воркера), а не из горутины самого теста — <code class="inline">Goexit</code> просто «убьёт» ту горутину, где был вызван, но не остановит и не провалит тест из горутины, где он в реальности исполняется; в лучшем случае это приведёт к зависшему тесту или гонке на завершении, а не к ожидаемой ошибке.</p>
+            <p class="tight">Практическое правило: <code class="inline">t.Fatal</code>/<code class="inline">t.FailNow</code> вызываются только из той же горутины, в которой выполняется тело <code class="inline">TestXxx</code> (или его подтеста, запущенного через <code class="inline">t.Run</code>). Если ошибку нужно сообщить из воркер-горутины — используют канал с результатом или <code class="inline">t.Errorf</code> после <code class="inline">wg.Wait()</code> в основной горутине теста.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="tabletest">
+        <h2><span class="idx">11.2</span>Table-driven tests</h2>
+        <p class="tight">Де-факто стандарт в Go: один кейс — одна строка таблицы, <code class="inline">t.Run</code> даёт каждому кейсу свой независимый подтест:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">table_test.go</span></div>
+          <pre><code class="language-go">func TestAdd(t *testing.T) {
+    tests := []struct {
+        name string
+        a, b int
+        want int
+    }{
+        {"положительные", 2, 3, 5},
+        {"с нулём", 0, 5, 5},
+        {"отрицательные", -1, -1, -2},
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            got := Add(tt.a, tt.b)
+            if got != tt.want {
+                t.Errorf("Add(%d, %d) = %d, хотим %d", tt.a, tt.b, got, tt.want)
+            }
+        })
+    }
+}</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Зачем именно так?</b> Новый кейс — это одна строка в срезе, а не новая функция. <code class="inline">t.Run(tt.name, …)</code> даёт каждому кейсу отдельное имя в выводе — сразу видно, какой конкретно провалился, и можно перезапустить только его через <code class="inline">-run</code>.</p>
+        </div>
+
+        <div class="callout warn">
+          <div class="mark">камень</div>
+          <p>Тот же подвох, что и с <code class="inline">range</code> в горутинах (глава 2): до Go 1.22 переменную цикла <code class="inline">tt</code> нужно было перехватывать явно (<code class="inline">tt := tt</code>) внутри тела, иначе при запуске подтестов параллельно (<code class="inline">t.Parallel()</code>) все они видели последнее значение <code class="inline">tt</code>. С 1.22 каждая итерация получает свою копию.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: <code class="inline">t.Parallel()</code> и golden-файлы <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Вызов <code class="inline">t.Parallel()</code> первой строкой внутри тела подтеста сигнализирует <code class="inline">go test</code>, что этот подтест можно выполнять параллельно с другими такими же подтестами — сам родительский тест при этом приостанавливается до тех пор, пока не будут запущены все его подтесты, после чего они реально исполняются одновременно (ограничено флагом <code class="inline">-parallel</code>, по умолчанию равным <code class="inline">GOMAXPROCS</code>). Это ускоряет большие table-driven наборы, но требует, чтобы кейсы были независимы друг от друга и не делили изменяемое состояние без синхронизации.</p>
+            <p class="tight">Для тестов со сложным ожидаемым выводом (сгенерированный код, большой JSON/HTML-ответ) вместо литералов в самом тесте часто используют <b>golden-файлы</b> — эталонный вывод сохраняют в отдельный файл (<code class="inline">testdata/case.golden</code>) и сравнивают фактический результат с его содержимым; флаг вида <code class="inline">-update</code> (соглашение, не встроено в <code class="inline">testing</code>) позволяет перегенерировать golden-файлы одной командой при осознанном изменении ожидаемого поведения.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="bench">
+        <h2><span class="idx">11.3</span>Бенчмарки</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">bench_test.go</span></div>
+          <pre><code class="language-go">func BenchmarkAdd(b *testing.B) {
+    for i := 0; i < b.N; i++ {
+        Add(2, 3)
+    }
+}</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Кто выставляет <code class="inline">b.N</code>?</b> Не вы — сам <code class="inline">testing</code> подбирает его автоматически, постепенно увеличивая, пока не наберётся достаточно повторов для стабильного по времени измерения. Запуск: <code class="inline">go test -bench=. -benchmem</code>.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: <code class="inline">-benchmem</code>, <code class="inline">b.ReportAllocs</code> и защита от компилятора <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Флаг <code class="inline">-benchmem</code> добавляет в вывод бенчмарка число аллокаций на операцию (<code class="inline">allocs/op</code>) и байт на операцию (<code class="inline">B/op</code>) — часто именно эти две цифры интереснее сырого времени, потому что аллокации напрямую нагружают GC. Опасность, о которой часто спрашивают: компилятор умеет заметить, что результат вызова внутри цикла бенчмарка нигде не используется, и убрать сам вызов через dead code elimination — тогда бенчмарк «измеряет» пустой цикл и врёт о производительности. Стандартная защита — сохранять результат в пакетную переменную:</p>
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">bench_safe_test.go</span></div>
+              <pre><code class="language-go">var result int // пакетная переменная — компилятор не уберёт запись в неё
+
+func BenchmarkAdd(b *testing.B) {
+    var r int
+    for i := 0; i < b.N; i++ {
+        r = Add(2, 3)
+    }
+    result = r // предотвращает "оптимизацию до пустоты"
+}</code></pre>
+            </div>
+            <p class="tight">Ещё один стандартный приём — <code class="inline">b.ResetTimer()</code> сразу после дорогой подготовки данных внутри самой функции бенчмарка, чтобы время на setup не попадало в измерение самой операции.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="testability">
+        <h2><span class="idx">11.4</span>Тестируемость через интерфейсы</h2>
+        <p class="tight">Маленькие интерфейсы и структурная типизация (глава 6) позволяют подставлять фейки без библиотек для моков:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">fake_test.go</span></div>
+          <pre><code class="language-go">type Store interface {
+    Get(id int) (string, error)
+}
+
+type fakeStore struct{}
+func (f *fakeStore) Get(id int) (string, error) { return "тест", nil }
+
+func TestHandler(t *testing.T) {
+    h := NewHandler(&fakeStore{}) // подменяем реальную БД фейком
+    // ...
+}</code></pre>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: fake vs mock, и когда всё же нужны библиотеки моков <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">В экосистеме Go принято различать «fake» — упрощённую, но реально работающую альтернативную реализацию интерфейса (например, in-memory хранилище вместо реальной БД) — и «mock» — объект, который не реализует логику, а только проверяет, что к нему обратились с ожидаемыми аргументами в ожидаемом порядке. Идиоматичный Go-подход исторически предпочитает ручные fake-и (как в примере выше) генерации моков через рефлексию или кодогенерацию — маленькие интерфейсы (глава 6) делают ручное написание fake дешёвым, а сама структурная типизация не требует специального фреймворка для подмены зависимости.</p>
+            <p class="tight">Тем не менее для больших проектов с десятками зависимостей и точной проверкой поведения вызовов (сколько раз вызван метод, с какими именно аргументами, в каком порядке) распространены и генераторы моков — <code class="inline">gomock</code> (с <code class="inline">mockgen</code>) и <code class="inline">testify/mock</code> — они генерируют код, реализующий интерфейс, с настраиваемыми ожиданиями (<code class="inline">EXPECT()</code>) и встроенными проверками вызовов. Выбор между ручным fake и сгенерированным mock — это компромисс между простотой/читаемостью и точностью контроля над поведением зависимости в тесте.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="testflags">
+        <h2><span class="idx">11.5</span>Флаги go test</h2>
+
+        <div class="tablewrap">
+          <table>
+            <tr><th>Команда</th><th class="wrap">Что делает</th></tr>
+            <tr><td><code class="inline">go test ./...</code></td><td class="wrap">все пакеты проекта</td></tr>
+            <tr><td><code class="inline">go test -v</code></td><td class="wrap">подробный вывод по каждому тесту</td></tr>
+            <tr><td><code class="inline">go test -race</code></td><td class="wrap">детектор гонок (глава 8)</td></tr>
+            <tr><td><code class="inline">go test -cover</code></td><td class="wrap">процент покрытия кода тестами</td></tr>
+            <tr><td><code class="inline">go test -run TestAdd</code></td><td class="wrap">только тесты, чьё имя матчит regexp</td></tr>
+          </table>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: build-теги для интеграционных тестов и <code class="inline">-short</code> <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Быстрые юнит-тесты и медленные интеграционные (поднимающие реальную БД, обращающиеся по сети) принято разделять, чтобы CI мог гонять их отдельными этапами. Два стандартных способа: build-тег в начале файла (<code class="inline">//go:build integration</code>, файл компилируется только при <code class="inline">go test -tags=integration</code>) — или проверка флага <code class="inline">testing.Short()</code> внутри самого теста с ранним <code class="inline">t.Skip("пропускаем в -short режиме")</code>, если тест запущен с <code class="inline">go test -short</code>.</p>
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">integration_test.go</span></div>
+              <pre><code class="language-go">func TestDatabaseIntegration(t *testing.T) {
+    if testing.Short() {
+        t.Skip("пропускаем интеграционный тест в -short режиме")
+    }
+    // ... реальное подключение к БД
+}</code></pre>
+            </div>
+            <p class="tight"><code class="inline">go test -cover</code> считает покрытие по строкам/блокам, но не гарантирует качество тестов — 100% покрытия достижимо и без единой проверки утверждения (assertion) внутри теста, поэтому в реальных проектах процент покрытия — ориентир, а не самоцель.</p>
+          </div>
+        </details>
+      </section>

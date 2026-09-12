@@ -1,0 +1,235 @@
+      <div class="kicker"><span class="line"></span>Глава 06</div>
+      <h1 class="title">Методы и интерфейсы</h1>
+      <p class="lede">Самая собеседовательная глава: receiver'ы, method sets и ловушка nil-интерфейса, на которой спотыкаются даже опытные разработчики.</p>
+
+      <div class="depth-toggle">
+        <button type="button" class="depth-btn" data-action="expand">▾ развернуть все «подробнее»</button>
+        <button type="button" class="depth-btn" data-action="collapse">▴ свернуть всё</button>
+      </div>
+
+      <section class="topic" id="receivers">
+        <h2><span class="idx">6.1</span>Value vs pointer receiver</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">counter.go</span></div>
+          <pre><code class="language-go">type Counter struct{ n int }
+
+func (c Counter) Value() int { return c.n } // value receiver — работает с копией
+func (c *Counter) Inc()      { c.n++ }       // pointer receiver — меняет оригинал
+
+c := Counter{}
+c.Inc()                // компилятор сам подставляет (&c).Inc()
+fmt.Println(c.Value()) // 1</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Когда брать pointer receiver?</b> Когда метод должен менять получателя; когда структура большая и копировать её дорого; или просто для консистентности — если хоть один метод типа меняет состояние через <code class="inline">*T</code>, остальные методы обычно тоже делают <code class="inline">*T</code>, чтобы не путать вызывающих.</p>
+        </div>
+
+        <div class="callout warn">
+          <div class="mark">камень</div>
+          <p>Pointer-метод нельзя вызвать на неадресуемом значении: <code class="inline">Counter{}.Inc()</code> — ошибка компиляции, потому что у временного значения <code class="inline">Counter{}</code> нет адреса, который можно взять. Это первый намёк на <b>method sets</b> — разберём ниже.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: автоматическое разыменование работает только у адресуемых значений <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Go неявно подставляет <code class="inline">&</code> при вызове pointer-receiver метода — но только у адресуемых значений (переменных). Временные значения (литералы структур, результат вызова функции) неадресуемы:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">addressable.go</span></div>
+              <pre><code class="language-go">Counter{}.Inc()  // ошибка: нельзя взять адрес литерала
+
+c := Counter{}
+c.Inc()          // ок: компилятор неявно делает (&c).Inc()</code></pre>
+            </div>
+
+            <p class="tight">Отсюда практическое правило именования: если метод типа хоть раз меняет получателя через <code class="inline">*T</code>, остальные методы обычно тоже делают <code class="inline">*T</code> — не столько по техническим причинам, сколько ради консистентности API и предсказуемости для вызывающего кода.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="methodsets">
+        <h2><span class="idx">6.2</span>Method sets</h2>
+        <p class="tight">Method set типа <code class="inline">T</code> включает только методы с value receiver. Method set <code class="inline">*T</code> включает и value-, и pointer-receiver методы. Отсюда — самая частая ошибка новичков с интерфейсами:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">speaker.go</span></div>
+          <pre><code class="language-go">type Speaker interface{ Speak() string }
+
+type Dog struct{}
+func (d *Dog) Speak() string { return "Гав" } // pointer receiver
+
+var s Speaker = Dog{}   // ошибка компиляции:
+                        // Dog does not implement Speaker
+var s Speaker = &Dog{}  // OK</code></pre>
+        </div>
+
+        <figure>
+          <svg viewBox="0 0 600 236" role="img" aria-label="Method set типа Dog пуст, потому что Speak имеет pointer receiver — только *Dog удовлетворяет интерфейсу Speaker.">
+            <defs>
+              <marker id="arr6" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+              </marker>
+            </defs>
+
+            <rect x="30" y="20" width="230" height="72" rx="9" fill="none" stroke="currentColor" stroke-dasharray="3 4" opacity="0.4"/>
+            <text x="145" y="42" text-anchor="middle" font-family="Sora" font-weight="600" font-size="12.5" fill="currentColor">Method set: Dog</text>
+            <text x="145" y="64" text-anchor="middle" font-size="10.5" fill="currentColor" opacity="0.65">(пусто —</text>
+            <text x="145" y="78" text-anchor="middle" font-size="10.5" fill="currentColor" opacity="0.65">Speak — pointer receiver)</text>
+
+            <rect x="340" y="20" width="230" height="72" rx="9" fill="none" stroke="#3b7ec9"/>
+            <text x="455" y="42" text-anchor="middle" font-family="Sora" font-weight="600" font-size="12.5" fill="#3b7ec9">Method set: *Dog</text>
+            <text x="455" y="68" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="#3b7ec9">Speak() string</text>
+
+            <rect x="190" y="176" width="220" height="46" rx="9" fill="none" stroke="currentColor" opacity="0.55"/>
+            <text x="300" y="195" text-anchor="middle" font-family="Sora" font-weight="600" font-size="12" fill="currentColor">Speaker</text>
+            <text x="300" y="212" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="currentColor">{ Speak() string }</text>
+
+            <path d="M455,92 L360,176" fill="none" stroke="#3b7ec9" stroke-width="1.6" marker-end="url(#arr6)"/>
+            <text x="430" y="140" font-size="10.5" fill="#3b7ec9">✓ удовлетворяет</text>
+
+            <path d="M145,92 L230,176" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="3 4" opacity="0.5"/>
+            <text x="120" y="140" font-size="10.5" fill="currentColor" opacity="0.65">✕ не удовлетворяет</text>
+          </svg>
+          <figcaption>Раз <code class="inline">Speak</code> объявлен с pointer receiver, он входит только в method set <code class="inline">*Dog</code> — интерфейсу <code class="inline">Speaker</code> удовлетворяет <code class="inline">*Dog</code>, а не сам <code class="inline">Dog</code>.</figcaption>
+        </figure>
+
+        <details class="deep">
+          <summary>Подробнее: точное правило одной фразой <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Если у типа <code class="inline">T</code> <b>все</b> методы объявлены с value receiver — интерфейсу удовлетворяют и <code class="inline">T</code>, и <code class="inline">*T</code>. Если хотя бы <b>один</b> метод объявлен с pointer receiver — интерфейсу удовлетворяет только <code class="inline">*T</code>. Частая ошибка на практике — не столько путаница в теории (её обычно объясняют верно), сколько забывчивость: присваивая интерфейсной переменной, легко забыть явно передать <code class="inline">&structVar</code>, а не голую переменную, если среди методов есть хоть один pointer receiver.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="implicit">
+        <h2><span class="idx">6.3</span>Неявная реализация</h2>
+        <p class="tight">Интерфейс в Go описывает поведение, а не иерархию типов — слово <code class="inline">implements</code> не пишут никогда:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">writer.go</span></div>
+          <pre><code class="language-go">type Writer interface {
+    Write(p []byte) (int, error)
+}
+
+type File struct{ /* … */ }
+func (f *File) Write(p []byte) (int, error) { return len(p), nil }
+
+var w Writer = &File{} // *File реализует Writer автоматически</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Структурная типизация (structural typing).</b> Компилятор просто проверяет, есть ли у типа нужные методы с нужными сигнатурами — откуда тип и зачем, не важно. Поэтому в Go интерфейсы маленькие и определяются на стороне потребителя (<code class="inline">io.Reader</code>, <code class="inline">io.Writer</code> — по одному методу).</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: почему интерфейс объявляют рядом с потребителем, а не с реализацией <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Идиоматичное правило размещения (в противовес практике многих других языков, где интерфейс объявляют рядом с реализацией): интерфейс должен жить в пакете, который его <b>использует</b>, а не в пакете, который его реализует. Реализующий тип вообще не обязан знать о существовании интерфейса — благодаря неявному удовлетворению это просто работает.</p>
+            <p class="tight">Практическая польза — пакет-потребитель объявляет ровно тот минимальный интерфейс, который ему реально нужен (часто на 1 метод меньше, чем «полный» интерфейс поставщика) — это упрощает мокирование в тестах (глава 11) и снижает связанность между пакетами: поставщик может добавлять новые методы своему типу, не затрагивая уже написанные интерфейсы потребителей.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="anyassert">
+        <h2><span class="idx">6.4</span>any и type assertion</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">assert.go</span></div>
+          <pre><code class="language-go">var x any = 42
+
+n, ok := x.(int) // comma-ok — безопасное приведение
+if ok {
+    fmt.Println(n * 2)
+}
+
+n2 := x.(string) // без ok: паника, если x не string</code></pre>
+        </div>
+
+        <p class="tight">Если типов несколько — вместо цепочки assertion'ов используют <code class="inline">switch v := x.(type)</code> из главы 2.</p>
+
+        <details class="deep">
+          <summary>Подробнее: сравнение любых <code class="inline">any</code> и сужение после assertion к другому интерфейсу <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">Два значения <code class="inline">any</code> сравнимы через <code class="inline">==</code>, только если сравним их динамический тип. Если хотя бы одно хранит несравнимый тип (слайс, map, функцию) — сравнение не просто вернёт <code class="inline">false</code>, а <b>паникует в рантайме</b>:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">anycompare.go</span></div>
+              <pre><code class="language-go">var a any = []int{1, 2}
+var b any = []int{1, 2}
+fmt.Println(a == b) // panic: comparing uncomparable type []int</code></pre>
+            </div>
+
+            <p class="tight">Компилятор не может отследить это статически для <code class="inline">any</code> — конкретный динамический тип известен только в рантайме. Альтернатива для слайсов — <code class="inline">slices.Equal()</code> (Go 1.21+) или более универсальный, но медленный <code class="inline">reflect.DeepEqual()</code>.</p>
+
+            <p class="tight">Отдельный, часто упускаемый нюанс type assertion — если приводить не к конкретному типу, а к <b>другому интерфейсу</b>, после успешной assertion доступны только методы целевого интерфейса, даже если реальный динамический тип реализует значительно больше методов:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">narrowassert.go</span></div>
+              <pre><code class="language-go">type AB interface { A; B }
+type BC interface { B; C }
+
+var ab AB = T{}   // T реализует A, B и C
+bc := ab.(BC)      // успешно — T реализует всё, что требует BC
+bc.MethodA()       // ОШИБКА КОМПИЛЯЦИИ: интерфейс BC не включает A</code></pre>
+            </div>
+
+            <p class="tight">Assertion срабатывает, потому что рантайм проверяет соответствие по динамическому типу — но статический тип переменной <code class="inline">bc</code> после присвоения именно <code class="inline">BC</code>, и компилятор разрешает вызывать только то, что объявлено в этом статическом типе.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="niltrap">
+        <h2><span class="idx">6.5</span>Ловушка nil-интерфейса</h2>
+        <p class="tight">Интерфейс внутри — это пара <code class="inline">(тип, значение)</code>. Он равен <code class="inline">nil</code>, только если <b>обе</b> части пустые:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">niltrap.go</span></div>
+          <pre><code class="language-go">type MyError struct{ msg string }
+func (e *MyError) Error() string { return e.msg }
+
+func doSomething() error {
+    var p *MyError = nil
+    return p // интерфейс НЕ nil!
+}
+
+err := doSomething()
+fmt.Println(err == nil) // false — хотя p был nil</code></pre>
+        </div>
+
+        <figure>
+          <svg viewBox="0 0 600 200" role="img" aria-label="Интерфейс с настоящим nil хранит пустой тип и пустое значение. Интерфейс, получивший nil-указатель, хранит непустой тип *MyError и nil-значение — поэтому сравнение с nil даёт false.">
+            <text x="150" y="16" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.65">var err error = nil</text>
+            <rect x="30" y="26" width="240" height="70" rx="9" fill="none" stroke="currentColor" opacity="0.5"/>
+            <line x1="30" y1="61" x2="270" y2="61" stroke="currentColor" opacity="0.3"/>
+            <text x="45" y="50" font-family="JetBrains Mono" font-size="11.5" fill="currentColor">тип: —</text>
+            <text x="45" y="84" font-family="JetBrains Mono" font-size="11.5" fill="currentColor">значение: —</text>
+            <text x="150" y="122" text-anchor="middle" font-size="12" fill="currentColor">err == nil → <tspan font-weight="700">true</tspan></text>
+
+            <text x="450" y="16" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.65">return p // p — *MyError(nil)</text>
+            <rect x="330" y="26" width="240" height="70" rx="9" fill="none" stroke="#af4433"/>
+            <line x1="330" y1="61" x2="570" y2="61" stroke="#af4433" opacity="0.35"/>
+            <text x="345" y="50" font-family="JetBrains Mono" font-size="11.5" fill="#af4433">тип: *MyError</text>
+            <text x="345" y="84" font-family="JetBrains Mono" font-size="11.5" fill="#af4433">значение: nil</text>
+            <text x="450" y="122" text-anchor="middle" font-size="12" fill="#af4433">err == nil → <tspan font-weight="700">false</tspan></text>
+          </svg>
+          <figcaption>У левого <code class="inline">err</code> пусты и тип, и значение. У правого — тип заполнен (<code class="inline">*MyError</code>), пусто только значение, поэтому сама пара <code class="inline">(тип, значение)</code> уже не nil.</figcaption>
+        </figure>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Как правильно?</b> Возвращать <code class="inline">nil</code> напрямую как <code class="inline">error</code>, а не через типизированный <code class="inline">nil</code>-указатель: <code class="inline">if p == nil { return nil }; return p</code>. Это один из самых частых вопросов на Go-собеседованиях — про него часто спрашивают именно словами «почему <code class="inline">err != nil</code>, хотя функция явно вернула nil?».</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: почему пустой и непустой интерфейс устроены по-разному внутри <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">Непустой интерфейс (с хотя бы одним методом, вроде <code class="inline">error</code>) хранится как пара <code class="inline">(itab, data)</code>: указатель на <b>itab</b> — таблицу методов конкретного типа — и указатель на сами данные. Именно ненулевой <code class="inline">itab</code> и создаёт ловушку выше: типизированный <code class="inline">nil</code>-указатель даёт заполненный <code class="inline">itab</code> при пустых данных, и пара в целом уже не nil.</p>
+
+            <p class="tight">Пустой интерфейс (<code class="inline">any</code>/<code class="inline">interface{}</code>, без методов вообще) устроен иначе: диспетчеризировать нечего, поэтому вместо <code class="inline">itab</code> его представление — пара «указатель на дескриптор типа, указатель на данные» напрямую, без промежуточной таблицы методов. Оба представления двухсловные (два указателя), но смысл первого слова разный — присвоение конкретного значения пустому интерфейсу немного дешевле именно из-за отсутствия косвенного обращения через <code class="inline">itab</code>, хотя стоимость самого копирования данных это не меняет.</p>
+          </div>
+        </details>
+      </section>

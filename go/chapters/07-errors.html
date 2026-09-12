@@ -1,0 +1,231 @@
+      <div class="kicker"><span class="line"></span>Глава 07</div>
+      <h1 class="title">Обработка ошибок</h1>
+      <p class="lede">Ошибка — обычное значение, а не исключение. Здесь — идиома error, оборачивание, errors.Is/As и когда всё-таки нужна паника.</p>
+
+      <div class="depth-toggle">
+        <button type="button" class="depth-btn" data-action="expand">▾ развернуть все «подробнее»</button>
+        <button type="button" class="depth-btn" data-action="collapse">▴ свернуть всё</button>
+      </div>
+
+      <section class="topic" id="errinterface">
+        <h2><span class="idx">7.1</span>Интерфейс error</h2>
+        <p class="tight"><code class="inline">error</code> — это интерфейс с одним методом. Любой тип с таким методом — уже ошибка:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">error.go</span></div>
+          <pre><code class="language-go">type error interface {
+    Error() string
+}
+
+err := errors.New("что-то пошло не так")
+err2 := fmt.Errorf("не удалось открыть файл %q: %w", name, err)</code></pre>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: panic — для программистских ошибок, error — для ожидаемых сбоев <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Интерфейс <code class="inline">error</code> минимален — единственный обязательный метод <code class="inline">Error() string</code>, и <code class="inline">nil</code> тоже ему удовлетворяет (отсюда и ловушка typed-nil из главы 6). Смысловое разграничение с <code class="inline">panic</code>: <code class="inline">panic</code> — для нарушения инвариантов программы, программистских ошибок, которые в принципе не должны происходить; <code class="inline">error</code> — для ожидаемых, штатных сбоев (не найден файл, не прошла валидация, недоступна сеть). Не стоит использовать panic как замену обычной обработке ошибок в бизнес-коде — это разбирается подробнее ниже, в 7.5.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="wrapping">
+        <h2><span class="idx">7.2</span>Оборачивание — %w</h2>
+        <p class="tight"><code class="inline">%w</code> в <code class="inline">fmt.Errorf</code> сохраняет ссылку на исходную ошибку — в отличие от <code class="inline">%v</code>, который просто печатает текст и рвёт цепочку:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">wrap.go</span></div>
+          <pre><code class="language-go">func readConfig() error {
+    _, err := os.Open("config.yaml")
+    if err != nil {
+        return fmt.Errorf("readConfig: %w", err) // оборачивает, не теряя оригинал
+    }
+    return nil
+}</code></pre>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: несколько %w сразу и errors.Join <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">С Go 1.20 <code class="inline">fmt.Errorf</code> допускает <b>несколько</b> <code class="inline">%w</code> в одном вызове — получившаяся ошибка оборачивает сразу несколько причин, и <code class="inline">errors.Is</code>/<code class="inline">errors.As</code> проверяют все ветки:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">multiwrap.go</span></div>
+              <pre><code class="language-go">err := fmt.Errorf("два сбоя сразу: %w и %w", err1, err2)
+
+// более прямой способ объединить набор независимых ошибок —
+// например все ошибки валидации формы разом:
+joined := errors.Join(err1, err2, err3)
+fmt.Println(joined) // печатает все три ошибки, по одной на строку</code></pre>
+            </div>
+
+            <p class="tight"><code class="inline">errors.Join</code> (тоже с Go 1.20) — стандартный способ собрать несколько независимых ошибок в одну без ручной конкатенации строк; <code class="inline">nil</code>-элементы внутри отбрасываются автоматически.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="isas">
+        <h2><span class="idx">7.3</span>errors.Is и errors.As</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">isas.go</span></div>
+          <pre><code class="language-go">var ErrNotFound = errors.New("не найдено")
+
+func find(id int) error {
+    return fmt.Errorf("find(%d): %w", id, ErrNotFound)
+}
+
+err := find(5)
+if errors.Is(err, ErrNotFound) { // проходит сквозь все обёртки
+    fmt.Println("не нашли запись")
+}
+
+var myErr *MyError
+if errors.As(err, &myErr) { // достаёт конкретный тип из цепочки
+    fmt.Println(myErr.Code)
+}</code></pre>
+        </div>
+
+        <figure>
+          <svg viewBox="0 0 560 240" role="img" aria-label="err3 оборачивает err2, err2 оборачивает ErrNotFound. errors.Is идёт по цепочке Unwrap, пока не найдёт совпадение с ErrNotFound.">
+            <defs>
+              <marker id="arr7" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+              </marker>
+            </defs>
+
+            <rect x="40" y="16" width="280" height="40" rx="8" fill="none" stroke="currentColor" opacity="0.55"/>
+            <text x="180" y="41" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="currentColor">err3 — из readConfig</text>
+            <line x1="180" y1="56" x2="180" y2="86" stroke="currentColor" opacity="0.45" marker-end="url(#arr7)"/>
+            <text x="196" y="75" font-size="10" fill="currentColor" opacity="0.6">Unwrap()</text>
+
+            <rect x="40" y="90" width="280" height="40" rx="8" fill="none" stroke="currentColor" opacity="0.55"/>
+            <text x="180" y="115" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="currentColor">err2 — из find</text>
+            <line x1="180" y1="130" x2="180" y2="160" stroke="currentColor" opacity="0.45" marker-end="url(#arr7)"/>
+            <text x="196" y="149" font-size="10" fill="currentColor" opacity="0.6">Unwrap()</text>
+
+            <rect x="40" y="164" width="280" height="40" rx="8" fill="none" stroke="#3b7ec9"/>
+            <text x="180" y="189" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="#3b7ec9">ErrNotFound (sentinel)</text>
+
+            <path d="M320,36 C 420,60 420,150 320,184" fill="none" stroke="#3b7ec9" stroke-width="1.6" marker-end="url(#arr7)"/>
+            <text x="335" y="115" font-size="10.5" fill="#3b7ec9">errors.Is(err3, ErrNotFound)</text>
+            <text x="335" y="129" font-size="10.5" fill="#3b7ec9">✓ найдено на дне цепочки</text>
+          </svg>
+          <figcaption><code class="inline">errors.Is</code> и <code class="inline">errors.As</code> сами разворачивают цепочку через <code class="inline">Unwrap()</code>, пока не найдут совпадение — не важно, сколько раз ошибку обернули по пути.</figcaption>
+        </figure>
+
+        <details class="deep">
+          <summary>Подробнее: на чём именно держится цепочка — метод Unwrap() <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight"><code class="inline">fmt.Errorf</code> с <code class="inline">%w</code> под капотом создаёт значение, реализующее необязательный метод <code class="inline">Unwrap() error</code> — именно по нему <code class="inline">errors.Is</code>/<code class="inline">errors.As</code> проходят цепочку дальше. Собственный тип ошибки может реализовать <code class="inline">Unwrap()</code> вручную, чтобы участвовать в этой же цепочке:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">unwrap.go</span></div>
+              <pre><code class="language-go">type ValidationError struct {
+    Field string
+    Err   error
+}
+
+func (e *ValidationError) Error() string { return e.Field + ": " + e.Err.Error() }
+func (e *ValidationError) Unwrap() error { return e.Err } // включает в общую цепочку</code></pre>
+            </div>
+
+            <p class="tight"><code class="inline">errors.Is(err, target)</code> — по сути «<code class="inline">==</code>, но по всей цепочке» — годится для сравнения с sentinel-ошибками (<code class="inline">var ErrNotFound = errors.New(...)</code>). <code class="inline">errors.As(err, &target)</code> — «type assertion, но по всей цепочке» — находит в цепочке ошибку конкретного <b>типа</b> и извлекает её в <code class="inline">target</code>, давая доступ к дополнительным полям вроде <code class="inline">Field</code> выше.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="customerr">
+        <h2><span class="idx">7.4</span>Кастомные ошибки</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">customerr.go</span></div>
+          <pre><code class="language-go">type MyError struct {
+    Code int
+    Msg  string
+}
+
+func (e *MyError) Error() string {
+    return fmt.Sprintf("[%d] %s", e.Code, e.Msg)
+}</code></pre>
+        </div>
+
+        <div class="callout warn">
+          <div class="mark">камень</div>
+          <p>Sentinel-ошибки (<code class="inline">var ErrX = errors.New(...)</code>) нельзя надёжно сравнивать через <code class="inline">==</code>, если по пути их могли обернуть — используйте <code class="inline">errors.Is</code>. Для ошибок с данными (код, поля) — свой тип и <code class="inline">errors.As</code>.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: продакшн-паттерн — код ошибки вместо текста <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">На высоконагруженных сервисах текст ошибки в кастомном типе — хрупкая база для контракта: тесты, сравнивающие строки текста, ломаются при любой правке формулировки, а клиент, разбирающий текст, лишён стабильного API. Продакшн-паттерн — доменные типы ошибок с явным <b>кодом</b>, а не только текстом:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">domainerr.go</span></div>
+              <pre><code class="language-go">type Code string
+
+const (
+    ErrNotFound        Code = "NOT_FOUND"
+    ErrInvalidArgument Code = "INVALID_ARGUMENT"
+)
+
+type DomainError struct {
+    Code    Code
+    Message string
+    TraceID string // сквозная трассируемость по логам
+}
+
+func (e *DomainError) Error() string { return string(e.Code) + ": " + e.Message }</code></pre>
+            </div>
+
+            <p class="tight">В JSON-ответе клиенту передаётся именно код ошибки — локализация текста для конечного пользователя остаётся на стороне клиента, а не зашита в сообщение с бэкенда. Отдельное централизованное middleware отвечает за маппинг доменного кода в конкретный HTTP-статус в одном месте, а не разбросанной по каждому хендлеру логикой.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="panicrecover">
+        <h2><span class="idx">7.5</span>panic / recover</h2>
+        <p class="tight"><code class="inline">recover</code> работает только внутри <code class="inline">defer</code>:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">recover.go</span></div>
+          <pre><code class="language-go">func safeDivide(a, b int) (result int, err error) {
+    defer func() {
+        if r := recover(); r != nil {
+            err = fmt.Errorf("восстановились после паники: %v", r)
+        }
+    }()
+    return a / b, nil // паника при b == 0: integer divide by zero
+}</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Когда использовать panic вместо error?</b> Почти никогда для обычной бизнес-логики. <code class="inline">panic</code> — для по-настоящему невосстановимых ситуаций: нарушен инвариант программы, баг, а не ожидаемая ошибка вроде «файл не найден». Библиотеки не должны паниковать наружу — на границе пакета панику принято ловить <code class="inline">recover</code> и превращать в обычный <code class="inline">error</code>.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: recover работает только в той горутине, где случилась паника <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">Критичный нюанс для конкурентного кода: необработанная паника в любой горутине убивает <b>весь процесс</b> целиком, а не только эту горутину — <code class="inline">recover()</code> в <code class="inline">main</code> никак не спасёт от паники, случившейся в другой горутине. Каждой горутине, где в принципе может случиться паника (особенно воркерам в пуле), нужен свой собственный <code class="inline">defer</code>+<code class="inline">recover</code>:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">workerrecover.go</span></div>
+              <pre><code class="language-go">func worker(jobs <-chan Job) {
+    for j := range jobs {
+        func() {
+            defer func() {
+                if r := recover(); r != nil {
+                    log.Println("worker паникнул на задании:", r)
+                }
+            }()
+            process(j) // паника здесь не уронит остальных воркеров
+        }()
+    }
+}</code></pre>
+            </div>
+
+            <p class="tight">Рекомендуемая практика — ставить <code class="inline">recover</code> на верхнем уровне логической единицы работы (middleware HTTP-сервера, обёртка над обработчиком воркера), а не разбрасывать по всему коду. <code class="inline">recover()</code> возвращает значение типа <code class="inline">any</code> — чтобы понять, что именно запаниковало, требуется type assertion к этому значению.</p>
+          </div>
+        </details>
+      </section>

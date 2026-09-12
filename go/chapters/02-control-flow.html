@@ -1,0 +1,327 @@
+      <div class="kicker"><span class="line"></span>Глава 02</div>
+      <h1 class="title">Управляющие конструкции</h1>
+      <p class="lede">if, switch, единственный цикл for во всех формах и defer — с местами, где Go делает не так, как остальные C-подобные языки.</p>
+
+      <div class="depth-toggle">
+        <button type="button" class="depth-btn" data-action="expand">▾ развернуть все «подробнее»</button>
+        <button type="button" class="depth-btn" data-action="collapse">▴ свернуть всё</button>
+      </div>
+
+      <section class="topic" id="if">
+        <h2><span class="idx">2.1</span>if / else</h2>
+        <p class="tight">Без скобок вокруг условия, фигурные скобки — обязательны всегда, даже для одной строки:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">ifelse.go</span></div>
+          <pre><code class="language-go">if x > 0 {
+    fmt.Println("положительное")
+} else if x < 0 {
+    fmt.Println("отрицательное")
+} else {
+    fmt.Println("ноль")
+}
+
+// init-statement — переменная видна только внутри if/else
+if v, err := parse(input); err != nil {
+    log.Fatal(err)
+} else {
+    fmt.Println(v)
+}</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Зачем в <code class="inline">if</code> можно писать init-statement?</b> Чтобы область видимости временной переменной (обычно <code class="inline">err</code>) была ограничена телом <code class="inline">if/else</code> и не «утекала» в остальную функцию. Это самая частая идиома в Go-коде.</p>
+        </div>
+
+        <div class="callout warn">
+          <div class="mark">камень</div>
+          <p>Открывающая <code class="inline">{</code> обязана стоять на той же строке, что и <code class="inline">if</code>/<code class="inline">for</code>/<code class="inline">func</code>. Из-за автоматической подстановки <code class="inline">;</code> перенос скобки на новую строку — ошибка компиляции.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: почему в Go нет тернарного оператора <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">В C/JS/Java есть короткая форма <code class="inline">cond ? a : b</code> — в Go её нарочно нет. Причина та же, что и с отсутствием неявных преобразований типов: авторы языка сознательно жертвуют компактностью синтаксиса ради того, чтобы код читался однозначно, без плотно упакованных выражений с побочным эффектом внутри условия.</p>
+            <p class="tight">Идиоматичная замена — обычный <code class="inline">if/else</code> с присваиванием, либо (для действительно частого случая «одно из двух значений») — маленькая функция-хелпер. Библиотечных «псевдотернарников» через дженерики в стандартной библиотеке нет специально — это осознанное решение, а не забытая фича.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="switch">
+        <h2><span class="idx">2.2</span>switch</h2>
+        <p class="tight">Три формы: обычный, «безусловный» (замена цепочки <code class="inline">if/else if</code>) и type switch:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">switch.go</span></div>
+          <pre><code class="language-go">switch day {
+case time.Saturday, time.Sunday:
+    fmt.Println("выходной")
+default:
+    fmt.Println("будний день")
+}
+
+switch {                    // без выражения — читается как if/else if
+case score >= 90:
+    grade = "A"
+case score >= 75:
+    grade = "B"
+default:
+    grade = "C"
+}
+
+switch v := x.(type) {      // type switch — какой конкретный тип в интерфейсе
+case int:
+    fmt.Println("int:", v)
+case string:
+    fmt.Println("string:", v)
+}</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Проваливается ли <code class="inline">switch</code> по умолчанию?</b> Нет — в отличие от C/Java/JS каждый <code class="inline">case</code> завершается неявным break. Чтобы провалиться в следующий <code class="inline">case</code>, нужно явное слово <code class="inline">fallthrough</code>.</p>
+          <p><b>Что такое type switch?</b> Способ узнать конкретный тип значения, лежащего в интерфейсе (<code class="inline">any</code>/<code class="inline">interface{}</code>), через <code class="inline">x.(type)</code>.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: несколько типов в одном case type switch <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Если <code class="inline">case</code> в type switch перечисляет ровно один тип — переменная внутри ветки получает этот конкретный тип. Но если типов несколько через запятую, переменная остаётся исходного интерфейсного типа, а не какого-то из перечисленных:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">typeswitch.go</span></div>
+              <pre><code class="language-go">switch v := x.(type) {
+case int:
+    fmt.Println(v * 2)      // v — именно int
+case int32, int64:
+    fmt.Println(v)          // v — всё ещё any, умножить нельзя без доп. assertion
+}</code></pre>
+            </div>
+
+            <p class="tight">Ещё одна деталь, часто ускользающая от новичков — <code class="inline">fallthrough</code> проваливается в тело следующего <code class="inline">case</code> безусловно, не проверяя его собственное условие; в type switch <code class="inline">fallthrough</code> вообще запрещён компилятором, потому что следующий case может ожидать другой тип.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="for">
+        <h2><span class="idx">2.3</span>for — все формы</h2>
+        <p class="tight">В Go один циклический keyword — <code class="inline">for</code>. Он же заменяет и <code class="inline">while</code>, и бесконечный цикл:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">for.go</span></div>
+          <pre><code class="language-go">for i := 0; i < 5; i++ {    // классический, три части
+    fmt.Println(i)
+}
+
+for cond {                   // замена while
+    cond = step()
+}
+
+for {                         // бесконечный, выход через break
+    if done() { break }
+}
+
+for i, v := range items {    // по индексу и значению
+    fmt.Println(i, v)
+}</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Сколько видов циклов в Go?</b> Один keyword <code class="inline">for</code>, четыре формы записи — так проще читать чужой код: не нужно помнить разный синтаксис <code class="inline">while</code>/<code class="inline">do-while</code>/<code class="inline">for</code>, как в C++.</p>
+        </div>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">capture.go</span></div>
+          <pre><code class="language-go">for i, n := range nums {
+    go func() { fmt.Println(i, n) }() // до Go 1.22 — i, n были ОДНИ на все итерации
+}</code></pre>
+        </div>
+
+        <div class="callout warn">
+          <div class="mark">камень</div>
+          <p>До Go 1.22 переменные цикла <code class="inline">range</code> были общими для всех итераций — замыкание в горутине выше почти всегда печатало одно и то же значение (обычно последнее). Начиная с <b>Go 1.22</b> каждая итерация получает свою копию <code class="inline">i</code>/<code class="inline">n</code>, и код выше работает ожидаемо. Частый вопрос на собесе — знай оба поведения и версию, с которой это изменилось.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: labeled break/continue и новые формы range (1.22+/1.23+) <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Чтобы прервать или продолжить именно внешний цикл из вложенного, используют метку — обычную идентификатор-метку перед циклом, а не <code class="inline">goto</code>:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">labels.go</span></div>
+              <pre><code class="language-go">outer:
+for i := 0; i < 3; i++ {
+    for j := 0; j < 3; j++ {
+        if j == 1 {
+            continue outer // переходит к следующей итерации ВНЕШНЕГО цикла
+        }
+        if i == 2 {
+            break outer     // выходит из ОБОИХ циклов сразу
+        }
+    }
+}</code></pre>
+            </div>
+
+            <p class="tight">С Go 1.22 <code class="inline">range</code> научился принимать просто целое число — <code class="inline">for i := range 5 { ... }</code> заменяет классическое <code class="inline">for i := 0; i < 5; i++</code> там, где нужен только счётчик. С Go 1.23 <code class="inline">range</code> дополнительно умеет принимать функцию-итератор специальной сигнатуры (<code class="inline">func(yield func(V) bool)</code> и её варианты, тип <code class="inline">iter.Seq</code>) — это позволяет писать собственные ленивые последовательности, по которым можно проходить обычным <code class="inline">for range</code>, без ручного построения промежуточного слайса.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="defer">
+        <h2><span class="idx">2.4</span>defer</h2>
+        <p class="tight"><code class="inline">defer</code> откладывает вызов до выхода из окружающей функции — успешного или через panic. Несколько <code class="inline">defer</code> выполняются в обратном порядке — <b>LIFO</b>:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">defer.go</span></div>
+          <pre><code class="language-go">func main() {
+    defer fmt.Println("1")
+    defer fmt.Println("2")
+    defer fmt.Println("3")
+    fmt.Println("main")
+}
+// вывод: main  3  2  1</code></pre>
+        </div>
+
+        <figure>
+          <svg viewBox="0 0 560 210" role="img" aria-label="Три defer объявлены в порядке 1, 2, 3, но выполнятся в обратном порядке: 3, 2, 1 — LIFO.">
+            <text x="115" y="16" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.6">объявлено в коде</text>
+            <text x="450" y="16" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.6">выполнится при return</text>
+
+            <rect x="20" y="28" width="190" height="36" rx="8" fill="none" stroke="currentColor" opacity="0.45"/>
+            <text x="35" y="51" font-family="JetBrains Mono" font-size="12" fill="currentColor">defer Println("1")</text>
+
+            <rect x="20" y="82" width="190" height="36" rx="8" fill="none" stroke="currentColor" opacity="0.45"/>
+            <text x="35" y="105" font-family="JetBrains Mono" font-size="12" fill="currentColor">defer Println("2")</text>
+
+            <rect x="20" y="136" width="190" height="36" rx="8" fill="none" stroke="currentColor" opacity="0.45"/>
+            <text x="35" y="159" font-family="JetBrains Mono" font-size="12" fill="currentColor">defer Println("3")</text>
+
+            <rect x="350" y="28" width="190" height="36" rx="8" fill="none" stroke="#3b7ec9" opacity="0.9"/>
+            <text x="365" y="51" font-family="JetBrains Mono" font-size="12" fill="#3b7ec9">"3" — первым</text>
+
+            <rect x="350" y="82" width="190" height="36" rx="8" fill="none" stroke="currentColor" opacity="0.45"/>
+            <text x="365" y="105" font-family="JetBrains Mono" font-size="12" fill="currentColor">"2" — вторым</text>
+
+            <rect x="350" y="136" width="190" height="36" rx="8" fill="none" stroke="currentColor" opacity="0.45"/>
+            <text x="365" y="159" font-family="JetBrains Mono" font-size="12" fill="currentColor">"1" — последним</text>
+
+            <path d="M210,46 C280,46 280,154 350,154" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+            <path d="M210,100 C260,100 260,100 350,100" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+            <path d="M210,154 C280,154 280,46 350,46" fill="none" stroke="#3b7ec9" stroke-width="1.5" opacity="0.9"/>
+          </svg>
+          <figcaption>Порядок объявления (слева) и порядок выполнения (справа) зеркальны: последний объявленный <code class="inline">defer</code> отработает первым.</figcaption>
+        </figure>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Когда вычисляются аргументы <code class="inline">defer</code>?</b> Сразу в момент объявления <code class="inline">defer</code>, а не в момент фактического вызова:</p>
+        </div>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">eval.go</span></div>
+          <pre><code class="language-go">i := 0
+defer fmt.Println("i =", i) // "i" читается ЗДЕСЬ → напечатает 0
+i++</code></pre>
+        </div>
+
+        <div class="callout warn">
+          <div class="mark">камень</div>
+          <p><code class="inline">defer</code> внутри цикла копится до конца всей функции, а не до конца итерации — если в цикле на тысячи элементов открывать файлы и делать <code class="inline">defer f.Close()</code>, дескрипторы не освободятся, пока функция не завершится. Для таких циклов закрывайте ресурс явно или выносите итерацию в отдельную функцию.</p>
+        </div>
+
+        <p class="tight"><code class="inline">defer</code> выполняется даже при панике — именно это делает его основой механизма <code class="inline">recover</code>. Подробнее — в разделе 2.5 ниже.</p>
+      </section>
+
+      <section class="topic" id="panicrecover-ch2">
+        <h2><span class="idx">2.5</span>panic / recover</h2>
+
+        <p class="tight"><b>Паника</b> — аварийная остановка программы. Возникает сама (выход за границы слайса, nil-указатель) или явно через <code class="inline">panic("сообщение")</code>. При панике Go прекращает выполнение текущей функции, запускает все её <code class="inline">defer</code>-функции, затем делает то же самое для вызывающей функции — и так вверх по стеку, пока не крашнет всю программу.</p>
+
+        <p class="tight"><b><code class="inline">recover()</code></b> — перехватывает панику и не даёт программе упасть. Вызывать его можно <b>только</b> изнутри <code class="inline">defer</code>-функции. Возвращает значение из <code class="inline">panic(...)</code> или <code class="inline">nil</code> если паники не было.</p>
+
+        <p class="tight">Вот как это выглядит по шагам:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">recover_steps.go</span></div>
+          <pre><code class="language-go">func safeDiv(a, b int) (result int, err error) {
+    // шаг 1: регистрируем defer — пока не выполняется, просто запомнили
+    defer func() {
+        // шаг 3: паника случилась — Go запускает этот defer
+        if r := recover(); r != nil {
+            // r == "runtime error: integer divide by zero"
+            err = fmt.Errorf("поймали панику: %v", r)
+        }
+        // шаг 4: функция завершается нормально, возвращает err
+    }()
+
+    // шаг 2: b == 0 → паника → выполнение прерывается здесь
+    return a / b, nil
+}
+
+func main() {
+    res, err := safeDiv(10, 0)
+    fmt.Println(res, err) // 0 поймали панику: runtime error: integer divide by zero
+}</code></pre>
+        </div>
+
+        <p class="tight"><b>Почему такая вложенная конструкция?</b> <code class="inline">defer func(){...}()</code> — это анонимная функция, которую мы сразу передаём в defer. Скобки <code class="inline">()</code> в конце — это её вызов (но отложенный). Без обёртки в анонимку написать <code class="inline">defer recover()</code> не получится — Go требует, чтобы <code class="inline">recover()</code> стоял прямо внутри defer-функции, иначе просто вернёт nil.</p>
+
+        <p class="tight"><b>Именованные возвращаемые значения</b> нужны для того, чтобы defer мог «дотянуться» до <code class="inline">err</code> и записать туда ошибку. Без них defer не знает о переменных снаружи — функция вернёт нули и ошибку не передаст.</p>
+
+        <p class="tight"><b>Как это используют в проектах</b> — в HTTP-серверах, чтобы одна паника в одном запросе не положила весь сервер:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">middleware.go</span></div>
+          <pre><code class="language-go">func recoveryMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        defer func() {
+            if err := recover(); err != nil {
+                log.Printf("паника: %v", err)
+                http.Error(w, "Internal Server Error", 500)
+            }
+        }()
+        next.ServeHTTP(w, r) // если тут паника — поймаем выше
+    })
+}
+// этот middleware уже встроен в gin, echo и другие фреймворки</code></pre>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: когда panic уместен, а когда лучше error <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">В Go принято разделять: <b>ожидаемые ошибки</b> (файл не найден, невалидный ввод) — возвращай <code class="inline">error</code>. <b>Программные баги</b> (невозможное состояние, нарушенный инвариант) — можно <code class="inline">panic</code>. Типичный пример допустимого <code class="inline">panic</code> — в функции инициализации: <code class="inline">regexp.MustCompile("pattern")</code> паникует если паттерн невалидный, потому что такое должно упасть при запуске, а не в рантайме. <code class="inline">recover</code> стоит использовать на границах пакетов — чтобы внутренняя паника не вылезла наружу в виде краша, а превратилась в <code class="inline">error</code>.</p>
+          </div>
+        </details>
+
+        <details class="deep">
+          <summary>Подробнее: ловушка — recover() не работает во вложенной функции <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight"><code class="inline">recover()</code> перехватывает панику <b>только</b> если вызван напрямую внутри той функции, которая передана в <code class="inline">defer</code>. Если вынести его во вспомогательную функцию — не сработает:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">recover_trap.go</span></div>
+              <pre><code class="language-go">// ❌ НЕ работает
+defer func() {
+    helper() // recover() внутри helper не поймает панику
+}()
+
+func helper() {
+    if r := recover(); r != nil { // всегда nil — не тот фрейм
+        fmt.Println("recovered:", r)
+    }
+}
+
+// ✅ Работает
+defer func() {
+    if r := recover(); r != nil { // прямо здесь, без вложенного вызова
+        fmt.Println("recovered:", r)
+    }
+}()</code></pre>
+            </div>
+
+            <p class="tight">Причина — <code class="inline">recover()</code> привязан к конкретному фрейму стека. Когда он вызывается из <code class="inline">helper()</code>, он находится в другом, более глубоком фрейме и уже не «видит» панику выше. Go проверяет: «ты вызван прямо в defer-функции?» — если нет, просто возвращает <code class="inline">nil</code>.</p>
+          </div>
+        </details>
+      </section>

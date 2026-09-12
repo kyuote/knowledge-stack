@@ -1,0 +1,271 @@
+      <div class="kicker"><span class="line"></span>Глава 15</div>
+      <h1 class="title">Шпаргалка</h1>
+      <p class="lede">Весь синтаксис в сжатом виде — для повторения перед собесом за 10 минут. Без объяснений: они уже были в главах 1–13, здесь только форма.</p>
+
+      <section class="topic" id="decls">
+        <h2><span class="idx">15.1</span>Типы и объявления</h2>
+        <div class="cheatgrid">
+          <div class="cheatcard">
+            <h3>Объявления</h3>
+            <pre><code class="language-go hljs">var x int        // 0
+var y = 10       // int
+z := "hi"        // только внутри функций
+const N = 3
+a, b := 1, "s"</code></pre>
+          </div>
+          <div class="cheatcard">
+            <h3>Базовые типы</h3>
+            <pre><code class="language-go hljs">bool, string
+int8/16/32/64, uint8/16/32/64
+int, uint       // 32 или 64 бита — платформа
+float32, float64
+byte = uint8, rune = int32</code></pre>
+          </div>
+          <div class="cheatcard">
+            <h3>Нулевые значения</h3>
+            <pre><code class="language-go hljs">number  → 0
+bool    → false
+string  → ""
+pointer, slice, map,
+chan, func, interface → nil</code></pre>
+          </div>
+          <div class="cheatcard">
+            <h3>iota</h3>
+            <pre><code class="language-go hljs">type Weekday int
+const (
+    Sun Weekday = iota // 0
+    Mon                // 1
+    Tue                // 2
+)</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="topic" id="control">
+        <h2><span class="idx">15.2</span>Управляющие конструкции</h2>
+        <div class="cheatgrid">
+          <div class="cheatcard">
+            <h3>if</h3>
+            <pre><code class="language-go hljs">if x := f(); x > 0 {
+} else if x < 0 {
+} else {
+}</code></pre>
+          </div>
+          <div class="cheatcard">
+            <h3>switch</h3>
+            <pre><code class="language-go hljs">switch x := f(); {
+case x > 0:
+case x < 0:
+default:
+}
+// без выражения — switch true
+// fallthrough — явный проход</code></pre>
+          </div>
+          <div class="cheatcard">
+            <h3>for — все формы</h3>
+            <pre><code class="language-go hljs">for i := 0; i < n; i++ {}
+for cond {}
+for {}                // вечный
+for i, v := range s {}
+for k, v := range m {}
+for range ch {}</code></pre>
+          </div>
+          <div class="cheatcard">
+            <h3>defer</h3>
+            <pre><code class="language-go hljs">defer f()  // аргументы — сразу,
+           // вызов — LIFO при выходе
+defer func(){ recover() }()</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="topic" id="funcs">
+        <h2><span class="idx">15.3</span>Функции и методы</h2>
+        <div class="cheatgrid">
+          <div class="cheatcard">
+            <h3>Сигнатуры</h3>
+            <pre><code class="language-go hljs">func add(a, b int) int { return a+b }
+func div(a, b int) (int, error) { … }
+func named() (res int) { res=1; return }
+func sum(nums ...int) int { … }</code></pre>
+          </div>
+          <div class="cheatcard">
+            <h3>Методы</h3>
+            <pre><code class="language-go hljs">func (c Circle) Area() float64 { … }
+// value receiver — копия
+func (c *Circle) Scale(k float64) { … }
+// pointer receiver — мутирует</code></pre>
+          </div>
+          <div class="cheatcard">
+            <h3>Замыкание</h3>
+            <pre><code class="language-go hljs">func counter() func() int {
+    n := 0
+    return func() int { n++; return n }
+}</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="topic" id="data">
+        <h2><span class="idx">15.4</span>Массивы, слайсы, map, struct</h2>
+        <div class="cheatgrid">
+          <div class="cheatcard">
+            <h3>Массив vs слайс</h3>
+            <pre><code class="language-go hljs">var a [3]int      // фикс. длина
+s := []int{1,2,3}  // {ptr,len,cap}
+s = append(s, 4)   // может реаллоцировать
+s2 := s[1:3]       // делит память с s!</code></pre>
+          </div>
+          <div class="cheatcard">
+            <h3>map</h3>
+            <pre><code class="language-go hljs">m := make(map[string]int)
+m["k"] = 1
+v, ok := m["k"]   // ok=false если нет
+delete(m, "k")
+// nil-map: читать можно, писать — паника</code></pre>
+          </div>
+          <div class="cheatcard">
+            <h3>struct</h3>
+            <pre><code class="language-go hljs">type User struct {
+    Name string `json:"name"`
+    age  int    // не экспортируется
+}
+u := User{Name: "A"}</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="topic" id="ptrsiface">
+        <h2><span class="idx">15.5</span>Указатели и интерфейсы</h2>
+        <div class="cheatgrid">
+          <div class="cheatcard">
+            <h3>Указатели</h3>
+            <pre><code class="language-go hljs">p := &x         // адрес
+*p = 5           // разыменование/запись
+p := new(int)    // указатель на нулевое
+q := &T{}        // указатель + инициализация
+// арифметики указателей нет</code></pre>
+          </div>
+          <div class="cheatcard">
+            <h3>Интерфейсы</h3>
+            <pre><code class="language-go hljs">type Stringer interface{ String() string }
+// implements — неявно, по методам
+v, ok := i.(ConcreteType)  // assertion
+switch v := i.(type) {
+case int: …
+}</code></pre>
+          </div>
+          <div class="cheatcard">
+            <h3>Ловушка nil-интерфейса</h3>
+            <pre><code class="language-go hljs">var p *MyErr = nil
+var err error = p
+// err != nil! пара (type, value)</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="topic" id="errconc">
+        <h2><span class="idx">15.6</span>Ошибки и конкурентность</h2>
+        <div class="cheatgrid">
+          <div class="cheatcard">
+            <h3>Ошибки</h3>
+            <pre><code class="language-go hljs">if err != nil {
+    return fmt.Errorf("op: %w", err)
+}
+errors.Is(err, ErrNotFound)
+errors.As(err, &myErr)</code></pre>
+          </div>
+          <div class="cheatcard">
+            <h3>panic / recover</h3>
+            <pre><code class="language-go hljs">defer func(){
+    if r := recover(); r != nil { … }
+}()
+panic("боль")</code></pre>
+          </div>
+          <div class="cheatcard">
+            <h3>Горутины и каналы</h3>
+            <pre><code class="language-go hljs">go f()
+ch := make(chan int)     // небуферизованный
+ch := make(chan int, 3)  // буфер на 3
+ch <- v; v := <-ch
+close(ch)
+v, ok := <-ch  // ok=false после close+пусто</code></pre>
+          </div>
+          <div class="cheatcard">
+            <h3>select / sync</h3>
+            <pre><code class="language-go hljs">select {
+case v := <-ch1:
+case ch2 <- x:
+default:
+}
+var wg sync.WaitGroup
+var mu sync.Mutex</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="topic" id="generics">
+        <h2><span class="idx">15.7</span>Generics</h2>
+        <div class="cheatgrid">
+          <div class="cheatcard">
+            <h3>Generic-функция</h3>
+            <pre><code class="language-go hljs">func Max[T cmp.Ordered](a, b T) T {
+    if a > b { return a }
+    return b
+}</code></pre>
+          </div>
+          <div class="cheatcard">
+            <h3>Generic-тип</h3>
+            <pre><code class="language-go hljs">type Stack[T any] struct {
+    items []T
+}
+func (s *Stack[T]) Push(v T) {
+    s.items = append(s.items, v)
+}</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="topic" id="stdtools">
+        <h2><span class="idx">15.8</span>Инструменты и format-verbs</h2>
+        <div class="tablewrap">
+          <table>
+            <tr><th>Команда</th><th class="wrap">Что делает</th></tr>
+            <tr><td><code class="inline">go run .</code></td><td class="wrap">собрать и сразу запустить</td></tr>
+            <tr><td><code class="inline">go build</code></td><td class="wrap">собрать бинарник</td></tr>
+            <tr><td><code class="inline">go test ./...</code></td><td class="wrap">все тесты рекурсивно</td></tr>
+            <tr><td><code class="inline">go test -race</code></td><td class="wrap">детектор гонок</td></tr>
+            <tr><td><code class="inline">go test -run X -bench .</code></td><td class="wrap">конкретный тест / бенчмарки</td></tr>
+            <tr><td><code class="inline">go vet ./...</code></td><td class="wrap">статический анализ на подозрительный код</td></tr>
+            <tr><td><code class="inline">gofmt -l -w .</code></td><td class="wrap">привести к каноническому стилю</td></tr>
+            <tr><td><code class="inline">go mod init / tidy</code></td><td class="wrap">создать / привести в порядок go.mod</td></tr>
+          </table>
+        </div>
+        <div class="tablewrap">
+          <table>
+            <tr><th>Verb</th><th class="wrap">Печатает</th></tr>
+            <tr><td><code class="inline">%v</code></td><td class="wrap">значение по умолчанию</td></tr>
+            <tr><td><code class="inline">%+v</code></td><td class="wrap">структура с именами полей</td></tr>
+            <tr><td><code class="inline">%#v</code></td><td class="wrap">Go-синтаксис значения</td></tr>
+            <tr><td><code class="inline">%T</code></td><td class="wrap">тип значения</td></tr>
+            <tr><td><code class="inline">%d %f %s %q</code></td><td class="wrap">число / float / строка / строка в кавычках</td></tr>
+            <tr><td><code class="inline">%w</code></td><td class="wrap">оборачивание ошибки (только в Errorf)</td></tr>
+          </table>
+        </div>
+      </section>
+
+      <section class="topic" id="pitfalls">
+        <h2><span class="idx">15.9</span>Быстрые ответы на частые вопросы</h2>
+        <div class="qa">
+        <dl>
+          <div><dt>Слайс vs массив?</dt><dd>слайс — вид «(указатель, длина, ёмкость)» поверх массива и растёт через <code class="inline">append</code>; массив — значение фиксированного размера, размер — часть типа.</dd></div>
+          <div><dt>Zero value интерфейса?</dt><dd><code class="inline">nil</code> — но typed-nil, положенный в интерфейс, интерфейсу уже не равен <code class="inline">nil</code> (пара <code class="inline">(type, value)</code>).</dd></div>
+          <div><dt>Когда обязателен pointer receiver?</dt><dd>когда метод мутирует получателя, или тип большой/несравниваемый; если у типа есть хоть один pointer-метод, остальные обычно тоже делают pointer — иначе метод-сет неполный.</dd></div>
+          <div><dt>Буферизованный vs небуферизованный канал?</dt><dd>небуферизованный блокирует отправителя до встречного получателя; буферизованный блокирует, только когда буфер полон (отправка) или пуст (приём).</dd></div>
+          <div><dt>select с несколькими готовыми case?</dt><dd>выбор случайный, справедливость по конкретному case не гарантирована.</dd></div>
+          <div><dt>Как найти гонки?</dt><dd><code class="inline">go test -race</code> / <code class="inline">go run -race</code> — детектор данных-рейсов во время выполнения.</dd></div>
+          <div><dt>Как правильно обернуть ошибку?</dt><dd><code class="inline">fmt.Errorf("контекст: %w", err)</code>, разворачивать — через <code class="inline">errors.Is</code>/<code class="inline">errors.As</code>, никогда не <code class="inline">==</code>.</dd></div>
+          <div><dt>Что произойдёт при записи в nil map?</dt><dd>паника в рантайме; чтение из nil map безопасно и возвращает нулевое значение.</dd></div>
+        </dl>
+        </div>
+      </section>

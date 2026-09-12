@@ -1,0 +1,448 @@
+      <div class="kicker"><span class="line"></span>Глава 01</div>
+      <h1 class="title">Базовый синтаксис</h1>
+      <p class="lede">Коротко и по делу: как устроен файл на Go, переменные, типы, константы, операторы и видимость. Отдельно — что из этого чаще всего спрашивают на собеседовании.</p>
+
+      <div class="depth-toggle">
+        <button type="button" class="depth-btn" data-action="expand">▾ развернуть все «подробнее»</button>
+        <button type="button" class="depth-btn" data-action="collapse">▴ свернуть всё</button>
+      </div>
+
+      <section class="topic" id="anatomy">
+        <h2><span class="idx">1.1</span>Анатомия файла</h2>
+        <p>Любой файл начинается с объявления пакета, затем идут импорты, затем объявления. Точка входа программы — функция <code class="inline">main</code> в пакете <code class="inline">main</code>.</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">main.go</span></div>
+          <pre><code class="language-go">package main
+
+import "fmt"
+
+func main() {
+    fmt.Println("Привет, Go!")
+}</code></pre>
+        </div>
+
+        <figure>
+          <svg viewBox="0 0 560 232" role="img" aria-label="Файл читается сверху вниз: package объявляет имя пакета, import подключает зависимости, func main — точка входа при запуске.">
+            <defs>
+              <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+              </marker>
+            </defs>
+            <rect x="20" y="14" width="248" height="42" rx="9" fill="none" stroke="currentColor" opacity="0.35"/>
+            <text x="38" y="40" font-family="JetBrains Mono" font-size="13" fill="currentColor">package main</text>
+            <line x1="30" y1="58" x2="30" y2="92" stroke="currentColor" opacity="0.35" marker-end="url(#arr)"/>
+            <rect x="20" y="96" width="248" height="42" rx="9" fill="none" stroke="currentColor" opacity="0.35"/>
+            <text x="38" y="122" font-family="JetBrains Mono" font-size="13" fill="currentColor">import "fmt"</text>
+            <line x1="30" y1="140" x2="30" y2="174" stroke="currentColor" opacity="0.35" marker-end="url(#arr)"/>
+            <rect x="20" y="178" width="248" height="42" rx="9" fill="none" stroke="currentColor" opacity="0.35"/>
+            <text x="38" y="204" font-family="JetBrains Mono" font-size="13" fill="currentColor">func main() {…}</text>
+
+            <text x="292" y="30" font-size="11.5" fill="currentColor" opacity="0.75">
+              <tspan x="292" dy="0">объявляет пакет —</tspan>
+              <tspan x="292" dy="14">всегда первой строкой</tspan>
+            </text>
+            <text x="292" y="112" font-size="11.5" fill="currentColor" opacity="0.75">
+              <tspan x="292" dy="0">подключает зависимости</tspan>
+              <tspan x="292" dy="14">из стандартной библиотеки или модулей</tspan>
+            </text>
+            <text x="292" y="194" font-size="11.5" fill="currentColor" opacity="0.75">
+              <tspan x="292" dy="0">точка входа —</tspan>
+              <tspan x="292" dy="14">вызывается при запуске программы</tspan>
+            </text>
+          </svg>
+          <figcaption>Файл читается сверху вниз: пакет → импорты → объявления. Пакетов с <code class="inline">main</code> и функцией <code class="inline">main()</code> в программе ровно один.</figcaption>
+        </figure>
+
+        <div class="callout warn">
+          <div class="mark">камень</div>
+          <p>Неиспользуемый импорт или неиспользуемая локальная переменная — это <b>ошибка компиляции</b>, а не предупреждение. Go нарочно не даёт мусору копиться в коде.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее про сборку файла <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Пакет может состоять из нескольких файлов в одной директории — все они делят одно пространство имён, ничего не нужно импортировать друг у друга. Условие одно: у всех файлов одинаковый <code class="inline">package</code>.</p>
+            <p class="tight">Особая функция <code class="inline">func init()</code> запускается автоматически перед <code class="inline">main</code>, без явного вызова. В пакете таких функций может быть несколько, даже в разных файлах: сначала инициализируются все переменные уровня пакета, затем по порядку (файл за файлом) выполняются все <code class="inline">init()</code>.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="vars">
+        <h2><span class="idx">1.2</span>Переменные</h2>
+        <p class="tight">Три способа объявить переменную — с явным типом, с выводом типа и «короткое» объявление:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">vars.go</span></div>
+          <pre><code class="language-go">var a int = 10     // явный тип
+var b = 20         // тип выводится из значения — int
+c := 30            // короткое объявление, только внутри функции
+
+var (              // групповое объявление
+    name    = "gopher"
+    age int = 3
+)</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Чем <code class="inline">:=</code> отличается от <code class="inline">var</code>?</b> <code class="inline">:=</code> работает только внутри тела функции, требует хотя бы одну новую переменную слева и сам выводит тип. <code class="inline">var</code> работает и на уровне пакета, и позволяет объявить переменную без инициализации — тогда она получит zero value.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: затенение переменных (shadowing) <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight"><code class="inline">:=</code> внутри вложенного блока (<code class="inline">if</code>, <code class="inline">for</code>, просто <code class="inline">{ }</code>) создаёт <b>новую</b> переменную, даже если снаружи уже есть переменная с таким же именем — внешняя на время блока просто «затеняется».</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">shadow.go</span></div>
+              <pre><code class="language-go">x := 1
+if true {
+    x := 2          // это НОВАЯ x, видна только внутри if
+    fmt.Println(x)  // 2
+}
+fmt.Println(x)      // 1 — внешняя x не изменилась</code></pre>
+            </div>
+
+            <details class="deep">
+              <summary>Ещё глубже: почему это частый источник багов <span class="tag">deep</span></summary>
+              <div class="deep-body">
+                <p class="tight">Особенно коварно с ошибками — легко случайно затенить <code class="inline">err</code> из внешней области видимости:</p>
+
+                <div class="codeblock">
+                  <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">shadowerr.go</span></div>
+                  <pre><code class="language-go">var err error
+if x, err := f(); x > 0 { // := создаёт новую err!
+    _ = err
+}
+// внешняя err так и осталась nil, даже если f() вернула ошибку</code></pre>
+                </div>
+
+                <p class="tight">Встроенный <code class="inline">go vet</code> это не ловит — нужен отдельный анализатор <code class="inline">shadow</code> (например, через <code class="inline">golangci-lint</code>).</p>
+              </div>
+            </details>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="types">
+        <h2><span class="idx">1.3</span>Типы и zero value</h2>
+        <p class="tight">Базовые типы и их размер в памяти:</p>
+
+        <div class="tablewrap">
+          <table>
+            <tr><th>Тип</th><th>Размер</th><th class="wrap">Комментарий</th><th>Реализация</th></tr>
+            <tr><td><code class="inline">bool</code></td><td>1 байт</td><td class="wrap"><code class="inline">true</code> / <code class="inline">false</code></td><td><button type="button" class="impl-btn" onclick="openImpl('bool')">под капотом →</button></td></tr>
+            <tr><td><code class="inline">int8 / int16 / int32 (rune) / int64</code></td><td>1 / 2 / 4 / 8 байт</td><td class="wrap">знаковые, фиксированного размера — <code class="inline">int32</code> в роли <code class="inline">rune</code> хранит один Unicode code point (символ текста)</td><td><button type="button" class="impl-btn" onclick="openImpl('int')">под капотом →</button></td></tr>
+            <tr><td><code class="inline">uint8 (byte) … uint64</code></td><td>1–8 байт</td><td class="wrap">беззнаковые аналоги — <code class="inline">uint8</code> в роли <code class="inline">byte</code> хранит сырой байт данных (I/O, хеши, бинарные протоколы)</td><td><button type="button" class="impl-btn" onclick="openImpl('int')">под капотом →</button></td></tr>
+            <tr><td><code class="inline">int / uint</code></td><td>4 или 8 байт</td><td class="wrap">размер зависит от платформы (32/64-бит)</td><td><button type="button" class="impl-btn" onclick="openImpl('int')">под капотом →</button></td></tr>
+            <tr><td><code class="inline">float32 / float64</code></td><td>4 / 8 байт</td><td class="wrap">дробный литерал по умолчанию — <code class="inline">float64</code></td><td><button type="button" class="impl-btn" onclick="openImpl('float')">под капотом →</button></td></tr>
+            <tr><td><code class="inline">string</code></td><td>—</td><td class="wrap">неизменяемая последовательность байт в UTF-8</td><td><button type="button" class="impl-btn" onclick="openImpl('string')">под капотом →</button></td></tr>
+          </table>
+        </div>
+        <p class="tight" style="font-size:12.5px;color:var(--text-dim);">«Под капотом» — отдельная панель с разбором конкретной реализации: исходники рантайма/компилятора, байтовая раскладка в памяти, что реально менялось между версиями Go.</p>
+
+        <p class="tight">У каждого типа есть значение по умолчанию — <b>zero value</b>. Необъявленных, «мусорных» переменных в Go не бывает:</p>
+
+        <div class="tablewrap">
+          <table>
+            <tr><th>Тип</th><th>Zero value</th></tr>
+            <tr><td>числа (<code class="inline">int</code>, <code class="inline">float64</code>…)</td><td><code class="inline">0</code> / <code class="inline">0.0</code></td></tr>
+            <tr><td><code class="inline">bool</code></td><td><code class="inline">false</code></td></tr>
+            <tr><td><code class="inline">string</code></td><td><code class="inline">""</code></td></tr>
+            <tr><td>pointer, slice, map, chan, func, interface</td><td><code class="inline">nil</code></td></tr>
+          </table>
+        </div>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">runes.go</span></div>
+          <pre><code class="language-go">s := "Go, гофер!"
+fmt.Println(len(s))          // 15 — длина в байтах, не в символах (10 рун, но кириллица — по 2 байта)
+
+for i, r := range s {
+    fmt.Printf("%d:%c ", i, r) // range декодирует строку в rune'ы
+}</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Зачем нужен zero value?</b> Чтобы в языке в принципе не было неинициализированной памяти — любая переменная сразу в валидном состоянии, без UB как в C.</p>
+          <p><b>Byte vs rune?</b> <code class="inline">byte</code> = <code class="inline">uint8</code>, один байт UTF-8. <code class="inline">rune</code> = <code class="inline">int32</code>, один символ Unicode. Индексация строки <code class="inline">s[i]</code> даёт байт, а <code class="inline">range</code> — руну.</p>
+        </div>
+
+        <div class="callout warn">
+          <div class="mark">камень</div>
+          <p>Строки в Go неизменяемы: <code class="inline">s[0] = 'H'</code> не скомпилируется. Чтобы менять — приводите к <code class="inline">[]byte</code> или <code class="inline">[]rune</code> и обратно.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: усечение при конвертации <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Явное приведение к меньшему типу не паникует — оно молча обрезает лишние биты:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">truncate.go</span></div>
+              <pre><code class="language-go">var big int32 = 300
+var small int8 = int8(big) // 300 не влезает в int8 (-128..127)
+fmt.Println(small)          // 44 — молчаливое переполнение</code></pre>
+            </div>
+
+            <p class="tight">Конвертация <code class="inline">string</code> ↔ <code class="inline">[]byte</code>/<code class="inline">[]rune</code> — это всегда копирование памяти (O(n)), а не бесплатный reinterpret: строки в Go неизменяемы, слайсы — нет.</p>
+          </div>
+        </details>
+
+        <details class="deep">
+          <summary>Подробнее: string изнутри — заголовок, графемы и zero value <span class="tag">string</span><span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Внутри строка — не сами байты, а компактный заголовок (<code class="inline">stringHeader</code>) из двух слов: указатель на данные (<code class="inline">Data</code>) и длина в байтах (<code class="inline">Len</code>) — без поля ёмкости (<code class="inline">Cap</code>), в отличие от заголовка слайса. Именно поэтому <code class="inline">len(s)</code> всегда O(1) и всегда считает байты, а не «символы».</p>
+            <p class="tight">Байт (<code class="inline">byte</code>) — единица хранения UTF-8, руна (<code class="inline">rune</code>) — один code point Unicode, а то, что человек интуитивно называет «одним символом» — графема — может состоять из нескольких рун сразу (например «é», набранное как «e» + акцент, — это 2 руны, но 1 графема). Ни <code class="inline">len(s)</code>, ни <code class="inline">utf8.RuneCountInString</code> графемы не считают — оба останавливаются на уровне байт/рун; для графемно-осознанного подсчёта нужны сторонние библиотеки (например <code class="inline">rivo/uniseg</code>).</p>
+            <p class="tight">Отдельная тонкость: zero value строки — всегда пустая строка <code class="inline">""</code>, а не <code class="inline">nil</code>, в отличие от слайса/map/канала. В этом смысле <code class="inline">string</code> ведёт себя как обычный value type (сравнима через <code class="inline">==</code>, у неё нет «пустого/неинициализированного» состояния, отличного от <code class="inline">""</code>) — хотя физически внутри неё лежит указатель на данные.</p>
+          </div>
+        </details>
+
+        <details class="deep">
+          <summary>Подробнее: почему float — плохой выбор для денег <span class="tag">float32 / float64</span><span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight"><code class="inline">float32</code>/<code class="inline">float64</code> следуют стандарту IEEE 754 — двоичному представлению, которое точно хранит далеко не все десятичные дроби (та же проблема, что и в большинстве других языков со стандартным float). Классический пример — сложение <code class="inline">0.1</code> миллион раз через <code class="inline">float64</code> не даёт ровно <code class="inline">100000</code>: мелкие ошибки округления накапливаются на масштабе.</p>
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">money.go</span></div>
+              <pre><code class="language-go">var total float64
+for i := 0; i < 1_000_000; i++ {
+    total += 0.1
+}
+fmt.Println(total) // НЕ ровно 100000 — накопленная погрешность
+
+// правильно — целые единицы валюты (копейки/центы)
+var totalCents int64
+for i := 0; i < 1_000_000; i++ {
+    totalCents += 10 // 0.10 → 10 копеек
+}</code></pre>
+            </div>
+            <p class="tight">Практическое правило: для денег — либо целочисленный тип в минимальных неделимых единицах валюты (<code class="inline">int64</code> в копейках/центах), либо тип <code class="inline">NUMERIC</code>/<code class="inline">DECIMAL</code> на уровне БД/специализированная decimal-библиотека, но не «голый» <code class="inline">float32</code>/<code class="inline">float64</code>. Дробный литерал без явного приведения (<code class="inline">3.14</code>) в Go по умолчанию имеет тип именно <code class="inline">float64</code>, а не <code class="inline">float32</code> — это стоит держать в голове при работе со сторонними API, ожидающими <code class="inline">float32</code>.</p>
+          </div>
+        </details>
+
+        <details class="deep">
+          <summary>Подробнее: правда ли, что rune — знаковый int32 специально ради -1 как признака ошибки? <span class="tag">rune</span><span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">⚠ Популярное, но неточное объяснение — встречается в разных обучающих материалах: якобы <code class="inline">rune</code> сделали знаковым (<code class="inline">int32</code>, а не <code class="inline">uint32</code>) специально для того, чтобы функции декодирования могли возвращать <code class="inline">-1</code> как признак «невалидного символа». Это не так на практике: стандартная библиотека для этого использует не <code class="inline">-1</code>, а специальную руну <code class="inline">utf8.RuneError</code> (U+FFFD) — <code class="inline">unicode/utf8.DecodeRuneInString</code> возвращает <code class="inline">(RuneError, 0)</code> для пустой строки и <code class="inline">(RuneError, 1)</code> для невалидной кодировки, но никогда <code class="inline">-1</code>. Официальный блог-пост Go про строки лишь констатирует факт: «<code class="inline">rune</code> — это алиас для <code class="inline">int32</code>, чтобы в коде было явно видно, где значение представляет code point», не объясняя выбор знаковости.</p>
+            <p class="tight">Более скромное и проверяемое объяснение: одного code point Unicode достаточно 21 бита, поэтому естественным выбором стал 32-битный тип — а <code class="inline">int32</code>, а не <code class="inline">uint32</code>, просто следует общему соглашению Go по умолчанию использовать знаковые целые (как <code class="inline">int</code> для длин/индексов), а не потому что отрицательные руны специально задуманы как сигнал ошибки. <code class="inline">byte</code> (<code class="inline">uint8</code>), для сравнения, беззнаковый естественно — это просто единица хранения байта (0..255), а не Unicode-значение. <em>(проверено в этой сессии: go.dev/blog/strings, pkg.go.dev/unicode/utf8)</em></p>
+          </div>
+        </details>
+
+        <details class="deep">
+          <summary>Подробнее: когда использовать byte, а когда rune <span class="tag">byte</span><span class="tag">rune</span><span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight"><code class="inline">byte</code> — для сырых данных, без понятия «символа»: ввод/вывод (<code class="inline">io.Reader</code>/<code class="inline">io.Writer</code> работают с <code class="inline">[]byte</code>), хеширование, шифрование, бинарные протоколы, индекс строки <code class="inline">s[i]</code>. <code class="inline">rune</code> — для текста, когда важен именно символ: перебор строки посимвольно (<code class="inline">for i, r := range s</code>), подсчёт длины в символах, а не в байтах (<code class="inline">utf8.RuneCountInString(s)</code> вместо <code class="inline">len(s)</code>), регистр и классы символов (<code class="inline">unicode.ToUpper</code>, <code class="inline">unicode.IsLetter</code>).</p>
+            <p class="tight">Правило простое: поток байт — <code class="inline">byte</code>; юникод-осознанный анализ текста — <code class="inline">rune</code>. Для ASCII разница незаметна, а вот кириллица (2 байта на символ в UTF-8) или эмодзи (обычно 4 байта) её сразу проявляют: <code class="inline">len("привет")</code> — это 12, а не 6. Резать строку по <code class="inline">s[:n]</code> безопасно, только если точно известно, что байт <code class="inline">n</code> не разрезает многобайтовый символ пополам.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="const">
+        <h2><span class="idx">1.4</span>Константы и iota</h2>
+        <p class="tight">Отдельного типа <code class="inline">enum</code> в Go нет — его эмулируют через <code class="inline">const</code> и счётчик <code class="inline">iota</code>, обнуляемый в каждом новом блоке:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">weekday.go</span></div>
+          <pre><code class="language-go">type Weekday int
+
+const (
+    Sunday Weekday = iota // 0
+    Monday                // 1
+    Tuesday               // 2
+    Wednesday             // 3
+)</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Есть ли enum в Go?</b> Нет ключевого слова — есть идиома «именованный тип + <code class="inline">const</code> + <code class="inline">iota</code>». Типобезопасность обеспечивает именно именованный тип (<code class="inline">Weekday</code>), а не сам <code class="inline">iota</code>.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: iota с выражениями и битовые флаги <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight"><code class="inline">iota</code> можно подставлять в произвольное выражение — классика: степени двойки для битовых флагов:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">flags.go</span></div>
+              <pre><code class="language-go">const (
+    Read  = 1 << iota // 1 << 0 = 1
+    Write              // 1 << 1 = 2
+    Exec               // 1 << 2 = 4
+)
+perms := Read | Write // 3 — комбинация флагов</code></pre>
+            </div>
+
+            <p class="tight">Пропустить значение — подчёркивание вместо имени: <code class="inline">const (a = iota; _; c)</code> — <code class="inline">c</code> получит 2, хотя имени под 1 не было.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="conv">
+        <h2><span class="idx">1.5</span>Приведение типов</h2>
+        <p class="tight">В Go нет неявных преобразований — даже между <code class="inline">int</code> и <code class="inline">float64</code>. Только явный вызов <code class="inline">T(v)</code>:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">convert.go</span></div>
+          <pre><code class="language-go">var i int = 42
+var f float64 = float64(i) // явно
+var u uint = uint(f)
+
+// var f2 float64 = i      // ошибка компиляции:
+                           // cannot use i (int) as float64</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Почему нет неявного приведения?</b> Разработчики Go сознательно пожертвовали удобством ради явности: скрытая потеря точности или неожиданный оверфлоу — частый источник багов в C/C++/JS.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: ловушка string(int) <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight"><code class="inline">string(n)</code>, где <code class="inline">n</code> — число, не переводит число в текстовую запись — Go воспринимает его как код Unicode-символа:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">strconv_trap.go</span></div>
+              <pre><code class="language-go">s := string(65)       // "A" — код символа, НЕ "65"!
+n := strconv.Itoa(65) // "65" — вот так правильно</code></pre>
+            </div>
+
+            <p class="tight">Для чисел нужен пакет <code class="inline">strconv</code>: <code class="inline">Itoa</code>/<code class="inline">Atoi</code> — число в строку и обратно. С недавних версий <code class="inline">go vet</code> предупреждает про такое <code class="inline">string(int)</code>, если явно не имелся в виду rune.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="ops">
+        <h2><span class="idx">1.6</span>Операторы</h2>
+
+        <div class="tablewrap">
+          <table>
+            <tr><th>Группа</th><th class="wrap">Операторы</th></tr>
+            <tr><td>Арифметические</td><td class="wrap"><code class="inline">+ - * / %</code></td></tr>
+            <tr><td>Сравнения</td><td class="wrap"><code class="inline">== != &lt; &gt; &lt;= &gt;=</code></td></tr>
+            <tr><td>Логические</td><td class="wrap"><code class="inline">&& || !</code></td></tr>
+            <tr><td>Битовые</td><td class="wrap"><code class="inline">& | ^ &^ &lt;&lt; &gt;&gt;</code></td></tr>
+            <tr><td>Присваивание</td><td class="wrap"><code class="inline">= += -= *= /= %= &lt;&lt;= &gt;&gt;=</code></td></tr>
+          </table>
+        </div>
+
+        <div class="callout warn">
+          <div class="mark">камень</div>
+          <p><code class="inline">&^</code> — уникальный для Go оператор «AND NOT» (bit clear): <code class="inline">a &^ b</code> обнуляет в <code class="inline">a</code> те биты, где в <code class="inline">b</code> стоит 1.</p>
+          <p><code class="inline">++</code> и <code class="inline">--</code> — это <b>statement</b>, а не выражение: <code class="inline">x = i++</code> не скомпилируется, только <code class="inline">i++</code> отдельной строкой.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: приоритет операторов и переполнение <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Целочисленное деление отбрасывает дробную часть, округляя к нулю: <code class="inline">7 / 2 == 3</code>, <code class="inline">-7 / 2 == -3</code>. Остаток <code class="inline">%</code> берёт знак делимого.</p>
+            <p class="tight">Переполнение знаковых и беззнаковых целых не паникует — значение «оборачивается» по модулю (<code class="inline">math.MaxInt8 + 1 == math.MinInt8</code>). Единственное исключение среди целых — деление на 0: это паника в рантайме (<code class="inline">runtime error: integer divide by zero</code>), кроме случая, когда оба операнда — константы: тогда это ошибка компиляции, а не рантайм-паника.</p>
+            <p class="tight">У <code class="inline">float64</code>/<code class="inline">float32</code> деление на 0 ведёт себя принципиально иначе — не паникует вообще: по IEEE 754 результат <code class="inline">+Inf</code>, <code class="inline">-Inf</code> или <code class="inline">NaN</code> (для <code class="inline">0.0/0.0</code>). Частая ловушка на собеседовании — ответить «паника» и для float тоже, забыв про эту асимметрию между целыми и плавающей точкой. <em>(источник: t.me/go_interview_lib)</em></p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="vis">
+        <h2><span class="idx">1.7</span>Экспорт и видимость</h2>
+        <p class="tight">В Go нет <code class="inline">private</code>/<code class="inline">public</code>. Видимость идентификатора за пределами пакета решает регистр первой буквы:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">shapes.go</span></div>
+          <pre><code class="language-go">package shapes
+
+type Circle struct { // экспортируется — с заглавной
+    Radius float64    // экспортируется
+    color  string      // НЕ экспортируется — со строчной
+}
+
+func NewCircle(r float64) *Circle { … } // экспортируется
+func (c *Circle) area() float64 { … }    // НЕ экспортируется</code></pre>
+        </div>
+
+        <p class="tight"><code class="inline">(c *Circle)</code> перед именем функции — это <b>receiver</b>: он делает функцию методом, привязанным к типу <code class="inline">Circle</code> (грубо — как <code class="inline">self</code>/<code class="inline">this</code> в других языках, только явно указанный). Вызывается как <code class="inline">c.area()</code>. Подробно про методы — в главе 6, здесь важно только одно: видимость метода вне пакета решает та же заглавная буква — <code class="inline">area</code> строчная, значит метод приватный для пакета.</p>
+
+        <figure>
+          <svg viewBox="0 0 620 260" role="img" aria-label="Заглавная буква пропускает идентификатор через границу пакета наружу, строчная блокирует его внутри пакета.">
+            <defs>
+              <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+              </marker>
+            </defs>
+
+            <rect x="16" y="20" width="270" height="220" rx="12" fill="none" stroke="currentColor" opacity="0.3"/>
+            <text x="34" y="44" font-family="Sora" font-weight="600" font-size="13" fill="currentColor">package shapes</text>
+
+            <rect x="34" y="70" width="130" height="34" rx="8" fill="none" stroke="currentColor" opacity="0.5"/>
+            <text x="99" y="92" text-anchor="middle" font-family="JetBrains Mono" font-size="12.5" fill="currentColor">Circle</text>
+            <text x="34" y="120" font-size="11" fill="currentColor" opacity="0.65">с заглавной буквы</text>
+
+            <rect x="34" y="176" width="130" height="34" rx="8" fill="none" stroke="currentColor" opacity="0.5"/>
+            <text x="99" y="198" text-anchor="middle" font-family="JetBrains Mono" font-size="12.5" fill="currentColor">color</text>
+            <text x="34" y="226" font-size="11" fill="currentColor" opacity="0.65">со строчной буквы</text>
+
+            <line x1="310" y1="8" x2="310" y2="252" stroke="currentColor" stroke-dasharray="4 5" opacity="0.4"/>
+            <text x="310" y="0" font-size="10.5" fill="currentColor" opacity="0.6" text-anchor="middle" dy="10">граница пакета</text>
+
+            <path d="M164,87 H360" fill="none" stroke="#3b7ec9" stroke-width="2" marker-end="url(#arr2)"/>
+            <text x="368" y="92" font-size="11.5" fill="#3b7ec9" font-weight="700">shapes.Circle ✓</text>
+
+            <path d="M164,193 H300" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 4" opacity="0.55"/>
+            <text x="304" y="198" font-size="15" fill="currentColor" opacity="0.7">✕</text>
+            <text x="326" y="198" font-size="11.5" fill="currentColor" opacity="0.65">недоступно извне</text>
+
+            <rect x="360" y="20" width="244" height="220" rx="12" fill="none" stroke="currentColor" opacity="0.3"/>
+            <text x="378" y="44" font-family="Sora" font-weight="600" font-size="13" fill="currentColor">package main</text>
+          </svg>
+          <figcaption>Заглавная буква пропускает идентификатор через границу пакета, строчная — оставляет его видимым только внутри <code class="inline">shapes</code>.</figcaption>
+        </figure>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Как в Go устроена инкапсуляция без <code class="inline">private</code>?</b> На уровне пакета, а не класса: правило регистра действует для всех файлов пакета сразу и проверяется компилятором, а не соглашением.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: видимость и encoding/json <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Пакеты вроде <code class="inline">encoding/json</code> работают через рефлексию, а рефлексия не может ни прочитать, ни записать неэкспортируемое поле из другого пакета. Поэтому <code class="inline">color string</code> из примера выше просто молча пропускается при <code class="inline">json.Marshal</code>/<code class="inline">Unmarshal</code> — без ошибки, как будто поля не существует.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="comments">
+        <h2><span class="idx">1.8</span>Комментарии</h2>
+        <p class="tight">Обычные — <code class="inline">//</code> и <code class="inline">/* */</code>. Комментарий прямо перед объявлением становится doc-комментарием и попадает в <code class="inline">godoc</code>:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">doc.go</span></div>
+          <pre><code class="language-go">// Circle описывает круг с заданным радиусом.
+// Используется пакетом geometry для расчёта площади.
+type Circle struct {
+    Radius float64
+}</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p>Соглашение godoc: doc-комментарий начинается с имени сущности (<code class="inline">Circle описывает…</code>) — так его проще парсить и читать в сгенерированной документации.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: спецкомментарии-директивы <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Комментарий с префиксом <code class="inline">//go:</code> — это не документация, а инструкция для компилятора или тулчейна:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">build.go</span></div>
+              <pre><code class="language-go">//go:build linux && amd64
+// файл участвует в сборке только под linux/amd64
+
+//go:generate stringer -type=Weekday
+// запускается вручную командой go generate</code></pre>
+            </div>
+          </div>
+        </details>
+      </section>

@@ -1,0 +1,480 @@
+      <div class="kicker"><span class="line"></span>Глава 08</div>
+      <h1 class="title">Конкурентность</h1>
+      <p class="lede">Визитная карточка Go: горутины, каналы, select, sync — и где именно прячутся гонки данных.</p>
+
+      <div class="depth-toggle">
+        <button type="button" class="depth-btn" data-action="expand">▾ развернуть все «подробнее»</button>
+        <button type="button" class="depth-btn" data-action="collapse">▴ свернуть всё</button>
+      </div>
+
+      <section class="topic" id="goroutines">
+        <h2><span class="idx">8.1</span>Горутины</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">goroutine.go</span></div>
+          <pre><code class="language-go">go func() {
+    fmt.Println("работает в фоне")
+}()</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Горутина — это поток ОС?</b> Нет. Это лёгкая «зелёная» нить: рантайм Go сам мультиплексирует множество горутин на меньшее число настоящих потоков ОС (планировщик <b>M:N</b>). Стартовый стек горутины — около 2 КБ и растёт по мере надобности, тогда как поток ОС обычно резервирует мегабайты. Поэтому горутин легко запустить тысячи и десятки тысяч.</p>
+        </div>
+
+        <div class="callout warn">
+          <div class="mark">камень</div>
+          <p>Когда <code class="inline">main()</code> завершается, все горутины обрываются без предупреждения — даже недописанные:</p>
+        </div>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">gotcha.go</span></div>
+          <pre><code class="language-go">func main() {
+    go fmt.Println("привет") // main может завершиться раньше — и это не напечатается
+}</code></pre>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: модель планировщика GMP и до какого предела растёт стек <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">Планировщик Go — модель <b>GMP</b>: G (горутина), M (поток ОС), P (логический процессор, число = <code class="inline">GOMAXPROCS</code>, по умолчанию — число ядер). У каждого P — своя локальная очередь горутин; когда она опустеет, P ворует горутины из чужой очереди (work stealing), забирая обычно половину, чтобы не создавать лишней конкуренции за одну очередь.</p>
+
+            <p class="tight">Стартовый стек горутины — 2 КБ, растёт динамически до ~1 ГБ по умолчанию — упереться в этот лимит почти всегда признак неограниченной рекурсии, а не легитимной глубокой нагрузки. Именно за счёт лёгкого старта на типичном железе можно держать миллионы горутин одновременно, хотя практический ориентир для одного инстанса — не превышать 500 тыс.–1 млн, с запасом по памяти и с использованием worker pool (8.7) для контроля нагрузки, а не бесконтрольного спавна.</p>
+
+            <p class="tight">С Go 1.14 планировщик умеет асинхронно вытеснять горутину, которая слишком долго не отдаёт управление добровольно (сигнал <code class="inline">SIGURG</code>) — до этого «тяжёлый» вычислительный цикл без операций ввода-вывода мог надолго занять поток целиком.</p>
+          </div>
+        </details>
+
+        <details class="deep">
+          <summary>Подробнее: горутина vs поток ОС и три штатных способа остановить горутину <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <div class="tablewrap">
+              <table>
+                <tr><th>Критерий</th><th class="wrap">Горутина</th><th class="wrap">Поток ОС</th></tr>
+                <tr><td>Кто планирует</td><td class="wrap">рантайм Go в userspace (модель M:N)</td><td class="wrap">ядро ОС (модель 1:1)</td></tr>
+                <tr><td>Стартовый стек</td><td class="wrap">~2 КБ, растёт динамически до ~1 ГБ (64-бит) / ~250 МБ (32-бит)</td><td class="wrap">обычно фиксированный, единицы мегабайт</td></tr>
+                <tr><td>Переключение контекста</td><td class="wrap">дёшево — переключение в userspace, без syscall</td><td class="wrap">дороже — через ядро ОС</td></tr>
+                <tr><td>Практический масштаб</td><td class="wrap">сотни тысяч – единицы миллионов одновременно</td><td class="wrap">обычно не больше нескольких тысяч</td></tr>
+              </table>
+            </div>
+
+            <p class="tight">Три штатных способа остановить горутину (в отличие от потока ОС, у горутины нет метода вроде <code class="inline">Kill()</code> — остановить можно только «изнутри», кооперативно):</p>
+            <ol>
+              <li>завершение <code class="inline">main()</code> — обрывает вообще все горутины программы разом, без каких-либо гарантий завершённости;</li>
+              <li>закрытие канала, который слушают горутины — <code class="inline">close(ch)</code> будит разом всех, кто ждёт на нём, стандартный «широковещательный» сигнал;</li>
+              <li>отмена через <code class="inline">context</code> — все горутины держат один и тот же <code class="inline">ctx</code> и проверяют <code class="inline">ctx.Done()</code>, обычно в <code class="inline">select</code> (подробнее о самом <code class="inline">context</code> — в 8.3 ниже).</li>
+            </ol>
+
+            <p class="tight">Управление ресурсами планировщика — не только <code class="inline">GOMAXPROCS</code> как переменная окружения: идиоматичный явный вызов <code class="inline">runtime.GOMAXPROCS(runtime.NumCPU())</code> фиксирует число P равным числу логических ядер (это и есть значение по умолчанию, явный вызов нужен, только если до этого кто-то его переопределил). <code class="inline">runtime.Gosched()</code> — добровольно уступить текущий поток, поставив свою горутину в конец очереди на выполнение, не блокируясь при этом ни на чём; в проде почти не нужен благодаря вытесняющему планировщику с Go 1.14, но всплывает в вопросах про кооперативную многозадачность. <em>(источник: habr.com/ru/articles/670974/)</em></p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="channels">
+        <h2><span class="idx">8.2</span>Каналы</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">channel.go</span></div>
+          <pre><code class="language-go">ch := make(chan int)      // небуферизованный
+bch := make(chan int, 3)  // буферизованный на 3
+
+ch <- 5      // отправка
+v := <-ch    // получение
+close(ch)    // сигнал "больше данных не будет"
+
+v, ok := <-ch // ok == false — канал закрыт и пуст</code></pre>
+        </div>
+
+        <figure>
+          <svg viewBox="0 0 600 226" role="img" aria-label="В небуферизованном канале send блокируется, пока получатель не заберёт значение — рандеву. В буферизованном канале send не блокирует, пока в буфере есть место.">
+            <defs>
+              <marker id="arr8" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+              </marker>
+            </defs>
+
+            <text x="150" y="16" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.65">make(chan int) — небуферизованный</text>
+            <rect x="30" y="26" width="240" height="34" rx="8" fill="none" stroke="currentColor" opacity="0.55"/>
+            <text x="150" y="47" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="currentColor">ch &lt;- 5 (горутина)</text>
+            <line x1="150" y1="60" x2="150" y2="158" stroke="#af4433" opacity="0.8" marker-end="url(#arr8)"/>
+            <text x="168" y="100" font-size="10.5" fill="#af4433">оба блокируются,</text>
+            <text x="168" y="113" font-size="10.5" fill="#af4433">пока не встретятся</text>
+            <rect x="30" y="162" width="240" height="34" rx="8" fill="none" stroke="currentColor" opacity="0.55"/>
+            <text x="150" y="183" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="currentColor">&lt;-ch (main)</text>
+
+            <text x="450" y="16" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.65">make(chan int, 2) — буфер 2</text>
+            <rect x="330" y="26" width="240" height="34" rx="8" fill="none" stroke="currentColor" opacity="0.55"/>
+            <text x="450" y="47" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="currentColor">ch &lt;- 5 (горутина)</text>
+            <line x1="450" y1="60" x2="450" y2="82" stroke="#3b7ec9" opacity="0.8" marker-end="url(#arr8)"/>
+            <rect x="405" y="86" width="42" height="28" rx="5" fill="none" stroke="#3b7ec9"/>
+            <text x="426" y="105" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="#3b7ec9">5</text>
+            <rect x="453" y="86" width="42" height="28" rx="5" fill="none" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>
+            <text x="382" y="105" font-size="10" fill="currentColor" opacity="0.6">буфер</text>
+            <line x1="450" y1="114" x2="450" y2="158" stroke="currentColor" opacity="0.4" marker-end="url(#arr8)"/>
+            <rect x="330" y="162" width="240" height="34" rx="8" fill="none" stroke="currentColor" opacity="0.55"/>
+            <text x="450" y="183" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="currentColor">&lt;-ch (main, не спешит)</text>
+          </svg>
+          <figcaption>Небуферизованный канал синхронизирует отправителя и получателя напрямую («рандеву»). Буферизованный позволяет отправить до <code class="inline">cap</code> значений, не дожидаясь получателя.</figcaption>
+        </figure>
+
+        <div class="callout warn">
+          <div class="mark">камень</div>
+          <p>Отправка в закрытый канал — паника (<code class="inline">send on closed channel</code>). Повторное <code class="inline">close</code> — тоже паника. А вот <b>читать</b> из закрытого канала можно всегда — вернётся zero value и <code class="inline">ok == false</code>.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: nil-канал не паникует — он блокируется навсегда <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">Полная таблица поведения по трём состояниям канала — частый вопрос-«аксиома», который путают: nil-канал — и чтение, и запись <b>блокируются навсегда</b> (вечный deadlock, если это единственный путь горутины), не паника; открытый канал — обычная семантика рандеву/буфера; закрытый канал — чтение продолжает отдавать оставшиеся данные, затем zero value без блокировки, запись — паника.</p>
+
+            <div class="tablewrap">
+              <table>
+                <tr><th>Состояние</th><th class="wrap">Чтение</th><th class="wrap">Запись</th></tr>
+                <tr><td><code class="inline">nil</code></td><td class="wrap">блокируется навсегда</td><td class="wrap">блокируется навсегда</td></tr>
+                <tr><td>открыт</td><td class="wrap">данные или блок до появления</td><td class="wrap">данные или блок до готовности буфера/получателя</td></tr>
+                <tr><td>закрыт</td><td class="wrap">оставшиеся данные, затем zero value без блока</td><td class="wrap">паника</td></tr>
+              </table>
+            </div>
+
+            <p class="tight">Это специально используют в <code class="inline">select</code>: присвоив каналу <code class="inline">nil</code>, соответствующий <code class="inline">case</code> больше никогда не сработает — способ динамически «выключить» одну из веток, например при реализации конечного автомата состояний (разбор — в 8.3 ниже). Внутри канал — структура <code class="inline">hchan</code> с очередями ожидающих отправителей/получателей (<code class="inline">sendq</code>/<code class="inline">recvq</code>); каждая заблокированная горутина паркуется там в обёртке <code class="inline">sudog</code>, не «крутясь в цикле», и будится через рантайм-функцию <code class="inline">goready()</code>, когда появляется встречная сторона.</p>
+          </div>
+        </details>
+
+        <details class="deep">
+          <summary>Подробнее: почему <code class="inline">chan struct{}</code>, а не <code class="inline">chan bool</code>, для канала-сигнала <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Когда через канал не передаётся полезных данных, а важен только сам факт получения значения или закрытия («стоп», «готово», «разбудить») — идиоматичный тип канала: <code class="inline">chan struct{}</code>, а не <code class="inline">chan bool</code>. Причина не только стилистическая: <code class="inline">struct{}</code> — тип нулевого размера, не занимает памяти вообще, тогда как <code class="inline">bool</code> физически занимает байт и создаёт ложное впечатление, что переданное значение (<code class="inline">true</code>/<code class="inline">false</code>) само по себе что-то значит. <code class="inline">chan struct{}</code> явно говорит читателю кода: этот канал — только для синхронизации.</p>
+            <p class="tight">Тот же тип <code class="inline">struct{}</code> — идиоматичная реализация множества (set) как <code class="inline">map[T]struct{}</code> вместо <code class="inline">map[T]bool</code> ровно по той же причине нулевого размера значения. <em>(источник: t.me/go_interview_lib)</em></p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="select">
+        <h2><span class="idx">8.3</span>select</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">select.go</span></div>
+          <pre><code class="language-go">select {
+case v := <-ch1:
+    fmt.Println("из ch1:", v)
+case v := <-ch2:
+    fmt.Println("из ch2:", v)
+case <-time.After(time.Second):
+    fmt.Println("таймаут")
+default:
+    fmt.Println("ни один канал не готов")
+}</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Что если готовы сразу два case?</b> <code class="inline">select</code> выберет один из готовых <b>случайно</b> — намеренно, чтобы код не мог незаметно положиться на порядок case'ов как на приоритет.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: <code class="inline">time.After</code> в цикле — незаметная утечка памяти <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">Частая ошибка на собеседовании и в проде: <code class="inline">time.After(d)</code> создаёт новый таймер (и канал под него) при <b>каждом</b> вызове. Если вызвать её внутри <code class="inline">select</code>, который крутится в цикле, — на каждой итерации создаётся новый таймер, а старые продолжают жить в памяти до срабатывания (таймер не собирается GC, пока не истечёт). При частых итерациях это ощутимая утечка.</p>
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">select_leak.go</span></div>
+              <pre><code class="language-go">// плохо: новый таймер на каждой итерации цикла
+for {
+    select {
+    case v := <-ch:
+        process(v)
+    case <-time.After(5 * time.Second):
+        return
+    }
+}
+
+// хорошо: один таймер, переиспользуется через Reset
+t := time.NewTimer(5 * time.Second)
+defer t.Stop()
+for {
+    if !t.Stop() {
+        <-t.C
+    }
+    t.Reset(5 * time.Second)
+    select {
+    case v := <-ch:
+        process(v)
+    case <-t.C:
+        return
+    }
+}</code></pre>
+            </div>
+            <p class="tight">Ещё один нюанс: <code class="inline">nil</code>-канал в <code class="inline">select</code> никогда не готов — этим пользуются, чтобы динамически «выключать» case, присвоив переменной канала <code class="inline">nil</code> (см. 8.2), вместо того чтобы городить дополнительный <code class="inline">bool</code>-флаг и ветвление.</p>
+          </div>
+        </details>
+
+        <details class="deep">
+          <summary>Подробнее: основы <code class="inline">context.Context</code> — Background/TODO и три способа отмены <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight"><code class="inline">context.Background()</code> и <code class="inline">context.TODO()</code> возвращают технически идентичный пустой контекст — разница чисто смысловая, для читаемости кода. <code class="inline">Background()</code> — канонический корень дерева контекстов, с которого стартуют в точке входа программы (<code class="inline">main</code>, обработчик верхнего уровня). <code class="inline">TODO()</code> — временная заглушка для мест, где ещё не решено, какой контекст должен быть на самом деле, либо родительский контекст пока объективно неоткуда взять — сигнал «здесь чего-то не хватает», а не альтернативный «корень».</p>
+
+            <p class="tight">Три конструктора производного отменяемого контекста, у каждого из которых обязательно нужно вызвать возвращаемую функцию отмены (обычно через <code class="inline">defer cancel()</code>), даже если дедлайн/таймаут уже успел сработать сам — иначе связанные с контекстом ресурсы (например горутина внутри самого пакета <code class="inline">context</code>, отслеживающая дедлайн) не освобождаются сразу:</p>
+
+            <div class="tablewrap">
+              <table>
+                <tr><th>Конструктор</th><th class="wrap">Когда сработает отмена</th></tr>
+                <tr><td><code class="inline">WithCancel(parent)</code></td><td class="wrap">только вручную — когда вызывающий сам решит и позовёт <code class="inline">cancel()</code></td></tr>
+                <tr><td><code class="inline">WithDeadline(parent, t)</code></td><td class="wrap">автоматически в конкретный момент времени <code class="inline">t</code></td></tr>
+                <tr><td><code class="inline">WithTimeout(parent, d)</code></td><td class="wrap">автоматически через интервал <code class="inline">d</code> от текущего момента (по сути обёртка над <code class="inline">WithDeadline</code>)</td></tr>
+              </table>
+            </div>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">ctxselect.go</span></div>
+              <pre><code class="language-go">select {
+case res := <-resultCh:
+    return res, nil
+case <-ctx.Done():
+    return nil, ctx.Err() // context.Canceled или context.DeadlineExceeded
+}</code></pre>
+            </div>
+
+            <p class="tight">Канал <code class="inline">ctx.Done()</code> закрывается ровно один раз при отмене (см. широковещательную семантику <code class="inline">close</code> из 8.2) — поэтому его можно безопасно слушать сразу в нескольких горутинах и в <code class="inline">select</code> вперемешку с другими каналами; <code class="inline">ctx.Err()</code> после закрытия возвращает конкретную причину — <code class="inline">context.Canceled</code> (позвали <code class="inline">cancel()</code>) либо <code class="inline">context.DeadlineExceeded</code> (истёк срок). <em>(источник: habr.com/ru/articles/670974/)</em></p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="waitgroup">
+        <h2><span class="idx">8.4</span>sync.WaitGroup</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">waitgroup.go</span></div>
+          <pre><code class="language-go">var wg sync.WaitGroup
+for i := 0; i < 3; i++ {
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+        fmt.Println("worker", i)
+    }()
+}
+wg.Wait()</code></pre>
+        </div>
+
+        <div class="callout warn">
+          <div class="mark">камень</div>
+          <p><code class="inline">Add(1)</code> вызывается <b>до</b> запуска горутины, а не внутри неё — иначе <code class="inline">Wait()</code> может успеть завершиться раньше, чем горутина вообще успеет вызвать <code class="inline">Add</code>.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: <code class="inline">errgroup</code> — WaitGroup + ошибки + отмена контекста <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Голый <code class="inline">sync.WaitGroup</code> не умеет собирать ошибки из горутин и не умеет остановить остальные при первой ошибке — обе задачи приходится решать вручную (общий <code class="inline">error</code> под мьютексом, канал ошибок). Пакет <code class="inline">golang.org/x/sync/errgroup</code> закрывает именно этот пробел: <code class="inline">g, ctx := errgroup.WithContext(ctx)</code> создаёт группу, привязанную к контексту — как только любая горутина вернёт ненулевую ошибку, этот <code class="inline">ctx</code> отменяется, и остальные горутины (если написаны с оглядкой на <code class="inline">ctx.Done()</code>) могут завершиться раньше срока; <code class="inline">g.Wait()</code> возвращает первую полученную ошибку.</p>
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">errgroup.go</span></div>
+              <pre><code class="language-go">g, ctx := errgroup.WithContext(context.Background())
+g.SetLimit(10) // не более 10 горутин одновременно
+
+for _, url := range urls {
+    url := url
+    g.Go(func() error {
+        return fetch(ctx, url)
+    })
+}
+if err := g.Wait(); err != nil {
+    log.Fatal(err)
+}</code></pre>
+            </div>
+            <p class="tight"><code class="inline">SetLimit(n)</code> дополнительно превращает группу в готовый пул с ограничением параллелизма — не нужно вручную городить буферизованный канал-семафор.</p>
+          </div>
+        </details>
+
+        <details class="deep">
+          <summary>Подробнее: как счётчик и число ожидающих упакованы в одно 64-битное слово <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">Внутреннее состояние <code class="inline">WaitGroup</code> — не два отдельных поля-счётчика, а одно упакованное <code class="inline">uint64</code>: старшие 32 бита — счётчик незавершённых задач (то, что меняют <code class="inline">Add</code>/<code class="inline">Done</code>), младшие 32 бита — число горутин, заблокированных в <code class="inline">Wait()</code>. Упаковка в одно слово — не экономия памяти, а способ менять оба значения <b>одной</b> атомарной инструкцией CPU (<code class="inline">atomic.Add</code>/CAS) без отдельного мьютекса: если бы это были два независимых <code class="inline">int32</code>, между их обновлениями возможна была бы гонка.</p>
+            <p class="tight">Отсюда и историческое требование выравнивания <code class="inline">WaitGroup</code> на границу 8 байт на 32-битных платформах — атомарная операция над 64-битным словом невозможна, если оно не выровнено, а несоблюдение этого требования на старых версиях Go могло приводить к панике именно на 32-битных архитектурах. <em>(источник: t.me/go_interview_lib)</em></p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="mutex">
+        <h2><span class="idx">8.5</span>sync.Mutex</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">mutex.go</span></div>
+          <pre><code class="language-go">var mu sync.Mutex
+var counter int
+
+func increment() {
+    mu.Lock()
+    defer mu.Unlock()
+    counter++
+}</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Зачем Mutex, если есть каналы?</b> Девиз Go — «не делитесь памятью через общение, общайтесь через каналы», но это не догма: для защиты простого счётчика или поля структуры <code class="inline">Mutex</code> часто проще и быстрее, чем городить канал ради одного значения.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: normal- и starvation-режим мьютекса <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">С Go 1.9 <code class="inline">sync.Mutex</code> внутри (<code class="inline">internal/sync/mutex.go</code>) — не просто один бит блокировки, а конечный автомат с двумя режимами. В <b>normal mode</b> горутина, не сумевшая захватить мьютекс сразу, несколько раз активно крутится в спин-цикле (busy-wait) в надежде, что владелец вот-вот освободит блокировку — это дёшево на многоядерных машинах, если критическая секция короткая, и только после нескольких неудачных попыток горутина паркуется в очереди ожидания. Из-за этого разбуженная горутина конкурирует за захват наравне с новоприбывшими и может проигрывать им много раз подряд — это несправедливо, но быстро в среднем.</p>
+            <p class="tight">Если конкретная горутина ждёт в очереди дольше порога <code class="inline">starvationThresholdNs = 1мс</code>, мьютекс переключается в <b>starvation mode</b>: захват передаётся строго первой горутине из очереди FIFO, новоприбывшие вообще не пытаются захватить мьютекс сразу, а встают в конец очереди — спин-цикл в этом режиме отключается. Это гарантирует прогресс долго ждавшим ценой пиковой пропускной способности. Как только очередь опустевает или последняя разбуженная горутина ждала меньше 1мс, мьютекс возвращается в normal mode.</p>
+            <p class="tight"><b>RWMutex</b> добавляет к этому разделение read/write-блокировок: несколько читателей могут держать <code class="inline">RLock()</code> одновременно, но писатель, ожидающий <code class="inline">Lock()</code>, блокирует новых читателей от захвата (чтобы не голодал бесконечно) — типичное практическое правило: <code class="inline">RWMutex</code> оправдан, когда чтений на порядок больше записей (грубая эвристика — 10:1 и выше), иначе накладные расходы на его более сложную логику не окупаются по сравнению с обычным <code class="inline">Mutex</code>.</p>
+          </div>
+        </details>
+
+        <details class="deep">
+          <summary>Подробнее: <code class="inline">sync.Once</code> и <code class="inline">sync.Cond</code> — соседи Mutex, о которых часто забывают <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight"><b><code class="inline">sync.Once</code></b> гарантирует, что переданная в <code class="inline">Do(f)</code> функция выполнится ровно один раз за весь жизненный цикл программы, даже если <code class="inline">Do</code> вызывают конкурентно из множества горутин одновременно — остальные вызовы просто дождутся завершения первого и вернутся, ничего не выполнив повторно. Типичное применение — ленивая потокобезопасная инициализация синглтона или общего подключения без ручной возни с мьютексом и флагом «уже инициализировано».</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">once.go</span></div>
+              <pre><code class="language-go">var once sync.Once
+var conn *Connection
+
+func getConn() *Connection {
+    once.Do(func() { conn = connect() }) // выполнится только у первого вызвавшего
+    return conn
+}</code></pre>
+            </div>
+
+            <p class="tight"><b><code class="inline">sync.Cond</code></b> — условная переменная поверх блокировки (обычно <code class="inline">*sync.Mutex</code>), нужна, когда горутине важно не просто дождаться освобождения лока, а дождаться конкретного <b>условия</b>. Методы: <code class="inline">Wait()</code> — атомарно освобождает лок и паркует горутину, при пробуждении сама же снова захватывает лок перед возвратом; <code class="inline">Signal()</code> — будит ровно одну ожидающую горутину; <code class="inline">Broadcast()</code> — будит все разом. Классическое правило использования — проверять условие в цикле <code class="inline">for</code>, а не в <code class="inline">if</code>: между пробуждением и повторным захватом лока условие могла успеть изменить другая горутина (или сработало «паразитное» пробуждение), поэтому после <code class="inline">Wait()</code> нужно перепроверять условие заново, а не считать пробуждение доказательством его истинности. <em>(источник: habr.com/ru/articles/658623/)</em></p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="race">
+        <h2><span class="idx">8.6</span>Гонки данных</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">race.go</span></div>
+          <pre><code class="language-go">counter := 0
+var wg sync.WaitGroup
+for i := 0; i < 1000; i++ {
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+        counter++ // ГОНКА — инкремент не атомарен
+    }()
+}
+wg.Wait()
+fmt.Println(counter) // не гарантированно 1000</code></pre>
+        </div>
+
+        <div class="callout warn">
+          <div class="mark">камень</div>
+          <p><code class="inline">counter++</code> — это чтение, инкремент и запись тремя отдельными шагами; горутины могут перемежать их как угодно. Всегда гоняйте тесты с детектором гонок: <code class="inline">go test -race</code> / <code class="inline">go run -race</code> — он ловит именно такие гонки, а не полагайтесь только на глазомер.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: дедлок, livelock, голодание — не путать <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Три разных отказа конкурентной программы, которые часто путают на собеседовании:</p>
+            <div class="tablewrap">
+              <table>
+                <tr><th>Термин</th><th class="wrap">Суть</th></tr>
+                <tr><td>Дедлок (deadlock)</td><td class="wrap">все участники заблокированы навсегда, взаимно ожидая друг друга — прогресса нет вообще; рантайм Go умеет обнаружить дедлок <b>всех</b> горутин сразу (тогда паникует с "all goroutines are asleep — deadlock!"), но не частичный дедлок подмножества горутин</td></tr>
+                <tr><td>Livelock</td><td class="wrap">горутины не заблокированы, активно выполняются и реагируют друг на друга, но система в целом не продвигается — классический пример: два человека в коридоре синхронно уступают дорогу друг другу и одновременно шагают в одну сторону</td></tr>
+                <tr><td>Голодание (starvation)</td><td class="wrap">какая-то горутина в принципе может продвинуться, но ей систематически не даёт этого сделать более «агрессивный» сосед (см. normal-mode мьютекса в 8.5, где именно от этого защищает starvation mode)</td></tr>
+              </table>
+            </div>
+            <p class="tight">Классические <b>четыре условия Коффмана</b> (Coffman conditions), при одновременном выполнении которых возможен дедлок: взаимное исключение (ресурс нельзя разделить), удержание-и-ожидание (процесс держит один ресурс и ждёт другой), отсутствие принудительного отбора ресурса, и циклическое ожидание (A ждёт B, B ждёт A). Убрать хотя бы одно условие — например, всегда захватывать несколько мьютексов в фиксированном глобальном порядке, убирая циклическое ожидание — стандартный способ гарантированно избежать дедлока при работе с несколькими блокировками.</p>
+            <p class="tight">Детектор гонок (<code class="inline">-race</code>) работает по алгоритму vector clocks поверх реальных запусков и замедляет выполнение примерно в 5–10 раз и увеличивает потребление памяти в разы — поэтому его держат во включённом виде в CI на тестах, но не в проде.</p>
+          </div>
+        </details>
+
+        <details class="deep">
+          <summary>Подробнее: lock-free vs wait-free — чем CAS-цикл отличается от более строгой гарантии <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight"><code class="inline">sync/atomic</code> позволяет писать алгоритмы вообще без блокировок — типичный паттерн: прочитать текущее значение, вычислить новое, попытаться атомарно подменить через <code class="inline">CompareAndSwap</code>, при неудаче (кто-то успел изменить значение первым) — повторить цикл заново.</p>
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">cas_loop.go</span></div>
+              <pre><code class="language-go">for {
+    old := atomic.LoadInt64(&x)
+    n := f(old) // например, old*2 или max(old, candidate)
+    if atomic.CompareAndSwapInt64(&x, old, n) {
+        break
+    }
+    // проиграли гонку — old устарел, повторяем с начала
+}</code></pre>
+            </div>
+            <p class="tight">Это <b>lock-free</b>, но не <b>wait-free</b> — важное различие в строгости гарантии прогресса. Lock-free гарантирует лишь, что хотя бы <b>одна</b> горутина из всех конкурирующих продвинется вперёд за конечное время (система в целом не зависает) — но конкретная отдельная горутина в теории может проигрывать CAS сколь угодно много раз подряд при очень высокой конкуренции («живое голодание» одного участника при общем прогрессе системы). Wait-free — более сильная гарантия: <b>каждая</b> горутина завершает операцию за ограниченное число шагов независимо от того, что делают остальные — на практике такие структуры данных сложнее в реализации и применяются реже, чем lock-free с CAS-ретраем.</p>
+            <p class="tight"><em>(источник: t.me/go_interview_lib)</em></p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="workerpool">
+        <h2><span class="idx">8.7</span>Мини-паттерн: worker pool</h2>
+        <p class="tight">Несколько воркеров разбирают одну очередь заданий и пишут результат в общий канал:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">pool.go</span></div>
+          <pre><code class="language-go">func worker(id int, jobs <-chan int, results chan<- int) {
+    for j := range jobs { // выходит из цикла, когда jobs закрыт и пуст
+        results <- j * 2
+    }
+}
+
+func main() {
+    jobs := make(chan int, 5)
+    results := make(chan int, 5)
+
+    for w := 1; w <= 3; w++ {
+        go worker(w, jobs, results)
+    }
+    for j := 1; j <= 5; j++ {
+        jobs <- j
+    }
+    close(jobs) // сигнал воркерам — заданий больше не будет
+
+    for i := 0; i < 5; i++ {
+        fmt.Println(<-results)
+    }
+}</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Что означают <code class="inline">&lt;-chan int</code> и <code class="inline">chan&lt;- int</code>?</b> Направленные типы каналов: <code class="inline">jobs</code> в сигнатуре <code class="inline">worker</code> — только для чтения, <code class="inline">results</code> — только для записи. Компилятор не даст перепутать направление — это защита от ошибок на уровне типов, а не просто соглашение.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: кто закрывает канал результатов и как остановиться по контексту <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">Пример выше жёстко знает, что результатов будет ровно 5, поэтому читает результаты фиксированное число раз без закрытия <code class="inline">results</code>. В реальном пуле воркеров так не получится — читателю нужно знать, когда результаты закончились, а закрывать канал из нескольких воркеров одновременно нельзя (повторное закрытие — паника). Стандартное решение — отдельная «координирующая» горутина, которая через <code class="inline">sync.WaitGroup</code> дожидается завершения всех воркеров и только затем закрывает канал результатов:</p>
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">pool_shutdown.go</span></div>
+              <pre><code class="language-go">var wg sync.WaitGroup
+for w := 1; w <= 3; w++ {
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+        for j := range jobs {
+            select {
+            case results <- process(j):
+            case <-ctx.Done():
+                return // корректная остановка по отмене контекста
+            }
+        }
+    }()
+}
+go func() {
+    wg.Wait()
+    close(results) // закрывает ровно ОДНА горутина, когда все воркеры точно завершились
+}()
+for r := range results { // читаем, пока канал не закроется
+    fmt.Println(r)
+}</code></pre>
+            </div>
+            <p class="tight">Второй нюанс — грациозная остановка: воркер, слепо читающий из <code class="inline">jobs</code> в бесконечном <code class="inline">for range</code>, не отреагирует на отмену контекста, пока не придёт следующее задание или канал не закроется. Чтобы пул можно было остановить по таймауту/сигналу немедленно, каждую отправку/приём внутри воркера оборачивают в <code class="inline">select</code> с <code class="inline">case &lt;-ctx.Done(): return</code>, как показано выше.</p>
+          </div>
+        </details>
+
+        <details class="deep">
+          <summary>Подробнее: сколько воркеров заводить — CPU-bound и I/O-bound требуют разного ответа <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Универсального числа воркеров не существует — правильный размер пула прямо зависит от того, чем именно занята задача внутри воркера:</p>
+            <p class="tight">Для <b>CPU-bound</b> задач (чистые вычисления, без ожидания сети/диска) оптимум обычно близок к <code class="inline">runtime.NumCPU()</code> (то есть к <code class="inline">GOMAXPROCS</code>) — больше воркеров, чем логических ядер, лишь увеличивает переключение контекста между горутинами, не давая реального прироста параллелизма, поскольку одновременно исполняться может ровно столько горутин, сколько есть P.</p>
+            <p class="tight">Для <b>I/O-bound</b> задач (сеть, диск, ожидание ответа БД) воркеров осмысленно заводить в разы или на порядки больше числа ядер — большую часть времени такая горутина не потребляет CPU вообще, а простаивает в ожидании ответа, дешёво занимая лишь несколько КБ стека. Здесь ограничивающий фактор — не число ядер, а внешние лимиты: число одновременных соединений, которое выдержит удалённый сервис/пул соединений БД, и под них подбирается размер пула (часто эмпирически, через нагрузочное тестирование), а не под <code class="inline">NumCPU()</code>. <em>(источник: t.me/go_interview_lib)</em></p>
+          </div>
+        </details>
+      </section>

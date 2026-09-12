@@ -1,0 +1,180 @@
+<title>Заметки гофера</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Karla:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/go.min.js"></script>
+<link rel="stylesheet" href="assets/style.css">
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">Go</div>
+      <div class="brand-name">Заметки гофера</div>
+    </div>
+    <div class="brand-tag">конспект языка Go — для себя и для собеса</div>
+
+    <div class="toc-label">Главы</div>
+    <div class="chapters">
+      <button class="ch is-active" data-chapter="1" data-file="chapters/01-basic-syntax.html"><span class="ch-num">01</span> Базовый синтаксис</button>
+      <ol class="subnav" data-for="1">
+        <li><a href="#anatomy">Анатомия файла</a></li>
+        <li><a href="#vars">Переменные</a></li>
+        <li><a href="#types">Типы и zero value</a></li>
+        <li><a href="#const">Константы и iota</a></li>
+        <li><a href="#conv">Приведение типов</a></li>
+        <li><a href="#ops">Операторы</a></li>
+        <li><a href="#vis">Экспорт и видимость</a></li>
+        <li><a href="#comments">Комментарии</a></li>
+      </ol>
+      <button class="ch" data-chapter="2" data-file="chapters/02-control-flow.html"><span class="ch-num">02</span> Управляющие конструкции</button>
+      <ol class="subnav" data-for="2" hidden>
+        <li><a href="#if">if / else</a></li>
+        <li><a href="#switch">switch</a></li>
+        <li><a href="#for">for — все формы</a></li>
+        <li><a href="#defer">defer</a></li>
+      </ol>
+      <button class="ch" data-chapter="3" data-file="chapters/03-functions.html"><span class="ch-num">03</span> Функции</button>
+      <ol class="subnav" data-for="3" hidden>
+        <li><a href="#decl">Объявление</a></li>
+        <li><a href="#multiret">Множественный возврат</a></li>
+        <li><a href="#named">Именованные результаты</a></li>
+        <li><a href="#variadic">Вариативные функции</a></li>
+        <li><a href="#closures">Замыкания</a></li>
+        <li><a href="#byvalue">Передача по значению</a></li>
+      </ol>
+      <button class="ch" data-chapter="4" data-file="chapters/04-collections.html"><span class="ch-num">04</span> Слайсы, массивы, map, struct</button>
+      <ol class="subnav" data-for="4" hidden>
+        <li><a href="#arrays">Массивы</a></li>
+        <li><a href="#slices">Слайсы</a></li>
+        <li><a href="#maps">map</a></li>
+        <li><a href="#structs">struct</a></li>
+      </ol>
+      <button class="ch" data-chapter="5" data-file="chapters/05-pointers.html"><span class="ch-num">05</span> Указатели</button>
+      <ol class="subnav" data-for="5" hidden>
+        <li><a href="#addr">& и *</a></li>
+        <li><a href="#newvs">new() vs &T{}</a></li>
+        <li><a href="#escape">Указатель на локальную переменную</a></li>
+        <li><a href="#nilptr">nil-указатель</a></li>
+      </ol>
+      <button class="ch" data-chapter="6" data-file="chapters/06-methods-interfaces.html"><span class="ch-num">06</span> Методы и интерфейсы</button>
+      <ol class="subnav" data-for="6" hidden>
+        <li><a href="#receivers">Value vs pointer receiver</a></li>
+        <li><a href="#methodsets">Method sets</a></li>
+        <li><a href="#implicit">Неявная реализация</a></li>
+        <li><a href="#anyassert">any и type assertion</a></li>
+        <li><a href="#niltrap">Ловушка nil-интерфейса</a></li>
+      </ol>
+      <button class="ch" data-chapter="7" data-file="chapters/07-errors.html"><span class="ch-num">07</span> Обработка ошибок</button>
+      <ol class="subnav" data-for="7" hidden>
+        <li><a href="#errinterface">Интерфейс error</a></li>
+        <li><a href="#wrapping">Оборачивание — %w</a></li>
+        <li><a href="#isas">errors.Is и errors.As</a></li>
+        <li><a href="#customerr">Кастомные ошибки</a></li>
+        <li><a href="#panicrecover">panic / recover</a></li>
+      </ol>
+      <button class="ch" data-chapter="8" data-file="chapters/08-concurrency.html"><span class="ch-num">08</span> Конкурентность</button>
+      <ol class="subnav" data-for="8" hidden>
+        <li><a href="#goroutines">Горутины</a></li>
+        <li><a href="#channels">Каналы</a></li>
+        <li><a href="#select">select</a></li>
+        <li><a href="#waitgroup">sync.WaitGroup</a></li>
+        <li><a href="#mutex">sync.Mutex</a></li>
+        <li><a href="#race">Гонки данных</a></li>
+        <li><a href="#workerpool">Worker pool</a></li>
+      </ol>
+      <button class="ch" data-chapter="9" data-file="chapters/09-generics.html"><span class="ch-num">09</span> Generics</button>
+      <ol class="subnav" data-for="9" hidden>
+        <li><a href="#whygen">Зачем нужны</a></li>
+        <li><a href="#genfunc">Обобщённые функции</a></li>
+        <li><a href="#constraints">Constraints</a></li>
+        <li><a href="#gentype">Обобщённые типы</a></li>
+      </ol>
+      <button class="ch" data-chapter="10" data-file="chapters/10-stdlib.html"><span class="ch-num">10</span> Стандартная библиотека</button>
+      <ol class="subnav" data-for="10" hidden>
+        <li><a href="#fmt">fmt</a></li>
+        <li><a href="#strings">strings / strconv</a></li>
+        <li><a href="#time">time</a></li>
+        <li><a href="#os">os</a></li>
+        <li><a href="#json">encoding/json</a></li>
+        <li><a href="#nethttp">net/http</a></li>
+      </ol>
+      <button class="ch" data-chapter="11" data-file="chapters/11-testing.html"><span class="ch-num">11</span> Тестирование</button>
+      <ol class="subnav" data-for="11" hidden>
+        <li><a href="#basictest">Базовый тест</a></li>
+        <li><a href="#tabletest">Table-driven tests</a></li>
+        <li><a href="#bench">Бенчмарки</a></li>
+        <li><a href="#testability">Тестируемость через интерфейсы</a></li>
+        <li><a href="#testflags">Флаги go test</a></li>
+      </ol>
+      <button class="ch" data-chapter="12" data-file="chapters/12-http-server.html"><span class="ch-num">12</span> HTTP-сервер</button>
+      <ol class="subnav" data-for="12" hidden>
+        <li><a href="#model">Модель и хранилище</a></li>
+        <li><a href="#handlers">Обработчики</a></li>
+        <li><a href="#routing">Маршрутизация</a></li>
+        <li><a href="#checking">Проверка</a></li>
+        <li><a href="#prodnotes">Что дальше в проде</a></li>
+      </ol>
+      <button class="ch" data-chapter="13" data-file="chapters/13-idioms.html"><span class="ch-num">13</span> Идиомы и best practices</button>
+      <ol class="subnav" data-for="13" hidden>
+        <li><a href="#naming">Именование</a></li>
+        <li><a href="#acceptiface">Accept interfaces, return structs</a></li>
+        <li><a href="#gofmt">gofmt</a></li>
+        <li><a href="#vetlint">go vet и линтеры</a></li>
+        <li><a href="#mistakes">Чек-лист частых ошибок</a></li>
+        <li><a href="#packages">Организация пакетов</a></li>
+      </ol>
+      <button class="ch" data-chapter="14" data-file="chapters/14-infra-db.html"><span class="ch-num">14</span> БД, инфраструктура, системный дизайн</button>
+      <ol class="subnav" data-for="14" hidden>
+        <li><a href="#dbindexes">Индексы БД и диагностика</a></li>
+        <li><a href="#dbtx">Транзакции и изоляция</a></li>
+        <li><a href="#locking">Блокировки: pessimistic vs optimistic</a></li>
+        <li><a href="#rediscache">Redis и кэширование</a></li>
+        <li><a href="#kafkamq">Kafka и очереди сообщений</a></li>
+        <li><a href="#outbox">Outbox и идемпотентность</a></li>
+        <li><a href="#k8sinfra">Docker/Kubernetes в проде</a></li>
+        <li><a href="#observability">Наблюдаемость</a></li>
+        <li><a href="#sysdesign">Паттерны системного дизайна</a></li>
+      </ol>
+      <button class="ch" data-chapter="15" data-file="chapters/15-cheatsheet.html"><span class="ch-num">15</span> Шпаргалка</button>
+      <ol class="subnav" data-for="15" hidden>
+        <li><a href="#decls">Типы и объявления</a></li>
+        <li><a href="#control">Управляющие конструкции</a></li>
+        <li><a href="#funcs">Функции и методы</a></li>
+        <li><a href="#data">Массивы, слайсы, map, struct</a></li>
+        <li><a href="#ptrsiface">Указатели и интерфейсы</a></li>
+        <li><a href="#errconc">Ошибки и конкурентность</a></li>
+        <li><a href="#generics">Generics</a></li>
+        <li><a href="#stdtools">Инструменты и verbs</a></li>
+        <li><a href="#pitfalls">Быстрые ответы</a></li>
+      </ol>
+    </div>
+
+    <div class="toc-label">Практика</div>
+    <div class="chapters">
+      <button class="ch" data-chapter="16" data-file="chapters/16-flashcards.html">Флеш-карты</button>
+      <ol class="subnav" data-for="16" hidden>
+        <li><a href="#flashcards">Проверка знаний</a></li>
+      </ol>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page">
+      <!-- chapter content is loaded here dynamically -->
+      <div id="chapter-root" class="chapter" data-chapter="1"></div>
+    </div>
+  </main>
+</div>
+
+<!-- impl-panel (shared overlay) -->
+<div class="impl-overlay" id="implOverlay"></div>
+<div class="impl-panel" id="implPanel" role="dialog" aria-modal="true" aria-labelledby="implTitle">
+  <div class="impl-header">
+    <h3 id="implTitle">под капотом</h3>
+  </div>
+  <button type="button" class="impl-close" id="implClose" aria-label="Закрыть">✕</button>
+  <div class="impl-body" id="implBody"></div>
+</div>
+
+<script src="assets/app.js"></script>

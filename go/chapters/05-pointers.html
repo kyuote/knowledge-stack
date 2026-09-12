@@ -1,0 +1,186 @@
+      <div class="kicker"><span class="line"></span>Глава 05</div>
+      <h1 class="title">Указатели</h1>
+      <p class="lede">Единственный законный способ изменить оригинал, если Go всё передаёт по значению — и заодно самая частая паника в проде.</p>
+
+      <div class="depth-toggle">
+        <button type="button" class="depth-btn" data-action="expand">▾ развернуть все «подробнее»</button>
+        <button type="button" class="depth-btn" data-action="collapse">▴ свернуть всё</button>
+      </div>
+
+      <section class="topic" id="addr">
+        <h2><span class="idx">5.1</span>& и *</h2>
+        <p class="tight"><code class="inline">&</code> берёт адрес переменной, <code class="inline">*</code> — разыменовывает указатель:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">pointer.go</span></div>
+          <pre><code class="language-go">x := 10
+p := &x    // p — *int, адрес x
+*p = 20     // разыменование — меняем x через указатель
+fmt.Println(x) // 20</code></pre>
+        </div>
+
+        <p class="tight">Это и есть способ обойти «всё передаётся по значению» из главы 3 — указатель тоже копируется, но копия указывает на тот же адрес:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">double.go</span></div>
+          <pre><code class="language-go">func double(n int)  { n *= 2 }   // копия — x не изменится
+func doublePtr(p *int) { *p *= 2 } // указывает на x — x изменится
+
+x := 10
+double(x)          // x всё ещё 10
+doublePtr(&x)      // x стало 20</code></pre>
+        </div>
+
+        <figure>
+          <svg viewBox="0 0 600 190" role="img" aria-label="При передаче по значению функция получает независимую копию и не может изменить оригинал. При передаче указателя функция получает копию адреса, но этот адрес ведёт к тому же x, поэтому разыменование меняет оригинал.">
+            <defs>
+              <marker id="arr5" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+              </marker>
+            </defs>
+
+            <text x="140" y="16" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.65">double(n int) — копия</text>
+            <rect x="40" y="26" width="200" height="32" rx="7" fill="none" stroke="currentColor" opacity="0.55"/>
+            <text x="140" y="47" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="currentColor">x = 10</text>
+            <rect x="40" y="90" width="200" height="32" rx="7" fill="none" stroke="currentColor" opacity="0.4" stroke-dasharray="3 4"/>
+            <text x="140" y="111" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="currentColor" opacity="0.8">n = 10 → 20 (копия)</text>
+            <text x="140" y="150" text-anchor="middle" font-size="10.5" fill="currentColor" opacity="0.6">никак не связаны —</text>
+            <text x="140" y="163" text-anchor="middle" font-size="10.5" fill="currentColor" opacity="0.6">x после вызова: 10</text>
+
+            <text x="460" y="16" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.65">doublePtr(p *int) — адрес</text>
+            <rect x="360" y="26" width="200" height="32" rx="7" fill="none" stroke="#3b7ec9"/>
+            <text x="460" y="47" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="#3b7ec9">x = 10 → 20</text>
+            <rect x="360" y="90" width="200" height="32" rx="7" fill="none" stroke="currentColor" opacity="0.55"/>
+            <text x="460" y="111" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="currentColor">p → адрес x (копия)</text>
+            <path d="M460,90 C 500,75 500,60 460,58" fill="none" stroke="#3b7ec9" opacity="0.8" marker-end="url(#arr5)"/>
+            <text x="460" y="150" text-anchor="middle" font-size="10.5" fill="currentColor" opacity="0.6">*p = x*2 меняет x —</text>
+            <text x="460" y="163" text-anchor="middle" font-size="10.5" fill="currentColor" opacity="0.6">x после вызова: 20</text>
+          </svg>
+          <figcaption>Указатель тоже передаётся по значению — копируется не переменная, а адрес. Но обе копии адреса ведут к одному и тому же <code class="inline">x</code>, поэтому разыменование внутри функции меняет оригинал.</figcaption>
+        </figure>
+
+        <details class="deep">
+          <summary>Подробнее: копирование структуры — не то же самое, что копирование её данных <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">Присвоение структуры (без указателя) копирует всю структуру целиком — но если внутри есть поле-слайс или поле-map, копируется только их заголовок (shallow copy): обе копии продолжают ссылаться на одни и те же исходные данные:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">shallow.go</span></div>
+              <pre><code class="language-go">type Order struct {
+    Items []string
+}
+
+a := Order{Items: []string{"хлеб"}}
+b := a               // копия структуры, но Items — тот же заголовок
+b.Items[0] = "молоко"
+fmt.Println(a.Items[0]) // "молоко" — a тоже изменилась!</code></pre>
+            </div>
+
+            <p class="tight"><code class="inline">append</code>, если требует реаллокации, разрывает эту связь — с этого момента копии расходятся. Если нужны по-настоящему независимые копии — либо хранить указатели (<code class="inline">[]*T</code>, <code class="inline">map[K]*V</code>), либо делать глубокое копирование вручную.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="newvs">
+        <h2><span class="idx">5.2</span>new() vs &T{}</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">new.go</span></div>
+          <pre><code class="language-go">p1 := new(int)       // *int, указывает на zero value — 0
+p2 := &Point{1, 2}    // *Point, сразу с нужными полями — так пишут почти всегда</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><code class="inline">new(T)</code> просто выделяет память под zero value <code class="inline">T</code> и возвращает <code class="inline">*T</code>. <code class="inline">&T{...}</code> делает то же самое, но с инициализацией полей на месте — поэтому на практике <code class="inline">new</code> почти не встречается вне учебников.</p>
+        </div>
+
+        <p class="tight">Для полей структуры компилятор сам разыменовывает — <code class="inline">p.X</code> вместо <code class="inline">(*p).X</code>:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">autoderef.go</span></div>
+          <pre><code class="language-go">p := &Point{1, 2}
+p.X = 10   // сахар для (*p).X = 10</code></pre>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: new() для слайса/map/канала обычно бесполезен <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight"><code class="inline">new(T)</code> работает для любого типа, но для слайса/map/канала он даёт указатель на <b>zero value</b> этого типа, то есть на <code class="inline">nil</code> — использовать сразу нельзя, нужна отдельная инициализация:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">new_nil.go</span></div>
+              <pre><code class="language-go">p := new([]int) // *[]int, указывает на nil-слайс
+(*p)[0] = 1      // panic: index out of range — слайс всё ещё пуст
+
+s := make([]int, 0, 10) // так — сразу с выделенным буфером</code></pre>
+            </div>
+
+            <p class="tight">Поэтому <code class="inline">make</code>, а не <code class="inline">new</code> — стандартный способ создать эти три типа. Отдельная деталь: то, окажется ли значение на стеке или в куче, решает escape analysis (разбор ниже), а не то, через <code class="inline">new</code> или <code class="inline">make</code> оно создано.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="escape">
+        <h2><span class="idx">5.3</span>Указатель на локальную переменную</h2>
+        <p class="tight">В отличие от C, возвращать адрес локальной переменной в Go совершенно безопасно:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">newpoint.go</span></div>
+          <pre><code class="language-go">func newPoint(x, y int) *Point {
+    p := Point{x, y}
+    return &p // безопасно! компилятор перенесёт p на heap
+}</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>А как же dangling pointer, как в C?</b> Невозможен — сработает тот же escape-анализ, что и с замыканиями в главе 3: раз на <code class="inline">p</code> остаётся живая ссылка после возврата, компилятор размещает её на heap вместо стека.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: взятие адреса не гарантирует уход на heap <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Частое заблуждение — считать, что раз у переменной взяли <code class="inline">&</code>, она автоматически окажется в куче. На самом деле компилятор анализирует, «убегает» ли переменная из функции (возвращается, сохраняется глобально, передаётся в горутину/канал) — если нет, она вполне может остаться на стеке, даже если её адрес был взят внутри функции:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">noescape.go</span></div>
+              <pre><code class="language-go">func sum(a, b int) int {
+    p := &a  // адрес взят, но p никуда не "убегает" из функции
+    return *p + b // компилятор вполне может оставить a на стеке
+}</code></pre>
+            </div>
+
+            <p class="tight">Посмотреть, что решил компилятор для конкретной функции — <code class="inline">go build -gcflags="-m"</code>: он печатает решения escape-анализа построчно (<code class="inline">moved to heap</code> / <code class="inline">does not escape</code>). Полезно при профилировании — лишние аллокации на горячем пути часто оказываются неожиданным «убеганием» переменной туда, где её не ждали.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="nilptr">
+        <h2><span class="idx">5.4</span>nil-указатель</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">nilptr.go</span></div>
+          <pre><code class="language-go">var p *Point
+p.X = 1 // panic: runtime error: invalid memory address or nil pointer dereference</code></pre>
+        </div>
+
+        <div class="callout warn">
+          <div class="mark">камень</div>
+          <p>Разыменование <code class="inline">nil</code>-указателя — одна из самых частых паник в проде, особенно если указатель пришёл откуда-то извне (не найденная запись, несработавший поиск). Проверка <code class="inline">if p == nil</code> перед использованием — не паранойя, а норма.</p>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Есть ли в Go арифметика указателей?</b> Нет (кроме экзотического <code class="inline">unsafe.Pointer</code>). Указатель либо валиден, либо <code class="inline">nil</code> — это упрощает сборщик мусора и делает памятную модель Go безопаснее, чем в C.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: unsafe.Pointer и почему указатель всегда весит одинаково <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">Указатель — это всегда просто адрес: 4 байта на 32-битной платформе, 8 байт на 64-битной, независимо от того, указывает он на <code class="inline">int8</code> или на мегабайтную структуру — сам указатель не «весит» больше от размера цели.</p>
+
+            <p class="tight"><code class="inline">unsafe.Pointer</code> — способ обойти систему типов и явно приводить указатели между несовместимыми типами; точечно используется во внутренностях стандартной библиотеки (например в <code class="inline">strings.Builder</code>/конвертации <code class="inline">string</code>↔<code class="inline">[]byte</code> без копирования). В обычном прикладном коде это считается кодом-запахом — почти всегда есть типобезопасная альтернатива, а любая ошибка в ручной арифметике с <code class="inline">unsafe.Pointer</code> — потенциальный <code class="inline">SIGSEGV</code>, который компилятор уже не может предотвратить.</p>
+          </div>
+        </details>
+      </section>

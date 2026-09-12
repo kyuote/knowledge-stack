@@ -1,0 +1,197 @@
+      <div class="kicker"><span class="line"></span>Глава 09</div>
+      <h1 class="title">Generics</h1>
+      <p class="lede">В Go с версии 1.18. Параметризация по типу вместо копипаста функций под каждый тип или небезопасного any.</p>
+
+      <div class="depth-toggle">
+        <button type="button" class="depth-btn" data-action="expand">▾ развернуть все «подробнее»</button>
+        <button type="button" class="depth-btn" data-action="collapse">▴ свернуть всё</button>
+      </div>
+
+      <section class="topic" id="whygen">
+        <h2><span class="idx">9.1</span>Зачем нужны</h2>
+        <p class="tight">До 1.18 — либо дублировать функцию под каждый тип, либо писать через <code class="inline">any</code> с приведением типов внутри (теряя проверку на этапе компиляции):</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">before.go</span></div>
+          <pre><code class="language-go">func SumInts(nums []int) int {
+    var s int
+    for _, n := range nums { s += n }
+    return s
+}
+
+func SumFloats(nums []float64) float64 {
+    var s float64
+    for _, n := range nums { s += n }
+    return s
+}</code></pre>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: почему просто <code class="inline">any</code> — не замена дженерикам <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Вариант с <code class="inline">any</code> (<code class="inline">func Sum(nums []any) any</code>) решает проблему дублирования кода, но создаёт две новые: во-первых, приведение типов происходит в рантайме — ошибку в приведении (<code class="inline">n.(int)</code> к неверному типу) компилятор не поймает, программа упадёт по панике только во время выполнения; во-вторых, это ощутимо медленнее — доступ к значению внутри <code class="inline">any</code> почти всегда требует отдельного выделения памяти в куче (boxing) и косвенного обращения через интерфейсный дескриптор, тогда как дженерик-версия для конкретного <code class="inline">T</code> компилируется в код, работающий с типом напрямую, без боксинга и без приведений в рантайме.</p>
+            <p class="tight">Итого: дженерики — это про безопасность типов на этапе компиляции и производительность, а не только про экономию строк кода.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="genfunc">
+        <h2><span class="idx">9.2</span>Обобщённые функции</h2>
+        <p class="tight"><code class="inline">T</code> в квадратных скобках — параметр типа, ограничение после него — какие типы допустимы:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">generic.go</span></div>
+          <pre><code class="language-go">func Sum[T int | float64](nums []T) T {
+    var s T
+    for _, n := range nums {
+        s += n
+    }
+    return s
+}
+
+Sum([]int{1, 2, 3})       // T выводится как int
+Sum([]float64{1.5, 2.5})  // T выводится как float64</code></pre>
+        </div>
+
+        <figure>
+          <svg viewBox="0 0 560 210" role="img" aria-label="Компилятор генерирует отдельную версию Sum под каждый конкретный тип, с которым её вызывают.">
+            <defs>
+              <marker id="arr9" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+              </marker>
+            </defs>
+            <rect x="30" y="70" width="230" height="60" rx="9" fill="none" stroke="currentColor" opacity="0.5"/>
+            <text x="145" y="95" text-anchor="middle" font-family="JetBrains Mono" font-size="11.5" fill="currentColor">func Sum[T Number]</text>
+            <text x="145" y="112" text-anchor="middle" font-size="10.5" fill="currentColor" opacity="0.65">универсальный шаблон</text>
+
+            <path d="M260,90 L360,40" fill="none" stroke="#3b7ec9" stroke-width="1.5" marker-end="url(#arr9)"/>
+            <path d="M260,110 L360,160" fill="none" stroke="#3b7ec9" stroke-width="1.5" marker-end="url(#arr9)"/>
+
+            <rect x="360" y="20" width="180" height="40" rx="8" fill="none" stroke="#3b7ec9"/>
+            <text x="450" y="45" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="#3b7ec9">Sum[int]</text>
+
+            <rect x="360" y="140" width="180" height="40" rx="8" fill="none" stroke="#3b7ec9"/>
+            <text x="450" y="165" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="#3b7ec9">Sum[float64]</text>
+          </svg>
+          <figcaption>Под каждый конкретный тип, с которым вызывают <code class="inline">Sum</code>, компилятор генерирует нужный код — сам параметризованный текст функции пишется один раз.</figcaption>
+        </figure>
+
+        <details class="deep">
+          <summary>Подробнее: мономорфизация vs дженерики через стирание типов <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">Компилятор Go использует гибридный подход, а не чистую мономорфизацию (как C++ шаблоны, где под каждый конкретный тип генерируется полностью отдельная копия машинного кода) и не чистое стирание типов с боксингом (как дженерики в Java до project Valhalla). Компилятор группирует типы по одинаковой «форме» (shape) — например, все указательные типы (<code class="inline">*T</code> для любого <code class="inline">T</code>) обычно разделяют одну реализацию, потому что указатель всегда занимает одинаковое количество байт и имеет одинаковое представление в памяти, а вот <code class="inline">int</code> и <code class="inline">float64</code> получают отдельные инстанциации, так как хранятся и обрабатываются по-разному (GC-информация, размер, арифметика).</p>
+            <p class="tight">Практический вывод: дженерик-код с числовыми типами почти не уступает по скорости написанному вручную под конкретный тип, но злоупотребление дженериками с большим числом разных инстанциаций может ощутимо увеличить размер скомпилированного бинарника (каждая уникальная «форма» — это отдельный сгенерированный код).</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="constraints">
+        <h2><span class="idx">9.3</span>Constraints</h2>
+        <p class="tight">Ограничение — обычный интерфейс, объединение типов через <code class="inline">|</code>, либо встроенное <code class="inline">comparable</code>:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">constraints.go</span></div>
+          <pre><code class="language-go">type Number interface {
+    int | int64 | float64 // union constraint
+}
+
+func Sum[T Number](nums []T) T { /* … */ }
+
+func Equal[T comparable](a, b T) bool {
+    return a == b // comparable разрешает == и !=
+}</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Что такое <code class="inline">comparable</code>?</b> Специальное встроенное ограничение (не обычный интерфейс с методами) — разрешает <code class="inline">==</code>/<code class="inline">!=</code> внутри обобщённой функции. С Go 1.21 готовые ограничения вроде <code class="inline">cmp.Ordered</code> есть в стандартном пакете <code class="inline">cmp</code> — свои <code class="inline">Number</code>-подобные интерфейсы чаще не нужны.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: пакеты <code class="inline">slices</code> и <code class="inline">maps</code> (Go 1.21) <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">С Go 1.21 в стандартную библиотеку вошли обобщённые пакеты <code class="inline">slices</code> и <code class="inline">maps</code>, написанные поверх ровно этого механизма ограничений — на практике они закрывают большую часть случаев, ради которых раньше писали свои дженерик-хелперы: <code class="inline">slices.Sort</code>, <code class="inline">slices.Contains</code>, <code class="inline">slices.Index</code>, <code class="inline">slices.Equal</code>, <code class="inline">maps.Keys</code>, <code class="inline">maps.Values</code>, <code class="inline">maps.Clone</code> и другие. Пакет <code class="inline">cmp</code> той же волны даёт <code class="inline">cmp.Ordered</code> (типы, поддерживающие <code class="inline">&lt;</code>/<code class="inline">&gt;</code>) и функцию <code class="inline">cmp.Compare</code>.</p>
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">stdlib_generics.go</span></div>
+              <pre><code class="language-go">import (
+    "cmp"
+    "slices"
+)
+
+nums := []int{5, 2, 8, 1}
+slices.Sort(nums)                 // [1 2 5 8]
+slices.Contains(nums, 8)          // true
+slices.SortFunc(items, func(a, b Item) int {
+    return cmp.Compare(a.Priority, b.Priority)
+})</code></pre>
+            </div>
+            <p class="tight">Практический совет для собеседования: прежде чем писать свою обобщённую утилиту для сортировки/поиска/сравнения срезов и карт, стоит проверить, нет ли готовой в <code class="inline">slices</code>/<code class="inline">maps</code>/<code class="inline">cmp</code> — начиная с 1.21 это почти всегда так.</p>
+          </div>
+        </details>
+
+        <details class="deep">
+          <summary>Подробнее: миф «встроенные min/max работают только для float» <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">До Go 1.21 в стандартной библиотеке действительно были только <code class="inline">math.Min</code>/<code class="inline">math.Max</code> — и те исключительно для <code class="inline">float64</code>; для целых чисел приходилось писать свою функцию с обычным <code class="inline">if</code>. Эта формулировка до сих пор кочует по некоторым разборам вопросов для собеседований как актуальный факт — но начиная с Go 1.21 она устарела.</p>
+
+            <p class="tight">Go 1.21 добавил <b>встроенные</b> (без импорта) функции <code class="inline">min</code> и <code class="inline">max</code>, работающие для <b>любого упорядочиваемого типа</b> — не только float, но и любые целые, и строки (сравнение через <code class="inline">&lt;</code>/<code class="inline">&gt;</code>), — а не только для чисел с плавающей точкой:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">minmax.go</span></div>
+              <pre><code class="language-go">min(3, 7)          // 3 — работает и для int
+max("a", "b", "c") // "c" — и для string, и с произвольным числом аргументов
+max(1.5, 2.25)     // 2.25 — и для float, как раньше</code></pre>
+            </div>
+
+            <p class="tight">Так что правильный на сегодня ответ на собеседовании — «нужно писать свою реализацию для int» был верен до версии 1.21 (2023) и устарел с её выходом; актуальный факт — билтины <code class="inline">min</code>/<code class="inline">max</code> универсальны по любому упорядочиваемому типу. <em>(миф — habr.com / folko.gitbook.io; уточнено по официальным release notes tip.golang.org/doc/go1.21)</em></p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="gentype">
+        <h2><span class="idx">9.4</span>Обобщённые типы</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">stack.go</span></div>
+          <pre><code class="language-go">type Stack[T any] struct {
+    items []T
+}
+
+func (s *Stack[T]) Push(v T) {
+    s.items = append(s.items, v)
+}
+
+func (s *Stack[T]) Pop() (T, bool) {
+    var zero T
+    if len(s.items) == 0 {
+        return zero, false
+    }
+    v := s.items[len(s.items)-1]
+    s.items = s.items[:len(s.items)-1]
+    return v, true
+}
+
+var s Stack[int]
+s.Push(1)
+s.Push(2)
+v, ok := s.Pop() // 2, true</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Зачем <code class="inline">var zero T</code>?</b> Внутри обобщённого кода нельзя написать литерал вроде <code class="inline">0</code> или <code class="inline">""</code> — компилятор не знает конкретный тип <code class="inline">T</code> заранее. <code class="inline">var zero T</code> — стандартный способ получить zero value любого <code class="inline">T</code>.</p>
+        </div>
+
+        <div class="callout warn">
+          <div class="mark">камень</div>
+          <p>У метода нельзя завести собственный, независимый параметр типа — только тот, что уже объявлен у получателя (<code class="inline">(s *Stack[T])</code>). Если нужен ещё один параметр типа — это должна быть отдельная функция, а не метод.</p>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: несколько параметров типа и вывод типов <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Параметров типа может быть несколько — например, обобщённая мапа с произвольными ключом и значением: <code class="inline">type Pair[K comparable, V any] struct { Key K; Value V }</code>. Компилятор старается вывести все параметры типа из аргументов вызова автоматически (как в примере <code class="inline">Sum([]int{...})</code> выше), но если тип нельзя однозначно вывести — например, при вызове функции без аргументов, использующих <code class="inline">T</code>, — параметр указывают явно: <code class="inline">New[int]()</code>.</p>
+            <p class="tight">На практике обобщённые типы данных (стеки, очереди, связные списки, деревья, кэши с обобщённым значением) — самое частое применение дженериков в реальном коде, наравне с обобщёнными хелперами вроде <code class="inline">Map</code>/<code class="inline">Filter</code>/<code class="inline">Reduce</code> над срезами.</p>
+          </div>
+        </details>
+      </section>

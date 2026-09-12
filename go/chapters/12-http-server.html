@@ -1,0 +1,266 @@
+      <div class="kicker"><span class="line"></span>Глава 12</div>
+      <h1 class="title">HTTP-сервер</h1>
+      <p class="lede">Мини-проект, который собирает вместе структуры, методы, мьютексы, JSON и net/http из прошлых глав — простой REST API для списка задач.</p>
+
+      <div class="depth-toggle">
+        <button type="button" class="depth-btn" data-action="expand">▾ развернуть все «подробнее»</button>
+        <button type="button" class="depth-btn" data-action="collapse">▴ свернуть всё</button>
+      </div>
+
+      <section class="topic" id="model">
+        <h2><span class="idx">12.1</span>Модель и хранилище</h2>
+        <p class="tight">In-memory хранилище на map, защищённое мьютексом (глава 8) — вместо настоящей БД, но с тем же принципом:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">store.go</span></div>
+          <pre><code class="language-go">type Task struct {
+    ID   int    `json:"id"`
+    Text string `json:"text"`
+    Done bool   `json:"done"`
+}
+
+type Store struct {
+    mu     sync.Mutex
+    tasks  map[int]Task
+    nextID int
+}
+
+func NewStore() *Store {
+    return &Store{tasks: make(map[int]Task), nextID: 1}
+}
+
+func (s *Store) Add(text string) Task {
+    s.mu.Lock()
+    defer s.mu.Unlock()
+    t := Task{ID: s.nextID, Text: text}
+    s.tasks[t.ID] = t
+    s.nextID++
+    return t
+}
+
+func (s *Store) All() []Task {
+    s.mu.Lock()
+    defer s.mu.Unlock()
+    out := make([]Task, 0, len(s.tasks))
+    for _, t := range s.tasks {
+        out = append(out, t)
+    }
+    return out
+}
+
+func (s *Store) Get(id int) (Task, bool) {
+    s.mu.Lock()
+    defer s.mu.Unlock()
+    t, ok := s.tasks[id]
+    return t, ok
+}</code></pre>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: почему <code class="inline">All()</code> возвращает копии, а не ссылку на карту <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight"><code class="inline">All()</code> собирает срез из значений карты внутри критической секции и возвращает уже готовый срез — это принципиально: если бы метод возвращал саму карту <code class="inline">s.tasks</code> по ссылке, вызывающий код мог бы читать и писать её уже вне мьютекса, что превратило бы весь механизм защиты в фикцию (см. главу 8 про гонки данных). Возврат копии данных, а не доступа к внутреннему состоянию — стандартный способ безопасно «выпустить» защищённые мьютексом данные наружу.</p>
+            <p class="tight">Этот же <code class="inline">Store</code> — простая иллюстрация паттерна repository: обработчики HTTP ничего не знают о том, что данные лежат в map в памяти, а не в PostgreSQL — они видят только методы <code class="inline">Add</code>/<code class="inline">All</code>/<code class="inline">Get</code>. Замена map на реальную БД в проде не потребует менять код обработчиков вообще, если интерфейс хранилища выделить отдельно (см. 11.4, тестируемость через интерфейсы).</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="handlers">
+        <h2><span class="idx">12.2</span>Обработчики</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">handlers.go</span></div>
+          <pre><code class="language-go">type API struct{ store *Store }
+
+func (a *API) listTasks(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(a.store.All())
+}
+
+func (a *API) createTask(w http.ResponseWriter, r *http.Request) {
+    var in struct{ Text string `json:"text"` }
+    if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+        http.Error(w, "некорректный JSON", http.StatusBadRequest)
+        return
+    }
+    task := a.store.Add(in.Text)
+    w.WriteHeader(http.StatusCreated)
+    json.NewEncoder(w).Encode(task)
+}
+
+func (a *API) getTask(w http.ResponseWriter, r *http.Request) {
+    id, err := strconv.Atoi(r.PathValue("id"))
+    if err != nil {
+        http.Error(w, "некорректный id", http.StatusBadRequest)
+        return
+    }
+    task, ok := a.store.Get(id)
+    if !ok {
+        http.Error(w, "не найдено", http.StatusNotFound)
+        return
+    }
+    json.NewEncoder(w).Encode(task)
+}</code></pre>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: почему <code class="inline">Content-Type</code> нужно ставить <b>до</b> <code class="inline">WriteHeader</code> <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">Первый вызов <code class="inline">w.Write(...)</code> (или неявный первый вызов внутри <code class="inline">json.NewEncoder(w).Encode(...)</code>) неявно посылает статус-код <code class="inline">200 OK</code>, если <code class="inline">WriteHeader</code> ещё не был вызван явно, — и в этот момент фиксируются все заголовки, выставленные к тому моменту. Установка заголовка (<code class="inline">w.Header().Set(...)</code>) <b>после</b> первой записи в тело ответа ни на что не повлияет — заголовки уже отправлены клиенту. Поэтому в <code class="inline">listTasks</code> заголовок ставится первой строкой, а в <code class="inline">createTask</code> порядок ещё строже: <code class="inline">WriteHeader(http.StatusCreated)</code> вызывается явно и до <code class="inline">Encode</code>, иначе тело ответа отправило бы неявные <code class="inline">200</code> вместо нужного <code class="inline">201</code>.</p>
+            <p class="tight">Ещё один частый промах в таком коде: ошибка от <code class="inline">json.NewEncoder(w).Encode(...)</code> в конце обработчика почти никогда не проверяется — на практике к этому моменту заголовки уже отправлены, и сделать полноценный <code class="inline">http.Error</code> уже нельзя, поэтому обычно её как минимум логируют, а не молча игнорируют.</p>
+          </div>
+        </details>
+
+        <details class="deep">
+          <summary>Подробнее: <code class="inline">http.Handler</code> vs <code class="inline">http.HandlerFunc</code>, и чем плох <code class="inline">nil</code> вторым аргументом в <code class="inline">ListenAndServe</code> <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight"><code class="inline">http.Handler</code> — интерфейс с единственным методом <code class="inline">ServeHTTP(w http.ResponseWriter, r *http.Request)</code>. Методы <code class="inline">a.listTasks</code>/<code class="inline">a.createTask</code> выше — обычные функции с такой сигнатурой, а не значения, реализующие интерфейс напрямую; связывает их с интерфейсом тип-обёртка <code class="inline">http.HandlerFunc</code> — она сама реализует <code class="inline">ServeHTTP</code>, просто вызывая себя как функцию. Именно поэтому <code class="inline">mux.HandleFunc(...)</code> (принимающий обычную функцию) и <code class="inline">mux.Handle(...)</code> (принимающий готовый <code class="inline">Handler</code>) — по сути один и тот же механизм с разным уровнем адаптации.</p>
+            <p class="tight">Отдельная ловушка — вызов <code class="inline">http.ListenAndServe(addr, nil)</code> с <code class="inline">nil</code> вместо явного мультиплексора: тогда используется <code class="inline">http.DefaultServeMux</code> — единый глобальный экземпляр роутера пакета <code class="inline">net/http</code>, в который пишет <b>любой</b> импортированный в процесс пакет, вызвавший пакетные функции <code class="inline">http.HandleFunc</code>/<code class="inline">http.Handle</code> (в том числе сторонние зависимости, регистрирующие туда отладочные хендлеры). В отличие от кода выше, явно создающего свой <code class="inline">mux := http.NewServeMux()</code>, использование <code class="inline">DefaultServeMux</code> в проде считается плохой практикой — риск незаметного конфликта путей между независимыми частями кода и невозможность держать несколько независимых серверов в одном процессе. <em>(источник: t.me/go_interview_lib)</em></p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="routing">
+        <h2><span class="idx">12.3</span>Маршрутизация</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">main.go</span></div>
+          <pre><code class="language-go">func main() {
+    store := NewStore()
+    api := &API{store: store}
+
+    mux := http.NewServeMux()
+    mux.HandleFunc("GET /tasks", api.listTasks)
+    mux.HandleFunc("POST /tasks", api.createTask)
+    mux.HandleFunc("GET /tasks/{id}", api.getTask)
+
+    log.Println("слушаем :8080")
+    http.ListenAndServe(":8080", mux)
+}</code></pre>
+        </div>
+
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Свежая деталь:</b> запись метода прямо в паттерне (<code class="inline">"GET /tasks"</code>) и path-параметры вроде <code class="inline">{id}</code> с <code class="inline">r.PathValue("id")</code> — это возможности <code class="inline">http.ServeMux</code>, добавленные в <b>Go 1.22</b>. До этого стандартный роутер не различал методы и параметры пути — ради этого тянули сторонние библиотеки (chi, gorilla/mux).</p>
+        </div>
+
+        <figure>
+          <svg viewBox="0 0 600 170" role="img" aria-label="Запрос идёт от клиента через mux к нужному обработчику, обработчик читает или пишет в Store, а ответ возвращается тем же путём в обратную сторону.">
+            <defs>
+              <marker id="arr12" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+              </marker>
+            </defs>
+
+            <rect x="20" y="18" width="100" height="42" rx="8" fill="none" stroke="currentColor" opacity="0.55"/>
+            <text x="70" y="43" text-anchor="middle" font-size="12" fill="currentColor">клиент</text>
+
+            <rect x="165" y="18" width="100" height="42" rx="8" fill="none" stroke="currentColor" opacity="0.55"/>
+            <text x="215" y="43" text-anchor="middle" font-family="JetBrains Mono" font-size="11.5" fill="currentColor">mux</text>
+
+            <rect x="310" y="18" width="120" height="42" rx="8" fill="none" stroke="currentColor" opacity="0.55"/>
+            <text x="370" y="43" text-anchor="middle" font-size="11.5" fill="currentColor">handler</text>
+
+            <rect x="475" y="18" width="105" height="42" rx="8" fill="none" stroke="#3b7ec9"/>
+            <text x="527" y="43" text-anchor="middle" font-family="JetBrains Mono" font-size="11.5" fill="#3b7ec9">Store</text>
+
+            <line x1="120" y1="39" x2="165" y2="39" stroke="currentColor" opacity="0.5" marker-end="url(#arr12)"/>
+            <text x="142" y="16" text-anchor="middle" font-size="9.5" fill="currentColor" opacity="0.6">GET /tasks/7</text>
+
+            <line x1="265" y1="39" x2="310" y2="39" stroke="currentColor" opacity="0.5" marker-end="url(#arr12)"/>
+            <text x="287" y="16" text-anchor="middle" font-size="9.5" fill="currentColor" opacity="0.6">getTask</text>
+
+            <line x1="430" y1="39" x2="475" y2="39" stroke="#3b7ec9" opacity="0.8" marker-end="url(#arr12)"/>
+            <text x="452" y="16" text-anchor="middle" font-size="9.5" fill="#3b7ec9">Get(7)</text>
+
+            <path d="M370,60 C 370,120 70,120 70,60" fill="none" stroke="#af4433" stroke-width="1.5" opacity="0.8" marker-end="url(#arr12)"/>
+            <text x="220" y="140" text-anchor="middle" font-size="10.5" fill="#af4433">ответ: JSON + статус-код (200 / 201 / 400 / 404)</text>
+          </svg>
+          <figcaption><code class="inline">mux</code> находит нужный обработчик по методу и пути, обработчик работает со <code class="inline">Store</code> и сам решает, что и с каким статус-кодом вернуть клиенту.</figcaption>
+        </figure>
+
+        <details class="deep">
+          <summary>Подробнее: почему до 1.22 тянули chi/gorilla, и приоритет более конкретного паттерна <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">До Go 1.22 <code class="inline">http.ServeMux</code> умел маршрутизировать только по точному совпадению пути или по префиксу, заканчивающемуся на <code class="inline">/</code> (например, <code class="inline">"/tasks/"</code> ловил всё, что начинается с этого префикса), и совсем не различал HTTP-методы — <code class="inline">GET /tasks</code> и <code class="inline">POST /tasks</code> обрабатывались бы одним и тем же паттерном <code class="inline">"/tasks"</code>, а различать методы и вытаскивать path-параметры (<code class="inline">{id}</code>) приходилось руками внутри обработчика (<code class="inline">r.Method == "GET"</code>, ручной парсинг <code class="inline">r.URL.Path</code>) или сторонними роутерами вроде <code class="inline">gorilla/mux</code> и <code class="inline">chi</code>, которые умели это из коробки. С 1.22 методы и <code class="inline">{param}</code> вошли в сам стандартный <code class="inline">http.ServeMux</code>, и многим проектам сторонний роутер стал не нужен вообще.</p>
+            <p class="tight">Когда несколько зарегистрированных паттернов могут совпасть с одним и тем же запросом, побеждает <b>более конкретный</b> — например, <code class="inline">"GET /tasks/{id}"</code> выигрывает у <code class="inline">"GET /tasks/"</code> для запроса <code class="inline">GET /tasks/7</code>, даже если оба зарегистрированы. Специальный синтаксис <code class="inline">{id...}</code> (с многоточием) ловит «хвост» пути произвольной длины — аналог wildcard-сегмента в сторонних роутерах.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="checking">
+        <h2><span class="idx">12.4</span>Проверка</h2>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">terminal</span></div>
+          <pre><code class="language-bash">curl -X POST localhost:8080/tasks -d '{"text":"купить хлеб"}'
+curl localhost:8080/tasks
+curl localhost:8080/tasks/1</code></pre>
+        </div>
+
+        <details class="deep">
+          <summary>Подробнее: <code class="inline">httptest</code> вместо реального <code class="inline">curl</code>/сервера <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">Проверка через <code class="inline">curl</code> на живом сервере удобна руками, но не автоматизируется в CI. Стандартный пакет <code class="inline">net/http/httptest</code> позволяет протестировать обработчик без реального сетевого сокета: <code class="inline">httptest.NewRequest</code> строит <code class="inline">*http.Request</code> напрямую в памяти, а <code class="inline">httptest.NewRecorder()</code> даёт <code class="inline">http.ResponseWriter</code>, который просто записывает всё в память вместо отправки по сети — обработчик вызывается как обычная функция, без поднятия сервера и порта.</p>
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">handlers_test.go</span></div>
+              <pre><code class="language-go">func TestGetTask(t *testing.T) {
+    api := &API{store: seedStore()}
+    req := httptest.NewRequest("GET", "/tasks/1", nil)
+    req.SetPathValue("id", "1")
+    rec := httptest.NewRecorder()
+
+    api.getTask(rec, req)
+
+    if rec.Code != http.StatusOK {
+        t.Errorf("код = %d, хотим %d", rec.Code, http.StatusOK)
+    }
+}</code></pre>
+            </div>
+            <p class="tight">Для тестов, покрывающих весь стек включая маршрутизацию (а не один изолированный обработчик), поднимают <code class="inline">httptest.NewServer(mux)</code> — настоящий сервер на случайном свободном порту, который живёт только на время теста.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="topic" id="prodnotes">
+        <h2><span class="idx">12.5</span>Что дальше в проде</h2>
+        <p class="tight">Для реального сервиса этому примеру не хватает: таймаутов (<code class="inline">http.Server{ReadTimeout, WriteTimeout}</code>), graceful shutdown через <code class="inline">context</code> и <code class="inline">Server.Shutdown</code>, middleware для логирования и восстановления после паники в хендлере, настоящей БД вместо map и более строгой валидации входных данных. Каждый пункт — материал для отдельной темы, здесь важно было собрать воедино синтаксис из прошлых глав.</p>
+
+        <details class="deep">
+          <summary>Подробнее: graceful shutdown целиком <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">Grace­ful shutdown — это остановка сервера, при которой уже принятые запросы успевают доработать, а новые соединения перестают приниматься сразу после сигнала завершения. <code class="inline">http.Server.Shutdown(ctx)</code> делает именно это: закрывает слушающий сокет (новые соединения больше не принимаются), но ждёт завершения уже идущих обработчиков, пока не истечёт дедлайн переданного <code class="inline">context.Context</code> — если дедлайн истекает раньше, чем все обработчики закончили, <code class="inline">Shutdown</code> возвращает ошибку контекста, а незавершённые соединения обрываются принудительно.</p>
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">graceful.go</span></div>
+              <pre><code class="language-go">srv := &http.Server{Addr: ":8080", Handler: mux}
+
+go func() {
+    if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+        log.Fatalf("ListenAndServe: %v", err)
+    }
+}()
+
+stop := make(chan os.Signal, 1)
+signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+<-stop // блокируемся, пока не придёт сигнал
+
+ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+defer cancel()
+if err := srv.Shutdown(ctx); err != nil {
+    log.Printf("принудительное завершение: %v", err)
+}</code></pre>
+            </div>
+            <p class="tight">Важная деталь: сам <code class="inline">ListenAndServe()</code> нужно запускать в отдельной горутине именно потому, что он блокирует вызывающую горутину до остановки сервера — если запустить его в основной горутине, код после него (ожидание сигнала, вызов <code class="inline">Shutdown</code>) никогда не выполнится. После успешного <code class="inline">Shutdown</code>, <code class="inline">ListenAndServe</code> в фоновой горутине вернёт специальную, ожидаемую ошибку <code class="inline">http.ErrServerClosed</code> — её явно исключают из «настоящих» ошибок, иначе штатная остановка сервера выглядела бы как сбой.</p>
+            <p class="tight">Код выше — «ручной» вариант через <code class="inline">signal.Notify</code> и отдельный канал. Более современная альтернатива — <code class="inline">signal.NotifyContext</code> (с Go 1.16): <code class="inline">ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)</code> сразу возвращает обычный <code class="inline">context.Context</code>, который отменяется при получении сигнала, — тогда весь остальной код (в том числе части, уже написанные с оглядкой на <code class="inline">ctx.Done()</code>, например через <code class="inline">errgroup</code>) реагирует на завершение единым образом, без отдельного канала сигналов и ручного <code class="inline">select</code>. Обязателен <code class="inline">defer stop()</code> сразу после получения — он освобождает регистрацию обработчика сигнала в рантайме; без него регистрация продолжает висеть до конца процесса. <em>(источник: t.me/go_interview_lib)</em></p>
+          </div>
+        </details>
+
+        <details class="deep">
+          <summary>Подробнее: SQL-инъекция и XSS — минимально необходимая защита <span class="tag">medium</span></summary>
+          <div class="deep-body">
+            <p class="tight">«Более строгая валидация входных данных», упомянутая выше, на практике в первую очередь означает защиту от двух классических атак.</p>
+            <p class="tight">От <b>SQL-инъекции</b> защищают исключительно параметризованные запросы — плейсхолдеры (<code class="inline">$1</code> в PostgreSQL, <code class="inline">?</code> в MySQL/SQLite), где значения передаются драйверу отдельно от текста запроса, а не подставляются в строку конкатенацией или через <code class="inline">fmt.Sprintf</code>. Драйвер и СУБД в этом случае гарантированно интерпретируют переданное значение как данные, а не как часть SQL-синтаксиса, какие бы кавычки или ключевые слова оно ни содержало.</p>
+            <p class="tight">От <b>XSS</b> (внедрения чужого JS/HTML через пользовательский ввод, впоследствии отображаемый другим пользователям) защищает контекстно-зависимое экранирование при рендеринге. Стандартный пакет <code class="inline">html/template</code> делает это автоматически — экранирует значение по-разному в зависимости от того, куда именно оно подставляется в шаблоне (тело HTML-тега, атрибут, URL, встроенный <code class="inline">&lt;script&gt;</code>). Пакет <code class="inline">text/template</code> с виду тождественен по API, но не экранирует ничего вообще — использовать его для генерации HTML-страниц из непроверенных пользовательских данных небезопасно, это только для обычного текстового вывода. <em>(источник: t.me/go_interview_lib)</em></p>
+          </div>
+        </details>
+      </section>
