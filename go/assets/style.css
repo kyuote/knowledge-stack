@@ -312,7 +312,7 @@
       position:static; width:100%; height:auto; border-right:none; border-bottom:1px solid var(--border);
       padding:18px 20px;
     }
-    .subnav{display:none;}
+    /* subnav visibility управляется атрибутом [hidden] — не переопределяем здесь */
     .toc-label:nth-of-type(2){display:none;}
   }
 
