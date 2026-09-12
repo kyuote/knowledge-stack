@@ -2439,171 +2439,224 @@ delete(m, "k")    // → mapdelete(t *maptype, h *hmap, k unsafe.Pointer)</code>
                   local_depth также используется при <b>клонировании мапы</b> (<code class="inline">maps.clone</code> / assign): рантайм обходит Directory и по local_depth определяет уникальные таблицы, чтобы не скопировать одну таблицу дважды через разные указатели.
                 </div>
 
-                <!-- SVG-диаграмма: единый cold без плывущих блоков -->
+                <!-- SVG-диаграмма: единый, без плывущих блоков -->
                 <div style="overflow-x:auto;">
-                  <svg viewBox="0 0 960 202" style="width:100%;min-width:680px;max-width:960px;display:block;" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono',monospace">
+                  <svg viewBox="0 0 1380 294" style="min-width:1550px;display:block;" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono',monospace">
                     <defs>
-                      <marker id="ehA" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="currentColor" opacity=".45"/></marker>
-                      <marker id="ehO" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#d97706"/></marker>
-                      <marker id="ehB" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#4a9fd4" opacity=".85"/></marker>
+                      <marker id="ehA" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L0,7 L7,3.5 z" fill="currentColor" opacity=".45"/></marker>
+                      <marker id="ehO" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L0,7 L7,3.5 z" fill="#d97706"/></marker>
+                      <marker id="ehB" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L0,7 L7,3.5 z" fill="#4a9fd4" opacity=".85"/></marker>
                     </defs>
 
-                    <!-- ═══ STAGE 1: 2 таблицы (x=5..197) ═══ -->
-                    <text x="101" y="13" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".38" font-weight="600" letter-spacing=".07em">① 2 ТАБЛИЦЫ</text>
-                    <rect x="5" y="18" width="192" height="174" rx="7" fill="currentColor" fill-opacity=".025" stroke="currentColor" stroke-opacity=".22" stroke-width="1"/>
-                    <text x="14" y="33" font-size="9" fill="currentColor" opacity=".42">Directory</text>
-                    <text x="193" y="33" font-size="8" fill="#7c3aed" text-anchor="end" font-weight="700">gd=1 · 2 слота</text>
-                    <!-- p1 -->
-                    <rect x="29" y="40" width="44" height="20" rx="4" fill="none" stroke="currentColor" stroke-opacity=".32" stroke-width="1"/>
-                    <text x="51" y="54" text-anchor="middle" font-size="9" fill="currentColor">p1</text>
-                    <!-- p2 (orange = full) -->
-                    <rect x="126" y="40" width="44" height="20" rx="4" fill="none" stroke="#d97706" stroke-width="1"/>
-                    <text x="148" y="54" text-anchor="middle" font-size="9" fill="#d97706">p2</text>
-                    <!-- arrows -->
-                    <line x1="51" y1="60" x2="51" y2="80" stroke="currentColor" stroke-opacity=".38" stroke-width="1.2" marker-end="url(#ehA)"/>
-                    <line x1="148" y1="60" x2="148" y2="80" stroke="#d97706" stroke-width="1.2" opacity=".8" marker-end="url(#ehO)"/>
-                    <!-- Table A -->
-                    <rect x="10" y="81" width="80" height="100" rx="6" fill="none" stroke="currentColor" stroke-opacity=".28" stroke-width="1"/>
-                    <text x="18" y="95" font-size="9" fill="currentColor" opacity=".48">Table A</text>
-                    <text x="87" y="95" font-size="8" fill="#7c3aed" text-anchor="end">ld=1</text>
-                    <rect x="18" y="102" width="32" height="8" rx="1" fill="#7ab3d4" fill-opacity=".58"/>
-                    <rect x="54" y="102" width="28" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
-                    <rect x="18" y="114" width="32" height="8" rx="1" fill="#7ab3d4" fill-opacity=".45"/>
-                    <rect x="54" y="114" width="28" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
-                    <rect x="18" y="126" width="32" height="8" rx="1" fill="#7ab3d4" fill-opacity=".22"/>
-                    <rect x="54" y="126" width="28" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
-                    <!-- Table B (orange, full) -->
-                    <rect x="106" y="81" width="80" height="100" rx="6" fill="none" stroke="#d97706" stroke-width="1"/>
-                    <text x="114" y="95" font-size="9" fill="currentColor" opacity=".48">Table B</text>
-                    <text x="183" y="95" font-size="8" fill="#7c3aed" text-anchor="end">ld=1</text>
-                    <rect x="114" y="102" width="30" height="8" rx="1" fill="#7ab3d4" fill-opacity=".62"/>
-                    <rect x="148" y="102" width="30" height="8" rx="1" fill="#7ab3d4" fill-opacity=".62"/>
-                    <rect x="114" y="114" width="30" height="8" rx="1" fill="#7ab3d4" fill-opacity=".62"/>
-                    <rect x="148" y="114" width="30" height="8" rx="1" fill="#7ab3d4" fill-opacity=".62"/>
-                    <rect x="114" y="126" width="30" height="8" rx="1" fill="#7ab3d4" fill-opacity=".62"/>
-                    <rect x="148" y="126" width="30" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
-                    <text x="146" y="175" font-size="7.5" fill="#d97706" text-anchor="middle">growth_left=0</text>
+                    <!-- ═══ STAGE 1 ═══ -->
+                    <text x="152" y="14" text-anchor="middle" font-size="11" fill="currentColor" opacity=".38" font-weight="600" letter-spacing=".07em">① 2 ТАБЛИЦЫ</text>
+                    <rect x="8" y="20" width="288" height="262" rx="8" fill="currentColor" fill-opacity=".025" stroke="currentColor" stroke-opacity=".22" stroke-width="1.2"/>
+                    <text x="18" y="40" font-size="12" fill="currentColor" opacity=".42">Directory</text>
+                    <text x="292" y="40" font-size="10" fill="#7c3aed" text-anchor="end" font-weight="700">gd=1 · 2 слота</text>
+                    <rect x="32" y="48" width="62" height="26" rx="5" fill="none" stroke="currentColor" stroke-opacity=".32" stroke-width="1.2"/>
+                    <text x="63" y="65" text-anchor="middle" font-size="12" fill="currentColor">p1</text>
+                    <rect x="200" y="48" width="62" height="26" rx="5" fill="none" stroke="#d97706" stroke-width="1.2"/>
+                    <text x="231" y="65" text-anchor="middle" font-size="12" fill="#d97706">p2</text>
+                    <line x1="63" y1="74" x2="63" y2="94" stroke="currentColor" stroke-opacity=".38" stroke-width="1.5" marker-end="url(#ehA)"/>
+                    <line x1="231" y1="74" x2="231" y2="94" stroke="#d97706" stroke-width="1.5" opacity=".8" marker-end="url(#ehO)"/>
+                    <!-- Table A: 3/8 filled -->
+                    <rect x="14" y="95" width="124" height="155" rx="7" fill="none" stroke="currentColor" stroke-opacity=".28" stroke-width="1.2"/>
+                    <text x="22" y="108" font-size="12" fill="currentColor" opacity=".48">Table A</text>
+                    <text x="135" y="108" font-size="10" fill="#7c3aed" text-anchor="end">ld=1</text>
+                    <rect x="18" y="112" width="116" height="53" rx="3" fill="none" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <text x="22" y="122" font-size="8" fill="currentColor" opacity=".35">Group</text>
+                    <rect x="22" y="126" width="50" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="76" y="126" width="50" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="22" y="140" width="50" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="76" y="140" width="50" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="18" y="168" width="116" height="53" rx="3" fill="none" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <text x="22" y="178" font-size="8" fill="currentColor" opacity=".35">Group</text>
+                    <rect x="22" y="182" width="50" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="76" y="182" width="50" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="22" y="196" width="50" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="76" y="196" width="50" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <!-- Table B: 8/8 full -->
+                    <rect x="152" y="95" width="124" height="155" rx="7" fill="none" stroke="#d97706" stroke-width="1.2"/>
+                    <text x="160" y="108" font-size="12" fill="currentColor" opacity=".48">Table B</text>
+                    <text x="273" y="108" font-size="10" fill="#7c3aed" text-anchor="end">ld=1</text>
+                    <rect x="156" y="112" width="116" height="53" rx="3" fill="none" stroke="#d97706" stroke-opacity=".4" stroke-width=".8"/>
+                    <text x="160" y="122" font-size="8" fill="#d97706" opacity=".6">Group</text>
+                    <rect x="160" y="126" width="50" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="214" y="126" width="50" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="160" y="140" width="50" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="214" y="140" width="50" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="156" y="168" width="116" height="53" rx="3" fill="none" stroke="#d97706" stroke-opacity=".4" stroke-width=".8"/>
+                    <text x="160" y="178" font-size="8" fill="#d97706" opacity=".6">Group</text>
+                    <rect x="160" y="182" width="50" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="214" y="182" width="50" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="160" y="196" width="50" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="214" y="196" width="50" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <text x="214" y="264" font-size="10" fill="#d97706" text-anchor="middle">growth_left=0</text>
 
-                    <!-- ═══ ARROW 1 (x=200..278) ═══ -->
-                    <text x="239" y="68" font-size="8.5" fill="#d97706" text-anchor="middle">local==global</text>
-                    <text x="239" y="80" font-size="8.5" fill="#d97706" text-anchor="middle">→ удваиваем</text>
-                    <text x="239" y="92" font-size="8.5" fill="#d97706" text-anchor="middle">директорию</text>
-                    <line x1="202" y1="107" x2="272" y2="107" stroke="#d97706" stroke-width="1.8" marker-end="url(#ehO)"/>
-                    <text x="239" y="122" font-size="7.5" fill="currentColor" opacity=".42" text-anchor="middle">B сплитится</text>
-                    <text x="239" y="133" font-size="7.5" fill="currentColor" opacity=".42" text-anchor="middle">A берёт p1+p2</text>
+                    <!-- ═══ ARROW 1 ═══ -->
+                    <text x="357" y="105" font-size="11" fill="#d97706" text-anchor="middle">local==global</text>
+                    <text x="357" y="120" font-size="11" fill="#d97706" text-anchor="middle">→ удваиваем</text>
+                    <text x="357" y="135" font-size="11" fill="#d97706" text-anchor="middle">директорию</text>
+                    <line x1="304" y1="151" x2="408" y2="151" stroke="#d97706" stroke-width="2" marker-end="url(#ehO)"/>
+                    <text x="357" y="167" font-size="10" fill="currentColor" opacity=".42" text-anchor="middle">B сплитится</text>
+                    <text x="357" y="181" font-size="10" fill="currentColor" opacity=".42" text-anchor="middle">A берёт p1+p2</text>
 
-                    <!-- ═══ STAGE 2: 3 таблицы (x=280..536) ═══ -->
-                    <text x="408" y="13" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".38" font-weight="600" letter-spacing=".07em">② 3 ТАБЛИЦЫ (НЕ 4!)</text>
-                    <rect x="280" y="18" width="256" height="174" rx="7" fill="currentColor" fill-opacity=".025" stroke="currentColor" stroke-opacity=".22" stroke-width="1"/>
-                    <text x="289" y="33" font-size="9" fill="currentColor" opacity=".42">Directory</text>
-                    <text x="532" y="33" font-size="8" fill="#7c3aed" text-anchor="end" font-weight="700">gd=2 · 4 слота</text>
-                    <!-- p1 blue -->
-                    <rect x="289" y="40" width="40" height="20" rx="4" fill="none" stroke="#4a9fd4" stroke-width="1"/>
-                    <text x="309" y="54" text-anchor="middle" font-size="9" fill="#4a9fd4">p1</text>
-                    <!-- p2 blue -->
-                    <rect x="339" y="40" width="40" height="20" rx="4" fill="none" stroke="#4a9fd4" stroke-width="1"/>
-                    <text x="359" y="54" text-anchor="middle" font-size="9" fill="#4a9fd4">p2</text>
-                    <!-- p3 -->
-                    <rect x="399" y="40" width="40" height="20" rx="4" fill="none" stroke="currentColor" stroke-opacity=".32" stroke-width="1"/>
-                    <text x="419" y="54" text-anchor="middle" font-size="9" fill="currentColor">p3</text>
-                    <!-- p4 -->
-                    <rect x="449" y="40" width="40" height="20" rx="4" fill="none" stroke="currentColor" stroke-opacity=".32" stroke-width="1"/>
-                    <text x="469" y="54" text-anchor="middle" font-size="9" fill="currentColor">p4</text>
-                    <!-- p1,p2 → TableA (wide box spans both) -->
-                    <line x1="309" y1="60" x2="309" y2="80" stroke="#4a9fd4" stroke-width="1.2" opacity=".78" marker-end="url(#ehB)"/>
-                    <line x1="359" y1="60" x2="359" y2="80" stroke="#4a9fd4" stroke-width="1.2" opacity=".78" marker-end="url(#ehB)"/>
-                    <!-- p3,p4 → B1,B2 -->
-                    <line x1="419" y1="60" x2="419" y2="80" stroke="currentColor" stroke-opacity=".38" stroke-width="1.2" marker-end="url(#ehA)"/>
-                    <line x1="469" y1="60" x2="469" y2="80" stroke="currentColor" stroke-opacity=".38" stroke-width="1.2" marker-end="url(#ehA)"/>
-                    <!-- TableA: wide, blue border, spans p1+p2 x range -->
-                    <rect x="285" y="81" width="115" height="100" rx="6" fill="none" stroke="#4a9fd4" stroke-width="1.2"/>
-                    <text x="293" y="95" font-size="9" fill="currentColor" opacity=".48">Table A</text>
-                    <text x="397" y="95" font-size="8" fill="#7c3aed" text-anchor="end">ld=1</text>
-                    <text x="342" y="108" font-size="7.5" fill="#4a9fd4" text-anchor="middle">← p1 + p2</text>
-                    <rect x="293" y="115" width="46" height="8" rx="1" fill="#7ab3d4" fill-opacity=".52"/>
-                    <rect x="345" y="115" width="47" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
-                    <rect x="293" y="127" width="46" height="8" rx="1" fill="#7ab3d4" fill-opacity=".32"/>
-                    <rect x="345" y="127" width="47" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
-                    <text x="342" y="173" font-size="7.5" fill="currentColor" opacity=".35" text-anchor="middle">ld&lt;gd · 2 указателя</text>
-                    <!-- B1 -->
-                    <rect x="405" y="81" width="58" height="86" rx="6" fill="none" stroke="currentColor" stroke-opacity=".28" stroke-width="1"/>
-                    <text x="412" y="95" font-size="9" fill="currentColor" opacity=".48">B1</text>
-                    <text x="460" y="95" font-size="8" fill="#059669" text-anchor="end">ld=2</text>
-                    <rect x="412" y="102" width="22" height="7" rx="1" fill="#7ab3d4" fill-opacity=".55"/>
-                    <rect x="438" y="102" width="18" height="7" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
-                    <rect x="412" y="113" width="22" height="7" rx="1" fill="#7ab3d4" fill-opacity=".35"/>
-                    <rect x="438" y="113" width="18" height="7" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
-                    <!-- B2 -->
-                    <rect x="467" y="81" width="58" height="86" rx="6" fill="none" stroke="currentColor" stroke-opacity=".28" stroke-width="1"/>
-                    <text x="474" y="95" font-size="9" fill="currentColor" opacity=".48">B2</text>
-                    <text x="522" y="95" font-size="8" fill="#059669" text-anchor="end">ld=2</text>
-                    <rect x="474" y="102" width="22" height="7" rx="1" fill="#7ab3d4" fill-opacity=".55"/>
-                    <rect x="500" y="102" width="18" height="7" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
-                    <rect x="474" y="113" width="22" height="7" rx="1" fill="#7ab3d4" fill-opacity=".35"/>
-                    <rect x="500" y="113" width="18" height="7" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
+                    <!-- ═══ STAGE 2 ═══ -->
+                    <text x="620" y="14" text-anchor="middle" font-size="11" fill="currentColor" opacity=".38" font-weight="600" letter-spacing=".07em">② 3 ТАБЛИЦЫ (НЕ 4!)</text>
+                    <rect x="424" y="20" width="392" height="262" rx="8" fill="currentColor" fill-opacity=".025" stroke="currentColor" stroke-opacity=".22" stroke-width="1.2"/>
+                    <text x="434" y="40" font-size="12" fill="currentColor" opacity=".42">Directory</text>
+                    <text x="812" y="40" font-size="10" fill="#7c3aed" text-anchor="end" font-weight="700">gd=2 · 4 слота</text>
+                    <rect x="436" y="48" width="52" height="26" rx="5" fill="none" stroke="#4a9fd4" stroke-width="1.2"/>
+                    <text x="462" y="65" text-anchor="middle" font-size="12" fill="#4a9fd4">p1</text>
+                    <rect x="498" y="48" width="52" height="26" rx="5" fill="none" stroke="#4a9fd4" stroke-width="1.2"/>
+                    <text x="524" y="65" text-anchor="middle" font-size="12" fill="#4a9fd4">p2</text>
+                    <rect x="610" y="48" width="52" height="26" rx="5" fill="none" stroke="currentColor" stroke-opacity=".32" stroke-width="1.2"/>
+                    <text x="636" y="65" text-anchor="middle" font-size="12" fill="currentColor">p3</text>
+                    <rect x="680" y="48" width="52" height="26" rx="5" fill="none" stroke="currentColor" stroke-opacity=".32" stroke-width="1.2"/>
+                    <text x="706" y="65" text-anchor="middle" font-size="12" fill="currentColor">p4</text>
+                    <line x1="462" y1="74" x2="462" y2="94" stroke="#4a9fd4" stroke-width="1.5" opacity=".78" marker-end="url(#ehB)"/>
+                    <line x1="524" y1="74" x2="524" y2="94" stroke="#4a9fd4" stroke-width="1.5" opacity=".78" marker-end="url(#ehB)"/>
+                    <line x1="636" y1="74" x2="636" y2="94" stroke="currentColor" stroke-opacity=".38" stroke-width="1.5" marker-end="url(#ehA)"/>
+                    <line x1="706" y1="74" x2="706" y2="94" stroke="currentColor" stroke-opacity=".38" stroke-width="1.5" marker-end="url(#ehA)"/>
+                    <!-- Table A: 6/8 filled (почти полная, сейчас сплитится) -->
+                    <rect x="430" y="95" width="152" height="155" rx="7" fill="none" stroke="#4a9fd4" stroke-width="1.5"/>
+                    <text x="438" y="108" font-size="12" fill="currentColor" opacity=".48">Table A</text>
+                    <text x="579" y="108" font-size="10" fill="#7c3aed" text-anchor="end">ld=1</text>
+                    <rect x="434" y="112" width="144" height="53" rx="3" fill="none" stroke="#4a9fd4" stroke-opacity=".3" stroke-width=".8"/>
+                    <text x="438" y="122" font-size="8" fill="#4a9fd4" opacity=".6">Group</text>
+                    <rect x="438" y="126" width="64" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="508" y="126" width="62" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="438" y="140" width="64" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="508" y="140" width="62" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="434" y="168" width="144" height="53" rx="3" fill="none" stroke="#4a9fd4" stroke-opacity=".3" stroke-width=".8"/>
+                    <text x="438" y="178" font-size="8" fill="#4a9fd4" opacity=".6">Group</text>
+                    <rect x="438" y="182" width="64" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="508" y="182" width="62" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="438" y="196" width="64" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="508" y="196" width="62" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <text x="506" y="264" font-size="9.5" fill="currentColor" opacity=".35" text-anchor="middle">ld&lt;gd · 2 указателя</text>
+                    <!-- B1: 4/8 (половина от B's 8) -->
+                    <rect x="588" y="95" width="106" height="155" rx="7" fill="none" stroke="currentColor" stroke-opacity=".28" stroke-width="1.2"/>
+                    <text x="596" y="108" font-size="12" fill="currentColor" opacity=".48">B1</text>
+                    <text x="691" y="108" font-size="10" fill="#059669" text-anchor="end">ld=2</text>
+                    <rect x="592" y="112" width="98" height="53" rx="3" fill="none" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <text x="596" y="122" font-size="8" fill="currentColor" opacity=".35">Group</text>
+                    <rect x="596" y="126" width="43" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="643" y="126" width="41" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="596" y="140" width="43" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="643" y="140" width="41" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="592" y="168" width="98" height="53" rx="3" fill="none" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <text x="596" y="178" font-size="8" fill="currentColor" opacity=".35">Group</text>
+                    <rect x="596" y="182" width="43" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="643" y="182" width="41" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="596" y="196" width="43" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="643" y="196" width="41" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <!-- B2: 4/8 (половина от B's 8) -->
+                    <rect x="700" y="95" width="106" height="155" rx="7" fill="none" stroke="currentColor" stroke-opacity=".28" stroke-width="1.2"/>
+                    <text x="708" y="108" font-size="12" fill="currentColor" opacity=".48">B2</text>
+                    <text x="803" y="108" font-size="10" fill="#059669" text-anchor="end">ld=2</text>
+                    <rect x="704" y="112" width="98" height="53" rx="3" fill="none" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <text x="708" y="122" font-size="8" fill="currentColor" opacity=".35">Group</text>
+                    <rect x="708" y="126" width="43" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="755" y="126" width="41" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="708" y="140" width="43" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="755" y="140" width="41" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="704" y="168" width="98" height="53" rx="3" fill="none" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <text x="708" y="178" font-size="8" fill="currentColor" opacity=".35">Group</text>
+                    <rect x="708" y="182" width="43" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="755" y="182" width="41" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="708" y="196" width="43" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="755" y="196" width="41" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
 
-                    <!-- ═══ ARROW 2 (x=540..618) ═══ -->
-                    <text x="579" y="65" font-size="8.5" fill="#d97706" text-anchor="middle">Table A</text>
-                    <text x="579" y="77" font-size="8.5" fill="#d97706" text-anchor="middle">заполнилась</text>
-                    <line x1="542" y1="91" x2="613" y2="91" stroke="#d97706" stroke-width="1.8" marker-end="url(#ehO)"/>
-                    <text x="579" y="107" font-size="8" fill="#059669" text-anchor="middle" font-weight="600">ld(1) &lt; gd(2)</text>
-                    <text x="579" y="119" font-size="8" fill="#059669" text-anchor="middle" font-weight="600">→ НЕ удваиваем!</text>
-                    <text x="579" y="131" font-size="7" fill="currentColor" opacity=".4" text-anchor="middle">делим указатели</text>
+                    <!-- ═══ ARROW 2 ═══ -->
+                    <text x="869" y="108" font-size="11" fill="#d97706" text-anchor="middle">Table A</text>
+                    <text x="869" y="123" font-size="11" fill="#d97706" text-anchor="middle">заполнилась</text>
+                    <line x1="824" y1="138" x2="912" y2="138" stroke="#d97706" stroke-width="2" marker-end="url(#ehO)"/>
+                    <text x="869" y="155" font-size="10.5" fill="#059669" text-anchor="middle" font-weight="600">ld(1) &lt; gd(2)</text>
+                    <text x="869" y="170" font-size="10.5" fill="#059669" text-anchor="middle" font-weight="600">→ НЕ удваиваем!</text>
+                    <text x="869" y="185" font-size="9" fill="currentColor" opacity=".4" text-anchor="middle">делим указатели</text>
 
-                    <!-- ═══ STAGE 3: 4 таблицы (x=622..955) ═══ -->
-                    <text x="788" y="13" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".38" font-weight="600" letter-spacing=".07em">③ 4 ТАБЛИЦЫ</text>
-                    <rect x="622" y="18" width="333" height="174" rx="7" fill="currentColor" fill-opacity=".025" stroke="currentColor" stroke-opacity=".22" stroke-width="1"/>
-                    <text x="631" y="33" font-size="9" fill="currentColor" opacity=".42">Directory</text>
-                    <text x="951" y="33" font-size="8" fill="#7c3aed" text-anchor="end" font-weight="700">gd=2 · 4 слота (не изменился)</text>
-                    <!-- p1 -->
-                    <rect x="631" y="40" width="58" height="20" rx="4" fill="none" stroke="currentColor" stroke-opacity=".32" stroke-width="1"/>
-                    <text x="660" y="54" text-anchor="middle" font-size="9" fill="currentColor">p1</text>
-                    <!-- p2 -->
-                    <rect x="713" y="40" width="58" height="20" rx="4" fill="none" stroke="currentColor" stroke-opacity=".32" stroke-width="1"/>
-                    <text x="742" y="54" text-anchor="middle" font-size="9" fill="currentColor">p2</text>
-                    <!-- p3 -->
-                    <rect x="795" y="40" width="58" height="20" rx="4" fill="none" stroke="currentColor" stroke-opacity=".32" stroke-width="1"/>
-                    <text x="824" y="54" text-anchor="middle" font-size="9" fill="currentColor">p3</text>
-                    <!-- p4 -->
-                    <rect x="877" y="40" width="58" height="20" rx="4" fill="none" stroke="currentColor" stroke-opacity=".32" stroke-width="1"/>
-                    <text x="906" y="54" text-anchor="middle" font-size="9" fill="currentColor">p4</text>
-                    <!-- arrows -->
-                    <line x1="660" y1="60" x2="660" y2="80" stroke="currentColor" stroke-opacity=".38" stroke-width="1.2" marker-end="url(#ehA)"/>
-                    <line x1="742" y1="60" x2="742" y2="80" stroke="currentColor" stroke-opacity=".38" stroke-width="1.2" marker-end="url(#ehA)"/>
-                    <line x1="824" y1="60" x2="824" y2="80" stroke="currentColor" stroke-opacity=".38" stroke-width="1.2" marker-end="url(#ehA)"/>
-                    <line x1="906" y1="60" x2="906" y2="80" stroke="currentColor" stroke-opacity=".38" stroke-width="1.2" marker-end="url(#ehA)"/>
-                    <!-- A1 -->
-                    <rect x="629" y="81" width="72" height="92" rx="6" fill="none" stroke="currentColor" stroke-opacity=".28" stroke-width="1"/>
-                    <text x="637" y="95" font-size="9" fill="currentColor" opacity=".48">A1</text>
-                    <text x="698" y="95" font-size="8" fill="#059669" text-anchor="end">ld=2</text>
-                    <rect x="637" y="102" width="28" height="8" rx="1" fill="#7ab3d4" fill-opacity=".55"/>
-                    <rect x="669" y="102" width="24" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
-                    <rect x="637" y="114" width="28" height="8" rx="1" fill="#7ab3d4" fill-opacity=".3"/>
-                    <rect x="669" y="114" width="24" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
-                    <!-- A2 -->
-                    <rect x="711" y="81" width="72" height="92" rx="6" fill="none" stroke="currentColor" stroke-opacity=".28" stroke-width="1"/>
-                    <text x="719" y="95" font-size="9" fill="currentColor" opacity=".48">A2</text>
-                    <text x="780" y="95" font-size="8" fill="#059669" text-anchor="end">ld=2</text>
-                    <rect x="719" y="102" width="28" height="8" rx="1" fill="#7ab3d4" fill-opacity=".55"/>
-                    <rect x="751" y="102" width="24" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
-                    <rect x="719" y="114" width="28" height="8" rx="1" fill="#7ab3d4" fill-opacity=".3"/>
-                    <rect x="751" y="114" width="24" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
-                    <!-- B1 -->
-                    <rect x="793" y="81" width="72" height="92" rx="6" fill="none" stroke="currentColor" stroke-opacity=".28" stroke-width="1"/>
-                    <text x="801" y="95" font-size="9" fill="currentColor" opacity=".48">B1</text>
-                    <text x="862" y="95" font-size="8" fill="#059669" text-anchor="end">ld=2</text>
-                    <rect x="801" y="102" width="28" height="8" rx="1" fill="#7ab3d4" fill-opacity=".55"/>
-                    <rect x="833" y="102" width="24" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
-                    <rect x="801" y="114" width="28" height="8" rx="1" fill="#7ab3d4" fill-opacity=".3"/>
-                    <rect x="833" y="114" width="24" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
-                    <!-- B2 -->
-                    <rect x="875" y="81" width="72" height="92" rx="6" fill="none" stroke="currentColor" stroke-opacity=".28" stroke-width="1"/>
-                    <text x="883" y="95" font-size="9" fill="currentColor" opacity=".48">B2</text>
-                    <text x="944" y="95" font-size="8" fill="#059669" text-anchor="end">ld=2</text>
-                    <rect x="883" y="102" width="28" height="8" rx="1" fill="#7ab3d4" fill-opacity=".55"/>
-                    <rect x="915" y="102" width="24" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
-                    <rect x="883" y="114" width="28" height="8" rx="1" fill="#7ab3d4" fill-opacity=".3"/>
-                    <rect x="915" y="114" width="24" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
+                    <!-- ═══ STAGE 3 ═══ -->
+                    <text x="1148" y="14" text-anchor="middle" font-size="11" fill="currentColor" opacity=".38" font-weight="600" letter-spacing=".07em">③ 4 ТАБЛИЦЫ</text>
+                    <rect x="924" y="20" width="448" height="262" rx="8" fill="currentColor" fill-opacity=".025" stroke="currentColor" stroke-opacity=".22" stroke-width="1.2"/>
+                    <text x="934" y="40" font-size="12" fill="currentColor" opacity=".42">Directory</text>
+                    <text x="1368" y="40" font-size="10" fill="#7c3aed" text-anchor="end" font-weight="700">gd=2 · 4 слота (не изменился)</text>
+                    <rect x="938" y="48" width="62" height="26" rx="5" fill="none" stroke="currentColor" stroke-opacity=".32" stroke-width="1.2"/>
+                    <text x="969" y="65" text-anchor="middle" font-size="12" fill="currentColor">p1</text>
+                    <rect x="1044" y="48" width="62" height="26" rx="5" fill="none" stroke="currentColor" stroke-opacity=".32" stroke-width="1.2"/>
+                    <text x="1075" y="65" text-anchor="middle" font-size="12" fill="currentColor">p2</text>
+                    <rect x="1150" y="48" width="62" height="26" rx="5" fill="none" stroke="currentColor" stroke-opacity=".32" stroke-width="1.2"/>
+                    <text x="1181" y="65" text-anchor="middle" font-size="12" fill="currentColor">p3</text>
+                    <rect x="1256" y="48" width="62" height="26" rx="5" fill="none" stroke="currentColor" stroke-opacity=".32" stroke-width="1.2"/>
+                    <text x="1287" y="65" text-anchor="middle" font-size="12" fill="currentColor">p4</text>
+                    <line x1="969" y1="74" x2="969" y2="94" stroke="currentColor" stroke-opacity=".38" stroke-width="1.5" marker-end="url(#ehA)"/>
+                    <line x1="1075" y1="74" x2="1075" y2="94" stroke="currentColor" stroke-opacity=".38" stroke-width="1.5" marker-end="url(#ehA)"/>
+                    <line x1="1181" y1="74" x2="1181" y2="94" stroke="currentColor" stroke-opacity=".38" stroke-width="1.5" marker-end="url(#ehA)"/>
+                    <line x1="1287" y1="74" x2="1287" y2="94" stroke="currentColor" stroke-opacity=".38" stroke-width="1.5" marker-end="url(#ehA)"/>
+                    <!-- A1: 3/8 (половина от A's 6) -->
+                    <rect x="930" y="95" width="102" height="155" rx="7" fill="none" stroke="currentColor" stroke-opacity=".28" stroke-width="1.2"/>
+                    <text x="938" y="108" font-size="12" fill="currentColor" opacity=".48">A1</text>
+                    <text x="1029" y="108" font-size="10" fill="#059669" text-anchor="end">ld=2</text>
+                    <rect x="934" y="112" width="94" height="53" rx="3" fill="none" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <text x="938" y="122" font-size="8" fill="currentColor" opacity=".35">Group</text>
+                    <rect x="938" y="126" width="38" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="982" y="126" width="40" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="938" y="140" width="38" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="982" y="140" width="40" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="934" y="168" width="94" height="53" rx="3" fill="none" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <text x="938" y="178" font-size="8" fill="currentColor" opacity=".35">Group</text>
+                    <rect x="938" y="182" width="38" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="982" y="182" width="40" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="938" y="196" width="38" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="982" y="196" width="40" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <!-- A2: 3/8 (половина от A's 6) -->
+                    <rect x="1038" y="95" width="102" height="155" rx="7" fill="none" stroke="currentColor" stroke-opacity=".28" stroke-width="1.2"/>
+                    <text x="1046" y="108" font-size="12" fill="currentColor" opacity=".48">A2</text>
+                    <text x="1137" y="108" font-size="10" fill="#059669" text-anchor="end">ld=2</text>
+                    <rect x="1042" y="112" width="94" height="53" rx="3" fill="none" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <text x="1046" y="122" font-size="8" fill="currentColor" opacity=".35">Group</text>
+                    <rect x="1046" y="126" width="38" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="1090" y="126" width="40" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="1046" y="140" width="38" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="1090" y="140" width="40" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="1042" y="168" width="94" height="53" rx="3" fill="none" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <text x="1046" y="178" font-size="8" fill="currentColor" opacity=".35">Group</text>
+                    <rect x="1046" y="182" width="38" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="1090" y="182" width="40" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="1046" y="196" width="38" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="1090" y="196" width="40" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <!-- B1: 4/8 (без изменений из Stage 2) -->
+                    <rect x="1144" y="95" width="102" height="155" rx="7" fill="none" stroke="currentColor" stroke-opacity=".28" stroke-width="1.2"/>
+                    <text x="1152" y="108" font-size="12" fill="currentColor" opacity=".48">B1</text>
+                    <text x="1243" y="108" font-size="10" fill="#059669" text-anchor="end">ld=2</text>
+                    <rect x="1148" y="112" width="94" height="53" rx="3" fill="none" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <text x="1152" y="122" font-size="8" fill="currentColor" opacity=".35">Group</text>
+                    <rect x="1152" y="126" width="38" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="1196" y="126" width="40" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="1152" y="140" width="38" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="1196" y="140" width="40" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="1148" y="168" width="94" height="53" rx="3" fill="none" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <text x="1152" y="178" font-size="8" fill="currentColor" opacity=".35">Group</text>
+                    <rect x="1152" y="182" width="38" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="1196" y="182" width="40" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="1152" y="196" width="38" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="1196" y="196" width="40" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <!-- B2: 4/8 (без изменений из Stage 2) -->
+                    <rect x="1252" y="95" width="102" height="155" rx="7" fill="none" stroke="currentColor" stroke-opacity=".28" stroke-width="1.2"/>
+                    <text x="1260" y="108" font-size="12" fill="currentColor" opacity=".48">B2</text>
+                    <text x="1351" y="108" font-size="10" fill="#059669" text-anchor="end">ld=2</text>
+                    <rect x="1256" y="112" width="94" height="53" rx="3" fill="none" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <text x="1260" y="122" font-size="8" fill="currentColor" opacity=".35">Group</text>
+                    <rect x="1260" y="126" width="38" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="1304" y="126" width="40" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="1260" y="140" width="38" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="1304" y="140" width="40" height="11" rx="2" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="1256" y="168" width="94" height="53" rx="3" fill="none" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <text x="1260" y="178" font-size="8" fill="currentColor" opacity=".35">Group</text>
+                    <rect x="1260" y="182" width="38" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="1304" y="182" width="40" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="1260" y="196" width="38" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
+                    <rect x="1304" y="196" width="40" height="11" rx="2" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".18" stroke-width=".8"/>
                   </svg>
                 </div>
 

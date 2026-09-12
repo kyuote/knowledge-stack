@@ -506,6 +506,7 @@ nilMap["y"] = 1    // panic: assignment to entry in nil map</code></pre>
             <p class="tight"><b>Ограничения (из исходников):</b> группа — всегда ровно <b>8 слотов</b> (<code class="inline">MapGroupSlots = 1 &lt;&lt; 3</code>, степень двойки обязательна — размер зашит в битовые сдвиги); таблица — максимум <b>1024 записи</b> (<code class="inline">maxTableCapacity = 1024</code> = 2¹⁰ = 128 групп), при переполнении directory добавляет новую таблицу; directory — размер всегда <code class="inline">1 &lt;&lt; globalDepth</code>, удваивается только когда <code class="inline">localDepth == globalDepth</code> у разбиваемой таблицы (иначе таблица сплитится без роста directory); маленькая map (≤8 ключей) вообще не создаёт directory. Цифры: до +60% на микробенчмарках, ~+1.5% geometric mean CPU в реальных приложениях (<a href="https://go.dev/blog/swisstable" style="color:inherit;opacity:.7">go.dev/blog/swisstable</a>).</p>
 
             <p class="tight">Почему <code class="inline">&m[key]</code> — ошибка компиляции: при рехешировании бакеты/слоты перевыделяются и элементы физически перемещаются в памяти, сохранённый указатель стал бы висячим. Обходные пути — читать-изменять-записывать значение целиком, либо хранить в map указатели (<code class="inline">map[K]*V</code>). Идиоматичная замена множества (set) — <code class="inline">map[T]struct{}</code>: пустая структура не занимает памяти, в отличие от <code class="inline">map[T]bool</code>, где пришлось бы хранить лишний булев флаг.</p>
+
           </div>
         </details>
       </section>
