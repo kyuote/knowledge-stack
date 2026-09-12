@@ -492,6 +492,11 @@ nilMap["y"] = 1    // panic: assignment to entry in nil map</code></pre>
           <p><b>Гарантирован ли порядок <code class="inline">for k, v := range m</code>?</b> Нет — рантайм Go нарочно рандомизирует порядок обхода map при каждом запуске, чтобы код не смог случайно на него положиться.</p>
         </div>
 
+        <div class="callout interview">
+          <div class="mark">собес</div>
+          <p><b>Сколько элементов вмещает группа Swiss Tables (Go 1.24+)?</b> Физически 8 слотов, но эффективно — <b>7</b>. Load factor = <code class="inline">maxAvgGroupLoad = 7/8 = 87.5%</code>: при достижении 7 занятых слотов таблица начинает расти. Практический вывод: реальная вместимость таблицы = <b>кол-во групп × 7</b>, не × 8. 8 групп → 56 элементов, не 64.</p>
+        </div>
+
         <details class="deep">
           <summary>Подробнее: как устроена map внутри — от бакетов к Swiss Tables в Go 1.24 <span class="tag">deep</span></summary>
           <div class="deep-body">
