@@ -2131,6 +2131,491 @@ delete(m, "k")    // → mapdelete(t *maptype, h *hmap, k unsafe.Pointer)</code>
                 <p><b>Swiss Tables vs старые бакеты:</b> open addressing вместо chaining → нет overflow bucket'ов → лучше cache locality. Control word позволяет сравнить H2 сразу 8 слотов за одну битовую операцию вместо цикла по tophash. Рост отдельной таблицы (не всей map сразу) через directory → меньше пауз.</p>
               </div>
 
+              <figure style="margin-top:16px">
+                <svg viewBox="0 0 680 490" style="width:100%;max-width:680px" role="img" aria-label="Swiss Tables: инлайн-группа при ≤8 ключах и переход к полной архитектуре при 9+">
+                  <defs>
+                    <marker id="st-arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                      <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.5"/>
+                    </marker>
+                  </defs>
+
+                  <!-- ═══ ЛЕВАЯ: ≤8 ключей ═══ -->
+                  <text x="130" y="22" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor" font-family="JetBrains Mono, monospace">≤ 8 ключей</text>
+                  <text x="130" y="38" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.5" font-family="JetBrains Mono, monospace">один инлайн-блок, директории нет</text>
+
+                  <rect x="30" y="48" width="200" height="24" rx="5" fill="currentColor" opacity="0.08" stroke="currentColor" stroke-opacity="0.25" stroke-width="1"/>
+                  <text x="130" y="64" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.5" font-family="JetBrains Mono, monospace">control word  (8 × h2)</text>
+
+                  <rect x="30" y="76"  width="200" height="24" rx="3" fill="#3d9e6a" opacity="0.75"/>
+                  <text x="130" y="92"  text-anchor="middle" font-size="10" fill="#fff" font-family="JetBrains Mono, monospace">slot 1 — key / value</text>
+                  <rect x="30" y="104" width="200" height="24" rx="3" fill="#3d9e6a" opacity="0.75"/>
+                  <text x="130" y="120" text-anchor="middle" font-size="10" fill="#fff" font-family="JetBrains Mono, monospace">slot 2 — key / value</text>
+                  <rect x="30" y="132" width="200" height="24" rx="3" fill="#3d9e6a" opacity="0.75"/>
+                  <text x="130" y="148" text-anchor="middle" font-size="10" fill="#fff" font-family="JetBrains Mono, monospace">slot 3 — key / value</text>
+                  <rect x="30" y="160" width="200" height="24" rx="3" fill="#3d9e6a" opacity="0.75"/>
+                  <text x="130" y="176" text-anchor="middle" font-size="10" fill="#fff" font-family="JetBrains Mono, monospace">slot 4 — key / value</text>
+                  <rect x="30" y="188" width="200" height="24" rx="3" fill="#3d9e6a" opacity="0.75"/>
+                  <text x="130" y="204" text-anchor="middle" font-size="10" fill="#fff" font-family="JetBrains Mono, monospace">slot 5 — key / value</text>
+                  <rect x="30" y="216" width="200" height="24" rx="3" fill="#3d9e6a" opacity="0.75"/>
+                  <text x="130" y="232" text-anchor="middle" font-size="10" fill="#fff" font-family="JetBrains Mono, monospace">slot 6 — key / value</text>
+                  <rect x="30" y="244" width="200" height="24" rx="3" fill="#3d9e6a" opacity="0.75"/>
+                  <text x="130" y="260" text-anchor="middle" font-size="10" fill="#fff" font-family="JetBrains Mono, monospace">slot 7 — key / value</text>
+                  <rect x="30" y="272" width="200" height="24" rx="3" fill="#3d9e6a" opacity="0.75"/>
+                  <text x="130" y="288" text-anchor="middle" font-size="10" fill="#fff" font-family="JetBrains Mono, monospace">slot 8 — key / value</text>
+
+                  <text x="130" y="314" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.45" font-family="JetBrains Mono, monospace">8/8 — всё ещё OK</text>
+
+                  <rect x="22" y="40" width="216" height="268" rx="8" fill="none" stroke="currentColor" stroke-opacity="0.2" stroke-width="1.5" stroke-dasharray="5,3"/>
+                  <text x="238" y="185" font-size="9" fill="currentColor" opacity="0.3" transform="rotate(-90,238,185)" font-family="JetBrains Mono, monospace">ГРУППА</text>
+
+                  <!-- ═══ СТРЕЛКА ═══ -->
+                  <text x="318" y="168" text-anchor="middle" font-size="13" fill="#e05a00" font-weight="700" font-family="JetBrains Mono, monospace">+1</text>
+                  <text x="318" y="184" text-anchor="middle" font-size="11" fill="#e05a00" font-family="JetBrains Mono, monospace">(9-й)</text>
+                  <text x="318" y="200" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.5" font-family="JetBrains Mono, monospace">элемент</text>
+                  <text x="318" y="215" text-anchor="middle" font-size="10" fill="#e05a00" font-family="JetBrains Mono, monospace">→ рост</text>
+                  <path d="M260,205 Q318,205 360,205" stroke="currentColor" stroke-opacity="0.4" stroke-width="1.5" fill="none" marker-end="url(#st-arr2)"/>
+
+                  <!-- ═══ ПРАВАЯ: полная архитектура ═══ -->
+                  <text x="525" y="22" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor" font-family="JetBrains Mono, monospace">9+ ключей → рост</text>
+                  <text x="525" y="38" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.5" font-family="JetBrains Mono, monospace">директория + таблицы + группы</text>
+
+                  <rect x="460" y="48" width="130" height="32" rx="7" fill="#7b8fa6" opacity="0.85"/>
+                  <text x="525" y="68" text-anchor="middle" font-size="11" fill="#fff" font-weight="600" font-family="JetBrains Mono, monospace">Directory</text>
+
+                  <line x1="490" y1="80" x2="430" y2="104" stroke="currentColor" stroke-opacity="0.3" stroke-width="1.2"/>
+                  <line x1="525" y1="80" x2="525" y2="104" stroke="currentColor" stroke-opacity="0.3" stroke-width="1.2"/>
+                  <line x1="560" y1="80" x2="620" y2="104" stroke="currentColor" stroke-opacity="0.3" stroke-width="1.2"/>
+
+                  <rect x="385" y="104" width="88" height="26" rx="5" fill="#5c85b4" opacity="0.8"/>
+                  <text x="429" y="121" text-anchor="middle" font-size="10" fill="#fff" font-family="JetBrains Mono, monospace">Table 0</text>
+                  <rect x="480" y="104" width="88" height="26" rx="5" fill="#5c85b4" opacity="0.8"/>
+                  <text x="524" y="121" text-anchor="middle" font-size="10" fill="#fff" font-family="JetBrains Mono, monospace">Table 1</text>
+                  <rect x="575" y="104" width="88" height="26" rx="5" fill="#5c85b4" opacity="0.8"/>
+                  <text x="619" y="121" text-anchor="middle" font-size="10" fill="#fff" font-family="JetBrains Mono, monospace">Table N</text>
+
+                  <line x1="414" y1="130" x2="414" y2="152" stroke="currentColor" stroke-opacity="0.3" stroke-width="1.2"/>
+                  <line x1="444" y1="130" x2="444" y2="152" stroke="currentColor" stroke-opacity="0.3" stroke-width="1.2"/>
+
+                  <rect x="374" y="152" width="76" height="44" rx="5" fill="#7b6ea8" opacity="0.75"/>
+                  <text x="412" y="169" text-anchor="middle" font-size="9" fill="#e8e4f5" font-family="JetBrains Mono, monospace">control word</text>
+                  <rect x="377" y="178" width="70" height="12" rx="3" fill="#a89fd4" opacity="0.9"/>
+                  <text x="412" y="188" text-anchor="middle" font-size="8" fill="#fff" font-family="JetBrains Mono, monospace">8 слотов</text>
+
+                  <rect x="456" y="152" width="76" height="44" rx="5" fill="#7b6ea8" opacity="0.75"/>
+                  <text x="494" y="169" text-anchor="middle" font-size="9" fill="#e8e4f5" font-family="JetBrains Mono, monospace">control word</text>
+                  <rect x="459" y="178" width="70" height="12" rx="3" fill="#a89fd4" opacity="0.9"/>
+                  <text x="494" y="188" text-anchor="middle" font-size="8" fill="#fff" font-family="JetBrains Mono, monospace">8 слотов</text>
+
+                  <text x="430" y="212" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.4" font-family="JetBrains Mono, monospace">Группы (×N)</text>
+
+                  <rect x="378" y="224" width="276" height="52" rx="7" fill="#fdf3e7" stroke="#f5c06a" stroke-width="1" opacity="0.9"/>
+                  <text x="516" y="242" text-anchor="middle" font-size="10" fill="#7a5500" font-weight="700" font-family="JetBrains Mono, monospace">Пределы из исходников Go</text>
+                  <text x="516" y="257" text-anchor="middle" font-size="9" fill="#7a5500" font-family="JetBrains Mono, monospace">Группа: 8 слотов, эффект. нагрузка 7/8</text>
+                  <text x="516" y="270" text-anchor="middle" font-size="9" fill="#7a5500" font-family="JetBrains Mono, monospace">Таблица: макс 1 024 эл. (128 групп)</text>
+
+                  <rect x="30" y="344" width="620" height="50" rx="8" fill="currentColor" fill-opacity="0.04" stroke="currentColor" stroke-opacity="0.15" stroke-width="1"/>
+                  <text x="340" y="364" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600" font-family="JetBrains Mono, monospace">Правило нагрузки (многогрупповой режим)</text>
+                  <text x="340" y="381" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.65" font-family="JetBrains Mono, monospace">8 групп × 7 = 56 эл. → при 57-м таблица растёт</text>
+
+                  <text x="340" y="412" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.35" font-family="JetBrains Mono, monospace">Directory удваивается только если localDepth == globalDepth</text>
+
+                  <text x="130" y="454" text-anchor="middle" font-size="10" fill="#3d9e6a" font-weight="600" font-family="JetBrains Mono, monospace">✓ инлайн: 1 группа, все 8 слотов</text>
+                  <text x="525" y="454" text-anchor="middle" font-size="10" fill="#af4433" font-weight="600" font-family="JetBrains Mono, monospace">↑ полная архитектура (9+ эл.)</text>
+                </svg>
+                <figcaption style="font-size:11px;opacity:.6">Маленькая map (≤8 ключей) — один инлайн-блок без Directory. При 9-м элементе создаётся полная структура. Нагрузка 7/8 применяется к многогрупповым таблицам.</figcaption>
+              </figure>
+
+              <!-- growth_left diagram -->
+              <div style="margin-top:18px; border-top:1px solid rgba(128,128,128,.2); padding-top:16px;">
+                <p class="tight" style="margin-bottom:10px"><b>Рост таблицы: как работает growth_left</b></p>
+
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:rgba(128,128,128,.06);border:1px solid rgba(128,128,128,.2);border-radius:6px;padding:7px 12px;margin-bottom:14px;font-size:10px;font-family:'JetBrains Mono',monospace;">
+                  <code class="inline">growth_left</code>
+                  <span style="opacity:.5">=</span>
+                  <span><b>groups × 7</b> − inserted</span>
+                  <span style="opacity:.5">·</span>
+                  <span>сколько элементов ещё влезет до роста</span>
+                  <span style="opacity:.5">·</span>
+                  <span>достигает <b style="color:#d97706">0</b> → таблица растёт</span>
+                </div>
+
+                <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:10px;">
+
+                  <!-- BEFORE -->
+                  <div style="display:flex;flex-direction:column;gap:6px;">
+                    <div style="font-size:9px;opacity:.5;text-align:center;text-transform:uppercase;letter-spacing:.08em;">до роста · 14 элементов</div>
+                    <div style="border:1px solid rgba(128,128,128,.4);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;background:rgba(128,128,128,.04);">
+                      <div style="text-align:center;font-size:11px;opacity:.5;">Directory</div>
+                      <div style="border:1px solid rgba(128,128,128,.4);border-radius:8px;padding:9px 10px 11px;">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                          <span style="opacity:.5;">Table</span>
+                          <div style="text-align:right;">
+                            <div style="font-weight:700;color:#d97706;">growth_left = 0</div>
+                            <div style="font-size:8px;opacity:.5;">2×7 − 14 = <b>0</b> → рост!</div>
+                          </div>
+                        </div>
+                        <div style="display:flex;gap:7px;">
+                          <div style="border:1px solid rgba(128,128,128,.4);border-radius:5px;padding:6px 5px 3px;width:60px;">
+                            <div style="font-size:8px;opacity:.5;text-align:center;margin-bottom:4px;">Group</div>
+                            ${Array(8).fill(0).map(()=>'<div style="display:flex;gap:3px;margin-bottom:3px;height:12px;"><div style="background:#7ab3d4;border-radius:2px;flex:1;opacity:.85;"></div><div style="background:#d4849a;border-radius:2px;flex:1;opacity:.85;"></div></div>').join('')}
+                            <div style="font-size:8px;opacity:.4;text-align:center;margin-top:4px;">1</div>
+                          </div>
+                          <div style="border:1px solid rgba(128,128,128,.4);border-radius:5px;padding:6px 5px 3px;width:60px;">
+                            <div style="font-size:8px;opacity:.5;text-align:center;margin-bottom:4px;">Group</div>
+                            ${Array(6).fill(0).map(()=>'<div style="display:flex;gap:3px;margin-bottom:3px;height:12px;"><div style="background:#7ab3d4;border-radius:2px;flex:1;opacity:.85;"></div><div style="background:#d4849a;border-radius:2px;flex:1;opacity:.85;"></div></div>').join('')}
+                            ${Array(2).fill(0).map(()=>'<div style="display:flex;gap:3px;margin-bottom:3px;height:12px;"><div style="border:1px solid rgba(128,128,128,.3);border-radius:2px;flex:1;opacity:.4;"></div><div style="border:1px solid rgba(128,128,128,.3);border-radius:2px;flex:1;opacity:.4;"></div></div>').join('')}
+                            <div style="font-size:8px;opacity:.4;text-align:center;margin-top:4px;">2</div>
+                          </div>
+                        </div>
+                        <div style="font-size:9px;opacity:.5;text-align:center;margin-top:6px;">capacity 2×7 = 14 · <b style="color:#d97706">14/14</b></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- ARROW -->
+                  <div style="display:flex;flex-direction:column;align-items:center;padding-top:70px;gap:4px;">
+                    <div style="font-size:10px;color:#d97706;text-align:center;line-height:1.5;">split<br>↓<br>×2 групп</div>
+                    <svg width="40" height="16" viewBox="0 0 40 16"><defs><marker id="glaw" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#d97706"/></marker></defs><line x1="2" y1="8" x2="34" y2="8" stroke="#d97706" stroke-width="1.5" marker-end="url(#glaw)"/></svg>
+                  </div>
+
+                  <!-- AFTER -->
+                  <div style="display:flex;flex-direction:column;gap:6px;">
+                    <div style="font-size:9px;opacity:.5;text-align:center;text-transform:uppercase;letter-spacing:.08em;">после роста · те же 10 элементов</div>
+                    <div style="display:flex;gap:12px;align-items:flex-start;">
+
+                      <!-- Directory с новой таблицей -->
+                      <div style="border:1px solid rgba(128,128,128,.4);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;background:rgba(128,128,128,.04);">
+                        <div style="text-align:center;font-size:11px;opacity:.5;">Directory</div>
+                        <div style="border:1px solid rgba(128,128,128,.4);border-radius:8px;padding:9px 10px 11px;">
+                          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                            <span style="opacity:.5;font-size:10px;">Table (новая)</span>
+                          </div>
+                          <div style="display:flex;gap:6px;flex-wrap:wrap;max-width:160px;">
+                            ${[3,3,2,2].map((n,i)=>'<div style="border:1px solid rgba(128,128,128,.4);border-radius:5px;padding:6px 5px 3px;width:60px;"><div style="font-size:8px;opacity:.5;text-align:center;margin-bottom:4px;">Group</div>'+Array(n).fill(0).map(()=>'<div style="display:flex;gap:3px;margin-bottom:3px;height:12px;"><div style="background:#7ab3d4;border-radius:2px;flex:1;opacity:.85;"></div><div style="background:#d4849a;border-radius:2px;flex:1;opacity:.85;"></div></div>').join('')+Array(8-n).fill(0).map(()=>'<div style="display:flex;gap:3px;margin-bottom:3px;height:12px;"><div style="border:1px solid rgba(128,128,128,.3);border-radius:2px;flex:1;opacity:.4;"></div><div style="border:1px solid rgba(128,128,128,.3);border-radius:2px;flex:1;opacity:.4;"></div></div>').join('')+'<div style="font-size:8px;opacity:.4;text-align:center;margin-top:4px;">'+(i+1)+'</div></div>').join('')}
+                          </div>
+                          <div style="font-size:9px;opacity:.5;text-align:center;margin-top:6px;">capacity 4×7 = 28 · <b style="color:#059669">10/28</b></div>
+                          <div style="font-size:8px;color:#059669;text-align:right;margin-top:3px;">growth_left = 18 · 4×7−10</div>
+                        </div>
+                      </div>
+
+                      <!-- Стрелка "нет ссылок" -->
+                      <div style="display:flex;flex-direction:column;align-items:center;padding-top:60px;gap:3px;">
+                        <div style="font-size:8px;color:#dc2626;opacity:.7;text-align:center;line-height:1.4;">ссылок<br>нет</div>
+                        <svg width="36" height="14" viewBox="0 0 36 14"><defs><marker id="gc-arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#dc2626" opacity=".6"/></marker></defs><line x1="2" y1="7" x2="30" y2="7" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="3,2" opacity=".6" marker-end="url(#gc-arr)"/></svg>
+                      </div>
+
+                      <!-- Старая таблица — вне Directory, ожидает GC -->
+                      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:2px;">
+                        <div style="border:1px dashed rgba(220,38,38,.4);border-radius:8px;padding:9px 10px 11px;opacity:.55;">
+                          <div style="display:flex;align-items:center;gap:4px;margin-bottom:8px;">
+                            <span style="opacity:.6;font-size:10px;">Table (старая)</span>
+                          </div>
+                          <div style="display:flex;gap:7px;">
+                            ${[1,2].map(n=>'<div style="border:1px solid rgba(128,128,128,.25);border-radius:5px;padding:6px 5px 3px;width:60px;"><div style="font-size:8px;opacity:.4;text-align:center;margin-bottom:4px;">Group</div>'+Array(8).fill(0).map(()=>'<div style="display:flex;gap:3px;margin-bottom:3px;height:12px;"><div style="border:1px solid rgba(128,128,128,.25);border-radius:2px;flex:1;opacity:.3;"></div><div style="border:1px solid rgba(128,128,128,.25);border-radius:2px;flex:1;opacity:.3;"></div></div>').join('')+'<div style="font-size:8px;opacity:.3;text-align:center;margin-top:4px;">'+n+'</div></div>').join('')}
+                          </div>
+                        </div>
+                        <div style="font-size:9px;color:#dc2626;opacity:.7;text-align:center;line-height:1.4;">данные перехешированы<br>→ очистится GC</div>
+                      </div>
+
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- global_depth / max-table split diagram -->
+              <div style="margin-top:18px; border-top:1px solid rgba(128,128,128,.2); padding-top:16px;">
+                <p class="tight" style="margin-bottom:10px"><b>Когда таблица достигает максимума: сплит на 2 + рост Directory</b></p>
+
+                <div style="border:1px solid rgba(124,58,237,.3);border-radius:8px;padding:8px 12px;margin-bottom:14px;background:rgba(124,58,237,.05);font-size:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-family:'JetBrains Mono',monospace;">
+                  <code class="inline" style="color:#7c3aed;">global_depth</code>
+                  <span style="opacity:.5">—</span>
+                  <span>сколько бит хеша = индекс в Directory</span>
+                  <span style="opacity:.5">·</span>
+                  <span>размер Directory = <b>2<sup>global_depth</sup></b></span>
+                  <span style="opacity:.5">·</span>
+                  <span>+1 → Directory <b>удваивается</b></span>
+                </div>
+
+                <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:10px;">
+
+                  <!-- BEFORE: таблица на максимуме -->
+                  <div style="display:flex;flex-direction:column;gap:5px;">
+                    <div style="font-size:9px;opacity:.5;text-align:center;text-transform:uppercase;letter-spacing:.08em;">таблица на максимуме · 896 эл.</div>
+                    <div style="border:1px solid rgba(128,128,128,.4);border-radius:10px;padding:11px 13px;background:rgba(128,128,128,.04);">
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <span style="font-size:11px;opacity:.5;">Directory</span>
+                        <span style="font-size:9px;color:#7c3aed;font-weight:700;">global_depth = 0 → 2⁰ = 1 слот</span>
+                      </div>
+                      <div style="border:1px solid rgba(128,128,128,.4);border-radius:8px;padding:9px 10px 11px;">
+                        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+                          <span style="opacity:.5;font-size:10px;">Table</span>
+                          <span style="color:#d97706;font-weight:700;font-size:9px;">growth_left = 0</span>
+                        </div>
+                        <div style="display:flex;gap:5px;align-items:flex-end;">
+                          ${[1,2,3].map(n=>'<div style="border:1px solid rgba(128,128,128,.4);border-radius:5px;padding:5px 4px 3px;width:50px;"><div style="font-size:7px;opacity:.5;text-align:center;margin-bottom:3px;">Group</div>'+Array(7).fill(0).map(()=>'<div style="display:flex;gap:2px;margin-bottom:2px;height:10px;"><div style="background:#7ab3d4;border-radius:2px;flex:1;opacity:.85;"></div><div style="background:#d4849a;border-radius:2px;flex:1;opacity:.85;"></div></div>').join('')+'<div style="display:flex;gap:2px;margin-bottom:2px;height:10px;"><div style="border:1px solid rgba(128,128,128,.3);border-radius:2px;flex:1;opacity:.35;"></div><div style="border:1px solid rgba(128,128,128,.3);border-radius:2px;flex:1;opacity:.35;"></div></div>'+'<div style="font-size:7px;opacity:.4;text-align:center;margin-top:3px;">'+n+'</div></div>').join('')}
+                          <div style="font-size:14px;opacity:.4;align-self:center;padding:0 2px;">···</div>
+                          <div style="border:1px solid rgba(128,128,128,.4);border-radius:5px;padding:5px 4px 3px;width:50px;">
+                            <div style="font-size:7px;opacity:.5;text-align:center;margin-bottom:3px;">Group</div>
+                            ${Array(7).fill(0).map(()=>'<div style="display:flex;gap:2px;margin-bottom:2px;height:10px;"><div style="background:#7ab3d4;border-radius:2px;flex:1;opacity:.85;"></div><div style="background:#d4849a;border-radius:2px;flex:1;opacity:.85;"></div></div>').join('')}
+                            <div style="display:flex;gap:2px;margin-bottom:2px;height:10px;"><div style="border:1px solid rgba(128,128,128,.3);border-radius:2px;flex:1;opacity:.35;"></div><div style="border:1px solid rgba(128,128,128,.3);border-radius:2px;flex:1;opacity:.35;"></div></div>
+                            <div style="font-size:7px;color:#d97706;font-weight:700;text-align:center;margin-top:3px;">128</div>
+                          </div>
+                        </div>
+                        <div style="font-size:9px;opacity:.5;text-align:center;margin-top:5px;">128 групп · 7/8 заполнено = <b style="color:#d97706;">896/1024 · growth_left=0</b></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- ARROW -->
+                  <div style="display:flex;flex-direction:column;align-items:center;padding-top:75px;gap:4px;">
+                    <div style="font-size:10px;color:#d97706;text-align:center;line-height:1.5;">split<br>на 2<br>↓<br>depth+1</div>
+                    <svg width="40" height="16" viewBox="0 0 40 16"><defs><marker id="maxaw" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#d97706"/></marker></defs><line x1="2" y1="8" x2="34" y2="8" stroke="#d97706" stroke-width="1.5" marker-end="url(#maxaw)"/></svg>
+                  </div>
+
+                  <!-- AFTER: Directory с 2 таблицами -->
+                  <div style="display:flex;flex-direction:column;gap:5px;">
+                    <div style="font-size:9px;opacity:.5;text-align:center;text-transform:uppercase;letter-spacing:.08em;">после сплита · данные разделены</div>
+                    <div style="border:1px solid rgba(128,128,128,.4);border-radius:10px;padding:11px 13px;background:rgba(128,128,128,.04);">
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <span style="font-size:11px;opacity:.5;">Directory</span>
+                        <span style="font-size:9px;color:#7c3aed;font-weight:700;">global_depth = 1 → 2¹ = 2 слота</span>
+                      </div>
+                      <div style="display:flex;gap:8px;">
+                        ${['Table 0','Table 1'].map((tname,ti)=>`
+                        <div style="border:1px solid rgba(128,128,128,.4);border-radius:8px;padding:9px 10px 11px;">
+                          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+                            <span style="opacity:.5;font-size:10px;">${tname}</span>
+                            <span style="color:#059669;font-size:8px;">~448 эл.</span>
+                          </div>
+                          <div style="display:flex;gap:5px;align-items:flex-end;">
+                            ${[1,2].map(n=>'<div style="border:1px solid rgba(128,128,128,.4);border-radius:5px;padding:5px 4px 3px;width:50px;"><div style="font-size:7px;opacity:.5;text-align:center;margin-bottom:3px;">Group</div>'+Array(4).fill(0).map(()=>'<div style="display:flex;gap:2px;margin-bottom:2px;height:10px;"><div style="background:#7ab3d4;border-radius:2px;flex:1;opacity:.85;"></div><div style="background:#d4849a;border-radius:2px;flex:1;opacity:.85;"></div></div>').join('')+Array(4).fill(0).map(()=>'<div style="display:flex;gap:2px;margin-bottom:2px;height:10px;"><div style="border:1px solid rgba(128,128,128,.3);border-radius:2px;flex:1;opacity:.35;"></div><div style="border:1px solid rgba(128,128,128,.3);border-radius:2px;flex:1;opacity:.35;"></div></div>').join('')+'<div style="font-size:7px;opacity:.4;text-align:center;margin-top:3px;">'+n+'</div></div>').join('')}
+                            <div style="font-size:14px;opacity:.4;align-self:center;padding:0 2px;">···</div>
+                            <div style="border:1px solid rgba(128,128,128,.4);border-radius:5px;padding:5px 4px 3px;width:50px;">
+                              <div style="font-size:7px;opacity:.5;text-align:center;margin-bottom:3px;">Group</div>
+                              ${Array(4).fill(0).map(()=>'<div style="display:flex;gap:2px;margin-bottom:2px;height:10px;"><div style="background:#7ab3d4;border-radius:2px;flex:1;opacity:.85;"></div><div style="background:#d4849a;border-radius:2px;flex:1;opacity:.85;"></div></div>').join('')}
+                              ${Array(4).fill(0).map(()=>'<div style="display:flex;gap:2px;margin-bottom:2px;height:10px;"><div style="border:1px solid rgba(128,128,128,.3);border-radius:2px;flex:1;opacity:.35;"></div><div style="border:1px solid rgba(128,128,128,.3);border-radius:2px;flex:1;opacity:.35;"></div></div>').join('')}
+                              <div style="font-size:7px;color:#d97706;font-weight:700;text-align:center;margin-top:3px;">128</div>
+                            </div>
+                          </div>
+                          <div style="font-size:8px;color:#059669;text-align:center;margin-top:5px;">hash-бит[0] = ${ti} → сюда</div>
+                        </div>`).join('')}
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- no-ref arrow + GC -->
+                  <div style="display:flex;flex-direction:column;align-items:center;padding-top:65px;gap:3px;">
+                    <div style="font-size:8px;color:#dc2626;opacity:.7;text-align:center;line-height:1.4;">ссылок<br>нет</div>
+                    <svg width="36" height="14" viewBox="0 0 36 14"><defs><marker id="gc-a3" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#dc2626" opacity=".6"/></marker></defs><line x1="2" y1="7" x2="30" y2="7" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="3,2" opacity=".6" marker-end="url(#gc-a3)"/></svg>
+                  </div>
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding-top:2px;">
+                    <div style="border:1px dashed rgba(220,38,38,.35);border-radius:8px;padding:9px 10px 10px;opacity:.45;">
+                      <div style="font-size:10px;opacity:.5;margin-bottom:6px;">Table (старая)</div>
+                      <div style="display:flex;gap:5px;">
+                        ${[1,128].map(n=>'<div style="border:1px solid rgba(128,128,128,.2);border-radius:5px;padding:5px 4px 3px;width:50px;"><div style="font-size:7px;opacity:.4;text-align:center;margin-bottom:3px;">Group</div>'+Array(8).fill(0).map(()=>'<div style="display:flex;gap:2px;margin-bottom:2px;height:10px;"><div style="border:1px solid rgba(128,128,128,.2);border-radius:2px;flex:1;opacity:.25;"></div><div style="border:1px solid rgba(128,128,128,.2);border-radius:2px;flex:1;opacity:.25;"></div></div>').join('')+'<div style="font-size:7px;opacity:.3;text-align:center;margin-top:3px;">'+n+'</div></div>').join('')}
+                      </div>
+                    </div>
+                    <div style="font-size:9px;color:#dc2626;opacity:.7;text-align:center;line-height:1.5;">перехешировано<br>→ очистится GC</div>
+                  </div>
+
+                </div>
+
+                <div style="margin-top:12px;font-size:9px;opacity:.5;line-height:1.8;font-family:'JetBrains Mono',monospace;">
+                  Из исходников: maxTableCapacity=1024 (слоты) · 1024/8 = <b>128 групп макс</b> · max элементов = (1024×7)/8 = <b>896</b>
+                  &nbsp;·&nbsp; global_depth=0 → 1 слот &nbsp;·&nbsp; global_depth=1 → 2 слота &nbsp;·&nbsp; global_depth=N → 2ᴺ слотов
+                </div>
+              </div>
+
+              <!-- extendible hashing: 2→3→4 таблицы -->
+              <div style="margin-top:18px; border-top:1px solid rgba(128,128,128,.2); padding-top:16px;">
+                <p class="tight" style="margin-bottom:8px"><b>Extendible hashing: как сплит через Directory работает</b></p>
+
+                <!-- Концептуальная шапка -->
+                <div style="border:1px solid rgba(124,58,237,.3);border-radius:7px;padding:8px 12px;margin-bottom:12px;background:rgba(124,58,237,.05);line-height:1.7;font-size:10px;">
+                  <b style="color:#7c3aed">Directory</b> — массив <b>указателей</b> (p1, p2…), размер = 2<sup>global_depth</sup>. Указатель → физическая таблица.<br>
+                  <b>Несколько указателей могут смотреть на одну таблицу</b> — когда local_depth таблицы &lt; global_depth.<br>
+                  Кол-во указателей на таблицу = 2<sup>(global_depth − local_depth)</sup>&nbsp;·&nbsp;Сплит перераспределяет указатели.<br>
+                  local_depth также используется при <b>клонировании мапы</b> (<code class="inline">maps.clone</code> / assign): рантайм обходит Directory и по local_depth определяет уникальные таблицы, чтобы не скопировать одну таблицу дважды через разные указатели.
+                </div>
+
+                <!-- SVG-диаграмма: единый cold без плывущих блоков -->
+                <div style="overflow-x:auto;">
+                  <svg viewBox="0 0 960 202" style="width:100%;min-width:680px;max-width:960px;display:block;" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono',monospace">
+                    <defs>
+                      <marker id="ehA" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="currentColor" opacity=".45"/></marker>
+                      <marker id="ehO" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#d97706"/></marker>
+                      <marker id="ehB" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#4a9fd4" opacity=".85"/></marker>
+                    </defs>
+
+                    <!-- ═══ STAGE 1: 2 таблицы (x=5..197) ═══ -->
+                    <text x="101" y="13" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".38" font-weight="600" letter-spacing=".07em">① 2 ТАБЛИЦЫ</text>
+                    <rect x="5" y="18" width="192" height="174" rx="7" fill="currentColor" fill-opacity=".025" stroke="currentColor" stroke-opacity=".22" stroke-width="1"/>
+                    <text x="14" y="33" font-size="9" fill="currentColor" opacity=".42">Directory</text>
+                    <text x="193" y="33" font-size="8" fill="#7c3aed" text-anchor="end" font-weight="700">gd=1 · 2 слота</text>
+                    <!-- p1 -->
+                    <rect x="29" y="40" width="44" height="20" rx="4" fill="none" stroke="currentColor" stroke-opacity=".32" stroke-width="1"/>
+                    <text x="51" y="54" text-anchor="middle" font-size="9" fill="currentColor">p1</text>
+                    <!-- p2 (orange = full) -->
+                    <rect x="126" y="40" width="44" height="20" rx="4" fill="none" stroke="#d97706" stroke-width="1"/>
+                    <text x="148" y="54" text-anchor="middle" font-size="9" fill="#d97706">p2</text>
+                    <!-- arrows -->
+                    <line x1="51" y1="60" x2="51" y2="80" stroke="currentColor" stroke-opacity=".38" stroke-width="1.2" marker-end="url(#ehA)"/>
+                    <line x1="148" y1="60" x2="148" y2="80" stroke="#d97706" stroke-width="1.2" opacity=".8" marker-end="url(#ehO)"/>
+                    <!-- Table A -->
+                    <rect x="10" y="81" width="80" height="100" rx="6" fill="none" stroke="currentColor" stroke-opacity=".28" stroke-width="1"/>
+                    <text x="18" y="95" font-size="9" fill="currentColor" opacity=".48">Table A</text>
+                    <text x="87" y="95" font-size="8" fill="#7c3aed" text-anchor="end">ld=1</text>
+                    <rect x="18" y="102" width="32" height="8" rx="1" fill="#7ab3d4" fill-opacity=".58"/>
+                    <rect x="54" y="102" width="28" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
+                    <rect x="18" y="114" width="32" height="8" rx="1" fill="#7ab3d4" fill-opacity=".45"/>
+                    <rect x="54" y="114" width="28" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
+                    <rect x="18" y="126" width="32" height="8" rx="1" fill="#7ab3d4" fill-opacity=".22"/>
+                    <rect x="54" y="126" width="28" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
+                    <!-- Table B (orange, full) -->
+                    <rect x="106" y="81" width="80" height="100" rx="6" fill="none" stroke="#d97706" stroke-width="1"/>
+                    <text x="114" y="95" font-size="9" fill="currentColor" opacity=".48">Table B</text>
+                    <text x="183" y="95" font-size="8" fill="#7c3aed" text-anchor="end">ld=1</text>
+                    <rect x="114" y="102" width="30" height="8" rx="1" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="148" y="102" width="30" height="8" rx="1" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="114" y="114" width="30" height="8" rx="1" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="148" y="114" width="30" height="8" rx="1" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="114" y="126" width="30" height="8" rx="1" fill="#7ab3d4" fill-opacity=".62"/>
+                    <rect x="148" y="126" width="30" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
+                    <text x="146" y="175" font-size="7.5" fill="#d97706" text-anchor="middle">growth_left=0</text>
+
+                    <!-- ═══ ARROW 1 (x=200..278) ═══ -->
+                    <text x="239" y="68" font-size="8.5" fill="#d97706" text-anchor="middle">local==global</text>
+                    <text x="239" y="80" font-size="8.5" fill="#d97706" text-anchor="middle">→ удваиваем</text>
+                    <text x="239" y="92" font-size="8.5" fill="#d97706" text-anchor="middle">директорию</text>
+                    <line x1="202" y1="107" x2="272" y2="107" stroke="#d97706" stroke-width="1.8" marker-end="url(#ehO)"/>
+                    <text x="239" y="122" font-size="7.5" fill="currentColor" opacity=".42" text-anchor="middle">B сплитится</text>
+                    <text x="239" y="133" font-size="7.5" fill="currentColor" opacity=".42" text-anchor="middle">A берёт p1+p2</text>
+
+                    <!-- ═══ STAGE 2: 3 таблицы (x=280..536) ═══ -->
+                    <text x="408" y="13" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".38" font-weight="600" letter-spacing=".07em">② 3 ТАБЛИЦЫ (НЕ 4!)</text>
+                    <rect x="280" y="18" width="256" height="174" rx="7" fill="currentColor" fill-opacity=".025" stroke="currentColor" stroke-opacity=".22" stroke-width="1"/>
+                    <text x="289" y="33" font-size="9" fill="currentColor" opacity=".42">Directory</text>
+                    <text x="532" y="33" font-size="8" fill="#7c3aed" text-anchor="end" font-weight="700">gd=2 · 4 слота</text>
+                    <!-- p1 blue -->
+                    <rect x="289" y="40" width="40" height="20" rx="4" fill="none" stroke="#4a9fd4" stroke-width="1"/>
+                    <text x="309" y="54" text-anchor="middle" font-size="9" fill="#4a9fd4">p1</text>
+                    <!-- p2 blue -->
+                    <rect x="339" y="40" width="40" height="20" rx="4" fill="none" stroke="#4a9fd4" stroke-width="1"/>
+                    <text x="359" y="54" text-anchor="middle" font-size="9" fill="#4a9fd4">p2</text>
+                    <!-- p3 -->
+                    <rect x="399" y="40" width="40" height="20" rx="4" fill="none" stroke="currentColor" stroke-opacity=".32" stroke-width="1"/>
+                    <text x="419" y="54" text-anchor="middle" font-size="9" fill="currentColor">p3</text>
+                    <!-- p4 -->
+                    <rect x="449" y="40" width="40" height="20" rx="4" fill="none" stroke="currentColor" stroke-opacity=".32" stroke-width="1"/>
+                    <text x="469" y="54" text-anchor="middle" font-size="9" fill="currentColor">p4</text>
+                    <!-- p1,p2 → TableA (wide box spans both) -->
+                    <line x1="309" y1="60" x2="309" y2="80" stroke="#4a9fd4" stroke-width="1.2" opacity=".78" marker-end="url(#ehB)"/>
+                    <line x1="359" y1="60" x2="359" y2="80" stroke="#4a9fd4" stroke-width="1.2" opacity=".78" marker-end="url(#ehB)"/>
+                    <!-- p3,p4 → B1,B2 -->
+                    <line x1="419" y1="60" x2="419" y2="80" stroke="currentColor" stroke-opacity=".38" stroke-width="1.2" marker-end="url(#ehA)"/>
+                    <line x1="469" y1="60" x2="469" y2="80" stroke="currentColor" stroke-opacity=".38" stroke-width="1.2" marker-end="url(#ehA)"/>
+                    <!-- TableA: wide, blue border, spans p1+p2 x range -->
+                    <rect x="285" y="81" width="115" height="100" rx="6" fill="none" stroke="#4a9fd4" stroke-width="1.2"/>
+                    <text x="293" y="95" font-size="9" fill="currentColor" opacity=".48">Table A</text>
+                    <text x="397" y="95" font-size="8" fill="#7c3aed" text-anchor="end">ld=1</text>
+                    <text x="342" y="108" font-size="7.5" fill="#4a9fd4" text-anchor="middle">← p1 + p2</text>
+                    <rect x="293" y="115" width="46" height="8" rx="1" fill="#7ab3d4" fill-opacity=".52"/>
+                    <rect x="345" y="115" width="47" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
+                    <rect x="293" y="127" width="46" height="8" rx="1" fill="#7ab3d4" fill-opacity=".32"/>
+                    <rect x="345" y="127" width="47" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
+                    <text x="342" y="173" font-size="7.5" fill="currentColor" opacity=".35" text-anchor="middle">ld&lt;gd · 2 указателя</text>
+                    <!-- B1 -->
+                    <rect x="405" y="81" width="58" height="86" rx="6" fill="none" stroke="currentColor" stroke-opacity=".28" stroke-width="1"/>
+                    <text x="412" y="95" font-size="9" fill="currentColor" opacity=".48">B1</text>
+                    <text x="460" y="95" font-size="8" fill="#059669" text-anchor="end">ld=2</text>
+                    <rect x="412" y="102" width="22" height="7" rx="1" fill="#7ab3d4" fill-opacity=".55"/>
+                    <rect x="438" y="102" width="18" height="7" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
+                    <rect x="412" y="113" width="22" height="7" rx="1" fill="#7ab3d4" fill-opacity=".35"/>
+                    <rect x="438" y="113" width="18" height="7" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
+                    <!-- B2 -->
+                    <rect x="467" y="81" width="58" height="86" rx="6" fill="none" stroke="currentColor" stroke-opacity=".28" stroke-width="1"/>
+                    <text x="474" y="95" font-size="9" fill="currentColor" opacity=".48">B2</text>
+                    <text x="522" y="95" font-size="8" fill="#059669" text-anchor="end">ld=2</text>
+                    <rect x="474" y="102" width="22" height="7" rx="1" fill="#7ab3d4" fill-opacity=".55"/>
+                    <rect x="500" y="102" width="18" height="7" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
+                    <rect x="474" y="113" width="22" height="7" rx="1" fill="#7ab3d4" fill-opacity=".35"/>
+                    <rect x="500" y="113" width="18" height="7" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
+
+                    <!-- ═══ ARROW 2 (x=540..618) ═══ -->
+                    <text x="579" y="65" font-size="8.5" fill="#d97706" text-anchor="middle">Table A</text>
+                    <text x="579" y="77" font-size="8.5" fill="#d97706" text-anchor="middle">заполнилась</text>
+                    <line x1="542" y1="91" x2="613" y2="91" stroke="#d97706" stroke-width="1.8" marker-end="url(#ehO)"/>
+                    <text x="579" y="107" font-size="8" fill="#059669" text-anchor="middle" font-weight="600">ld(1) &lt; gd(2)</text>
+                    <text x="579" y="119" font-size="8" fill="#059669" text-anchor="middle" font-weight="600">→ НЕ удваиваем!</text>
+                    <text x="579" y="131" font-size="7" fill="currentColor" opacity=".4" text-anchor="middle">делим указатели</text>
+
+                    <!-- ═══ STAGE 3: 4 таблицы (x=622..955) ═══ -->
+                    <text x="788" y="13" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".38" font-weight="600" letter-spacing=".07em">③ 4 ТАБЛИЦЫ</text>
+                    <rect x="622" y="18" width="333" height="174" rx="7" fill="currentColor" fill-opacity=".025" stroke="currentColor" stroke-opacity=".22" stroke-width="1"/>
+                    <text x="631" y="33" font-size="9" fill="currentColor" opacity=".42">Directory</text>
+                    <text x="951" y="33" font-size="8" fill="#7c3aed" text-anchor="end" font-weight="700">gd=2 · 4 слота (не изменился)</text>
+                    <!-- p1 -->
+                    <rect x="631" y="40" width="58" height="20" rx="4" fill="none" stroke="currentColor" stroke-opacity=".32" stroke-width="1"/>
+                    <text x="660" y="54" text-anchor="middle" font-size="9" fill="currentColor">p1</text>
+                    <!-- p2 -->
+                    <rect x="713" y="40" width="58" height="20" rx="4" fill="none" stroke="currentColor" stroke-opacity=".32" stroke-width="1"/>
+                    <text x="742" y="54" text-anchor="middle" font-size="9" fill="currentColor">p2</text>
+                    <!-- p3 -->
+                    <rect x="795" y="40" width="58" height="20" rx="4" fill="none" stroke="currentColor" stroke-opacity=".32" stroke-width="1"/>
+                    <text x="824" y="54" text-anchor="middle" font-size="9" fill="currentColor">p3</text>
+                    <!-- p4 -->
+                    <rect x="877" y="40" width="58" height="20" rx="4" fill="none" stroke="currentColor" stroke-opacity=".32" stroke-width="1"/>
+                    <text x="906" y="54" text-anchor="middle" font-size="9" fill="currentColor">p4</text>
+                    <!-- arrows -->
+                    <line x1="660" y1="60" x2="660" y2="80" stroke="currentColor" stroke-opacity=".38" stroke-width="1.2" marker-end="url(#ehA)"/>
+                    <line x1="742" y1="60" x2="742" y2="80" stroke="currentColor" stroke-opacity=".38" stroke-width="1.2" marker-end="url(#ehA)"/>
+                    <line x1="824" y1="60" x2="824" y2="80" stroke="currentColor" stroke-opacity=".38" stroke-width="1.2" marker-end="url(#ehA)"/>
+                    <line x1="906" y1="60" x2="906" y2="80" stroke="currentColor" stroke-opacity=".38" stroke-width="1.2" marker-end="url(#ehA)"/>
+                    <!-- A1 -->
+                    <rect x="629" y="81" width="72" height="92" rx="6" fill="none" stroke="currentColor" stroke-opacity=".28" stroke-width="1"/>
+                    <text x="637" y="95" font-size="9" fill="currentColor" opacity=".48">A1</text>
+                    <text x="698" y="95" font-size="8" fill="#059669" text-anchor="end">ld=2</text>
+                    <rect x="637" y="102" width="28" height="8" rx="1" fill="#7ab3d4" fill-opacity=".55"/>
+                    <rect x="669" y="102" width="24" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
+                    <rect x="637" y="114" width="28" height="8" rx="1" fill="#7ab3d4" fill-opacity=".3"/>
+                    <rect x="669" y="114" width="24" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
+                    <!-- A2 -->
+                    <rect x="711" y="81" width="72" height="92" rx="6" fill="none" stroke="currentColor" stroke-opacity=".28" stroke-width="1"/>
+                    <text x="719" y="95" font-size="9" fill="currentColor" opacity=".48">A2</text>
+                    <text x="780" y="95" font-size="8" fill="#059669" text-anchor="end">ld=2</text>
+                    <rect x="719" y="102" width="28" height="8" rx="1" fill="#7ab3d4" fill-opacity=".55"/>
+                    <rect x="751" y="102" width="24" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
+                    <rect x="719" y="114" width="28" height="8" rx="1" fill="#7ab3d4" fill-opacity=".3"/>
+                    <rect x="751" y="114" width="24" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
+                    <!-- B1 -->
+                    <rect x="793" y="81" width="72" height="92" rx="6" fill="none" stroke="currentColor" stroke-opacity=".28" stroke-width="1"/>
+                    <text x="801" y="95" font-size="9" fill="currentColor" opacity=".48">B1</text>
+                    <text x="862" y="95" font-size="8" fill="#059669" text-anchor="end">ld=2</text>
+                    <rect x="801" y="102" width="28" height="8" rx="1" fill="#7ab3d4" fill-opacity=".55"/>
+                    <rect x="833" y="102" width="24" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
+                    <rect x="801" y="114" width="28" height="8" rx="1" fill="#7ab3d4" fill-opacity=".3"/>
+                    <rect x="833" y="114" width="24" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
+                    <!-- B2 -->
+                    <rect x="875" y="81" width="72" height="92" rx="6" fill="none" stroke="currentColor" stroke-opacity=".28" stroke-width="1"/>
+                    <text x="883" y="95" font-size="9" fill="currentColor" opacity=".48">B2</text>
+                    <text x="944" y="95" font-size="8" fill="#059669" text-anchor="end">ld=2</text>
+                    <rect x="883" y="102" width="28" height="8" rx="1" fill="#7ab3d4" fill-opacity=".55"/>
+                    <rect x="915" y="102" width="24" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
+                    <rect x="883" y="114" width="28" height="8" rx="1" fill="#7ab3d4" fill-opacity=".3"/>
+                    <rect x="915" y="114" width="24" height="8" rx="1" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".18" stroke-width=".5"/>
+                  </svg>
+                </div>
+
+                <!-- Правило снизу -->
+                <div style="margin-top:10px;font-size:9px;opacity:.5;line-height:1.9;font-family:'JetBrains Mono',monospace;">
+                  <b>Правило сплита:</b>&nbsp;
+                  local_depth == global_depth → удваиваем Directory, сплитим таблицу (несплитившиеся получают 2× указателей)&nbsp;·&nbsp;
+                  local_depth &lt; global_depth → <b>Directory не трогаем</b>, перераспределяем указатели&nbsp;·&nbsp;
+                  указателей на таблицу = 2<sup>(gd−ld)</sup>
+                </div>
+              </div>
+
               <div class="impl-sources">Источники: src/internal/runtime/maps/map.go · src/internal/runtime/maps/table.go · go.dev/doc/go1.24 · abseil.io/about/design/swisstables</div>
             </div>
           </details>
