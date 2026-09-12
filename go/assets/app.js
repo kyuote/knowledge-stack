@@ -2669,6 +2669,101 @@ delete(m, "k")    // → mapdelete(t *maptype, h *hmap, k unsafe.Pointer)</code>
                 </div>
               </div>
 
+              <!-- Схема: маршрутизация хэша → Table → Group → h2 -->
+              <div style="margin-top:18px;">
+                <p class="tight" style="margin-bottom:10px"><b>Как хэш маршрутизируется: Table → Group → control byte</b></p>
+                <div style="overflow-x:auto;">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:11px;min-width:700px;">
+
+                    <!-- hash header -->
+                    <div style="font-size:11px;margin-bottom:10px;color:rgba(255,255,255,.4);">
+                      <span style="color:rgba(255,255,255,.85);">hash("hello")</span> = <span style="color:#d97706;">14333275774295595135</span> &nbsp;(64 bit)
+                    </div>
+
+                    <!-- bit strip -->
+                    <div style="display:flex;gap:1px;margin-bottom:4px;flex-wrap:nowrap;overflow-x:auto;" id="mapHashStrip">${[1,1,0,0,0,0,1,1,0,1,1,1,1,0,1,0,1,0,0,0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0,0,0,0,1,1,0,0,1,0,1,0,0,1,1,0,0,1,1,1,0,1,1,1,1,1,1,1,1,1].map((b,i)=>'<div style="width:9px;height:18px;border-radius:2px;flex-shrink:0;line-height:18px;text-align:center;font-size:6px;font-weight:700;color:rgba(0,0,0,.7);background:'+(i<2?'#d97706':i<57?'#4a9fd4':'#a78bfa')+'">'+b+'</div>').join('')}</div>
+                    <div style="display:flex;gap:14px;font-size:9px;margin-bottom:10px;">
+                      <span style="color:#d97706">█ table index</span>
+                      <span style="color:#4a9fd4">█ h1 → group</span>
+                      <span style="color:#a78bfa">█ h2 → control byte</span>
+                    </div>
+
+                    <!-- toggle -->
+                    <div style="display:flex;gap:8px;align-items:center;margin-bottom:18px;">
+                      <span style="font-size:10px;color:rgba(255,255,255,.3);">global_depth =</span>
+                      <button id="mapGdBtn1" onclick="(function(){var s=document.getElementById('mapHashStrip');if(s)Array.from(s.children).forEach(function(d,i){d.style.background=i<1?'#d97706':i<57?'#4a9fd4':'#a78bfa';});var b1=document.getElementById('mapGdBtn1'),b2=document.getElementById('mapGdBtn2');if(b1){b1.style.background='#1e2a1a';b1.style.borderColor='#34d399';b1.style.color='#34d399';}if(b2){b2.style.background='#1a1a1a';b2.style.borderColor='#333';b2.style.color='#888';}})()" style="background:#1a1a1a;border:1px solid #333;border-radius:4px;color:#888;font-family:monospace;font-size:11px;padding:4px 12px;cursor:pointer;">1 &nbsp;(2 таблицы)</button>
+                      <button id="mapGdBtn2" onclick="(function(){var s=document.getElementById('mapHashStrip');if(s)Array.from(s.children).forEach(function(d,i){d.style.background=i<2?'#d97706':i<57?'#4a9fd4':'#a78bfa';});var b1=document.getElementById('mapGdBtn1'),b2=document.getElementById('mapGdBtn2');if(b1){b1.style.background='#1a1a1a';b1.style.borderColor='#333';b1.style.color='#888';}if(b2){b2.style.background='#1e2a1a';b2.style.borderColor='#34d399';b2.style.color='#34d399';}})()" style="background:#1e2a1a;border:1px solid #34d399;border-radius:4px;color:#34d399;font-family:monospace;font-size:11px;padding:4px 12px;cursor:pointer;">2 &nbsp;(4 таблицы)</button>
+                    </div>
+
+                    <!-- Section 1 -->
+                    <div style="background:currentColor;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:7px;padding:10px 14px;margin-bottom:8px;">
+                      <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.4;margin-bottom:8px;">① Table index</div>
+                      <div style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);border-radius:4px;padding:5px 10px;display:inline-block;font-size:11px;margin-bottom:6px;">
+                        tableIdx = hash <span style="color:#34d399">&gt;&gt;</span> (64 − <span style="color:#d97706">globalDepth</span>)
+                        <span style="color:rgba(255,255,255,.25);margin-left:8px;">// топ-N бит → номер таблицы</span>
+                      </div>
+                      <div style="font-size:10px;color:rgba(255,255,255,.4);line-height:1.7;">
+                        gd=1 → 2 таблицы, нужен 1 бит &nbsp;·&nbsp; gd=2 → 4 таблицы, нужно 2 бита<br>
+                        <span style="color:#34d399">&gt;&gt;</span> — 1 инструкция CPU, цикл по 64 битам = 64 шага
+                      </div>
+                    </div>
+
+                    <!-- Section 2: AND table -->
+                    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:7px;padding:10px 14px;margin-bottom:8px;">
+                      <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.4;margin-bottom:8px;">② Group index — h1 + маска</div>
+                      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+                        <div style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);border-radius:4px;padding:5px 10px;font-size:11px;display:inline-block;">
+                          h1 = hash <span style="color:#34d399">&gt;&gt;</span> 7
+                        </div>
+                        <div style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);border-radius:4px;padding:5px 10px;font-size:11px;display:inline-block;">
+                          groupIdx = h1 <span style="color:#34d399">&amp;</span> (numGroups − 1)
+                          <span style="color:rgba(255,255,255,.25);margin-left:6px;">// 1024−1 = 0x3FF</span>
+                        </div>
+                      </div>
+                      <!-- AND visual -->
+                      <div style="font-size:10px;line-height:1.9;background:rgba(0,0,0,.25);border-radius:5px;padding:8px 10px;">
+                        <div><span style="color:#4a9fd4;display:inline-block;width:52px;">h1&nbsp;:</span><span style="color:rgba(255,255,255,.15);">0 0 0 0 0 0 0 &nbsp;1 1 0 0 0 …</span>&nbsp;<span style="color:#4a9fd4">1 1 0 0 1 1 1 0 1 1</span></div>
+                        <div><span style="color:rgba(255,255,255,.25);display:inline-block;width:52px;">&amp;&nbsp;mask:</span><span style="color:rgba(255,255,255,.1);">0 0 0 0 0 0 0 &nbsp;0 0 0 0 0 …</span>&nbsp;<span style="color:#34d399">1 1 1 1 1 1 1 1 1 1</span></div>
+                        <div style="border-top:1px solid rgba(255,255,255,.08);margin:2px 0 2px 52px;"></div>
+                        <div><span style="color:#34d399;display:inline-block;width:52px;">idx&nbsp;:</span><span style="color:rgba(255,255,255,.1);">0 0 0 0 0 0 0 &nbsp;0 0 0 0 0 …</span>&nbsp;<span style="background:rgba(52,211,153,.12);color:#34d399;padding:1px 4px;border-radius:3px;">1 1 0 0 1 1 1 0 1 1</span>&nbsp;<span style="color:#34d399">= group #827</span></div>
+                      </div>
+                      <div style="margin-top:8px;font-size:9.5px;color:rgba(255,255,255,.35);border-left:2px solid rgba(255,255,255,.08);padding-left:8px;line-height:1.7;">
+                        Почему не ещё <span style="color:rgba(255,255,255,.55)">&gt;&gt;</span>: уже убрали h2, ещё раз — потеряем средние биты.<br>
+                        Почему не <span style="color:rgba(255,255,255,.55)">&lt;&lt;</span>: вытолкнет старшие биты, средние не вытащить.<br>
+                        Маска <span style="color:#34d399">0x3FF</span> = 11&nbsp;1111&nbsp;1111 — берёт нижние 10 бит h1 за 1 такт.
+                      </div>
+                    </div>
+
+                    <!-- Section 3: h2 -->
+                    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:7px;padding:10px 14px;">
+                      <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.4;margin-bottom:8px;">③ h2 — 7-битный fingerprint</div>
+                      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;">
+                        <div style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);border-radius:4px;padding:5px 10px;font-size:11px;display:inline-block;flex-shrink:0;">
+                          h2 = hash <span style="color:#34d399">&amp;</span> 0x7F &nbsp;<span style="color:rgba(255,255,255,.25)">// нижние 7 бит</span>
+                        </div>
+                        <div style="font-size:10px;color:rgba(255,255,255,.45);line-height:1.7;">
+                          Хранится в control bytes каждого слота группы.<br>
+                          При поиске: сравниваем <span style="color:#a78bfa">h2</span> со всеми 8 control bytes сразу (SIMD).<br>
+                          Полное сравнение ключа — только если h2 совпал.
+                        </div>
+                      </div>
+                      <div style="margin-top:10px;display:inline-flex;align-items:center;gap:7px;background:rgba(167,139,250,.07);border:1px dashed rgba(167,139,250,.3);border-radius:5px;padding:5px 12px;font-size:10px;color:#a78bfa;">
+                        <span>↓</span>
+                        как устроена Group изнутри, control bytes и SIMD-поиск — <b>разберём подробнее ниже</b>
+                      </div>
+                    </div>
+
+                    <!-- summary -->
+                    <div style="margin-top:10px;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);border-radius:5px;font-size:10px;color:rgba(255,255,255,.35);line-height:2;">
+                      <span style="color:#d97706">hash &gt;&gt; (64−gd)</span> → tableIdx &nbsp;·&nbsp;
+                      <span style="color:#4a9fd4">(hash &gt;&gt; 7) &amp; 0x3FF</span> → groupIdx &nbsp;·&nbsp;
+                      <span style="color:#a78bfa">hash &amp; 0x7F</span> → h2
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+
               <div class="impl-sources">Источники: src/internal/runtime/maps/map.go · src/internal/runtime/maps/table.go · go.dev/doc/go1.24 · abseil.io/about/design/swisstables</div>
             </div>
           </details>
