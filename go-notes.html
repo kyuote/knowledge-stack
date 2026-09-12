@@ -1392,43 +1392,101 @@ i++</code></pre>
           <p><code class="inline">defer</code> внутри цикла копится до конца всей функции, а не до конца итерации — если в цикле на тысячи элементов открывать файлы и делать <code class="inline">defer f.Close()</code>, дескрипторы не освободятся, пока функция не завершится. Для таких циклов закрывайте ресурс явно или выносите итерацию в отдельную функцию.</p>
         </div>
 
+        <p class="tight"><code class="inline">defer</code> выполняется даже при панике — именно это делает его основой механизма <code class="inline">recover</code>. Подробнее — в разделе 2.5 ниже.</p>
+      </section>
+
+      <section class="topic" id="panicrecover-ch2">
+        <h2><span class="idx">2.5</span>panic / recover</h2>
+
+        <p class="tight"><b>Паника</b> — аварийная остановка программы. Возникает сама (выход за границы слайса, nil-указатель) или явно через <code class="inline">panic("сообщение")</code>. При панике Go прекращает выполнение текущей функции, запускает все её <code class="inline">defer</code>-функции, затем делает то же самое для вызывающей функции — и так вверх по стеку, пока не крашнет всю программу.</p>
+
+        <p class="tight"><b><code class="inline">recover()</code></b> — перехватывает панику и не даёт программе упасть. Вызывать его можно <b>только</b> изнутри <code class="inline">defer</code>-функции. Возвращает значение из <code class="inline">panic(...)</code> или <code class="inline">nil</code> если паники не было.</p>
+
+        <p class="tight">Вот как это выглядит по шагам:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">recover_steps.go</span></div>
+          <pre><code class="language-go">func safeDiv(a, b int) (result int, err error) {
+    // шаг 1: регистрируем defer — пока не выполняется, просто запомнили
+    defer func() {
+        // шаг 3: паника случилась — Go запускает этот defer
+        if r := recover(); r != nil {
+            // r == "runtime error: integer divide by zero"
+            err = fmt.Errorf("поймали панику: %v", r)
+        }
+        // шаг 4: функция завершается нормально, возвращает err
+    }()
+
+    // шаг 2: b == 0 → паника → выполнение прерывается здесь
+    return a / b, nil
+}
+
+func main() {
+    res, err := safeDiv(10, 0)
+    fmt.Println(res, err) // 0 поймали панику: runtime error: integer divide by zero
+}</code></pre>
+        </div>
+
+        <p class="tight"><b>Почему такая вложенная конструкция?</b> <code class="inline">defer func(){...}()</code> — это анонимная функция, которую мы сразу передаём в defer. Скобки <code class="inline">()</code> в конце — это её вызов (но отложенный). Без обёртки в анонимку написать <code class="inline">defer recover()</code> не получится — Go требует, чтобы <code class="inline">recover()</code> стоял прямо внутри defer-функции, иначе просто вернёт nil.</p>
+
+        <p class="tight"><b>Именованные возвращаемые значения</b> нужны для того, чтобы defer мог «дотянуться» до <code class="inline">err</code> и записать туда ошибку. Без них defer не знает о переменных снаружи — функция вернёт нули и ошибку не передаст.</p>
+
+        <p class="tight"><b>Как это используют в проектах</b> — в HTTP-серверах, чтобы одна паника в одном запросе не положила весь сервер:</p>
+
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">middleware.go</span></div>
+          <pre><code class="language-go">func recoveryMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        defer func() {
+            if err := recover(); err != nil {
+                log.Printf("паника: %v", err)
+                http.Error(w, "Internal Server Error", 500)
+            }
+        }()
+        next.ServeHTTP(w, r) // если тут паника — поймаем выше
+    })
+}
+// этот middleware уже встроен в gin, echo и другие фреймворки</code></pre>
+        </div>
+
         <details class="deep">
-          <summary>Подробнее: recover() должен стоять строго на верхнем уровне defer-функции <span class="tag">deep</span></summary>
+          <summary>Подробнее: когда panic уместен, а когда лучше error <span class="tag">deep</span></summary>
           <div class="deep-body">
-            <p class="tight"><code class="inline">recover()</code> перехватывает панику, только если он вызван напрямую внутри той функции, которая была непосредственно передана в <code class="inline">defer</code> — а не в какой-либо вложенной функции, вызванной из неё:</p>
+            <p class="tight">В Go принято разделять: <b>ожидаемые ошибки</b> (файл не найден, невалидный ввод) — возвращай <code class="inline">error</code>. <b>Программные баги</b> (невозможное состояние, нарушенный инвариант) — можно <code class="inline">panic</code>. Типичный пример допустимого <code class="inline">panic</code> — в функции инициализации: <code class="inline">regexp.MustCompile("pattern")</code> паникует если паттерн невалидный, потому что такое должно упасть при запуске, а не в рантайме. <code class="inline">recover</code> стоит использовать на границах пакетов — чтобы внутренняя паника не вылезла наружу в виде краша, а превратилась в <code class="inline">error</code>.</p>
+          </div>
+        </details>
+
+        <details class="deep">
+          <summary>Подробнее: ловушка — recover() не работает во вложенной функции <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight"><code class="inline">recover()</code> перехватывает панику <b>только</b> если вызван напрямую внутри той функции, которая передана в <code class="inline">defer</code>. Если вынести его во вспомогательную функцию — не сработает:</p>
 
             <div class="codeblock">
               <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">recover_trap.go</span></div>
-              <pre><code class="language-go">defer func() {
-    helper() // recover() внутри helper НЕ поймает панику
+              <pre><code class="language-go">// ❌ НЕ работает
+defer func() {
+    helper() // recover() внутри helper не поймает панику
 }()
 
 func helper() {
-    if r := recover(); r != nil { // не сработает — вызван не там
+    if r := recover(); r != nil { // всегда nil — не тот фрейм
         fmt.Println("recovered:", r)
     }
-}</code></pre>
+}
+
+// ✅ Работает
+defer func() {
+    if r := recover(); r != nil { // прямо здесь, без вложенного вызова
+        fmt.Println("recovered:", r)
+    }
+}()</code></pre>
             </div>
 
-            <p class="tight">Причина — <code class="inline">recover()</code> привязан к конкретному фрейму стека той функции, что зарегистрирована через <code class="inline">defer</code>; вызов из более глубоко вложенного фрейма уже не «видит» паникующий фрейм как непосредственно свой родительский. Правильно — вызывать <code class="inline">recover()</code> прямо в теле переданной в <code class="inline">defer</code> функции, без промежуточного вызова.</p>
-
-            <p class="tight">Именованные результаты (глава 3) в связке с этим дают идиоматичный способ подменить возвращаемое значение по итогам восстановления после паники — без него после <code class="inline">recover()</code> функция просто продолжит выполнение с зануленным результатом, не подавая наружу признак того, что вообще была паника:</p>
-
-            <div class="codeblock">
-              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">recover_named.go</span></div>
-              <pre><code class="language-go">func safeCall() (err error) {
-    defer func() {
-        if r := recover(); r != nil {
-            err = fmt.Errorf("паника: %v", r) // видно и снаружи функции
-        }
-    }()
-    // ...
-    return nil
-}</code></pre>
-            </div>
+            <p class="tight">Причина — <code class="inline">recover()</code> привязан к конкретному фрейму стека. Когда он вызывается из <code class="inline">helper()</code>, он находится в другом, более глубоком фрейме и уже не «видит» панику выше. Go проверяет: «ты вызван прямо в defer-функции?» — если нет, просто возвращает <code class="inline">nil</code>.</p>
           </div>
         </details>
       </section>
+
     </div>
 
     <div class="chapter" data-chapter="3" hidden>
@@ -1540,6 +1598,29 @@ if err != nil {
           <summary>Подробнее: главная практическая польза именованных результатов — не naked return, а defer <span class="tag">medium</span></summary>
           <div class="deep-body">
             <p class="tight">Именованные результаты доступны и изменяемы внутри <code class="inline">defer</code>-функции уже после выполнения тела, но до фактического возврата управления вызывающей стороне — это и есть тот самый механизм, который в главе 2 позволяет <code class="inline">recover()</code> подменить возвращаемую ошибку по итогам восстановления после паники. Без именованного результата такой трюк невозможен — обычный (безымянный) результат уже «зафиксирован» на момент выполнения <code class="inline">defer</code>, и правка внутри отложенной функции на него не повлияет.</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">named_return_defer.go</span></div>
+              <pre><code class="language-go">// ✅ именованный результат — defer может его поменять
+func withNamed() (err error) {
+    defer func() {
+        if r := recover(); r != nil {
+            err = fmt.Errorf("поймали: %v", r) // работает
+        }
+    }()
+    panic("упс")
+}
+
+// ❌ безымянный — defer не может повлиять на результат
+func withoutNamed() error {
+    defer func() {
+        if r := recover(); r != nil {
+            // некуда записать — результат уже зафиксирован
+        }
+    }()
+    panic("упс") // вернёт nil, хотя была паника
+}</code></pre>
+            </div>
           </div>
         </details>
       </section>
@@ -1584,7 +1665,7 @@ sum(nums...)          // тот же результат — распаковка
 
         <div class="codeblock">
           <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">counter.go</span></div>
-          <pre><code class="language-go">func makeCounter() func() int {
+          <pre><code class="language-go">func makeCounter() func() int { // возвращает функцию, которая вернёт int
     count := 0
     return func() int {
         count++
@@ -1716,16 +1797,82 @@ func appendOne(s []int) {
       </div>
 
       <section class="topic" id="arrays">
-        <h2><span class="idx">4.1</span>Массивы</h2>
+        <h2><span class="idx">4.1</span>Массивы <button type="button" class="impl-btn" onclick="openImpl('array')" style="margin-left:10px;vertical-align:middle">под капотом →</button></h2>
         <p class="tight">Размер — часть типа, поэтому массив используют редко: почти везде вместо него берут слайс.</p>
+
+        <figure>
+          <svg viewBox="0 0 580 130" style="width:100%;margin:8px 0 4px" role="img" aria-label="Массив — непрерывный блок памяти">
+            <!-- подпись -->
+            <text x="12" y="14" font-size="10" fill="currentColor" opacity="0.4" font-family="JetBrains Mono">память (RAM)</text>
+            <line x1="12" y1="18" x2="568" y2="18" stroke="currentColor" opacity="0.1"/>
+
+            <!-- чужие данные слева -->
+            <rect x="12" y="26" width="44" height="38" rx="4" fill="#6b728020" stroke="#6b7280" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+            <text x="34" y="50" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.35">...</text>
+            <rect x="56" y="26" width="44" height="38" rx="4" fill="#6b728020" stroke="#6b7280" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+            <text x="78" y="50" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.35">...</text>
+
+            <!-- массив [5]int — адреса сверху, значения в ячейках -->
+            <!-- int = 8 байт на 64-bit, адреса: 0x00, 0x08, 0x10, 0x18, 0x20 -->
+            <text x="136" y="24" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#3b7ec9" opacity="0.7">0x00</text>
+            <rect x="110" y="26" width="52" height="38" rx="4" fill="#3b7ec922" stroke="#3b7ec9" stroke-width="1.5"/>
+            <text x="136" y="50" text-anchor="middle" font-family="JetBrains Mono" font-size="13" fill="#3b7ec9">1</text>
+            <text x="136" y="64" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#3b7ec9" opacity="0.5">+8B</text>
+
+            <text x="188" y="24" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#3b7ec9" opacity="0.7">0x08</text>
+            <rect x="162" y="26" width="52" height="38" rx="4" fill="#3b7ec922" stroke="#3b7ec9" stroke-width="1.5"/>
+            <text x="188" y="50" text-anchor="middle" font-family="JetBrains Mono" font-size="13" fill="#3b7ec9">2</text>
+            <text x="188" y="64" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#3b7ec9" opacity="0.5">+8B</text>
+
+            <text x="240" y="24" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#3b7ec9" opacity="0.7">0x10</text>
+            <rect x="214" y="26" width="52" height="38" rx="4" fill="#3b7ec922" stroke="#3b7ec9" stroke-width="1.5"/>
+            <text x="240" y="50" text-anchor="middle" font-family="JetBrains Mono" font-size="13" fill="#3b7ec9">3</text>
+            <text x="240" y="64" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#3b7ec9" opacity="0.5">+8B</text>
+
+            <text x="292" y="24" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#3b7ec9" opacity="0.7">0x18</text>
+            <rect x="266" y="26" width="52" height="38" rx="4" fill="#3b7ec922" stroke="#3b7ec9" stroke-width="1.5"/>
+            <text x="292" y="50" text-anchor="middle" font-family="JetBrains Mono" font-size="13" fill="#3b7ec9">4</text>
+            <text x="292" y="64" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#3b7ec9" opacity="0.5">+8B</text>
+
+            <text x="344" y="24" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#3b7ec9" opacity="0.7">0x20</text>
+            <rect x="318" y="26" width="52" height="38" rx="4" fill="#3b7ec922" stroke="#3b7ec9" stroke-width="1.5"/>
+            <text x="344" y="50" text-anchor="middle" font-family="JetBrains Mono" font-size="13" fill="#3b7ec9">5</text>
+            <text x="344" y="64" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#3b7ec9" opacity="0.5">+8B</text>
+
+            <!-- скобка -->
+            <line x1="110" y1="78" x2="370" y2="78" stroke="#3b7ec9" opacity="0.4" stroke-width="1.5"/>
+            <line x1="110" y1="72" x2="110" y2="78" stroke="#3b7ec9" opacity="0.4" stroke-width="1.5"/>
+            <line x1="370" y1="72" x2="370" y2="78" stroke="#3b7ec9" opacity="0.4" stroke-width="1.5"/>
+            <text x="240" y="92" text-anchor="middle" font-size="10" fill="#3b7ec9" opacity="0.8">[5]int = 5 × 8 байт = 40 байт подряд</text>
+
+            <!-- чужие данные справа -->
+            <rect x="382" y="26" width="44" height="38" rx="4" fill="#6b728020" stroke="#6b7280" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+            <text x="404" y="50" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.35">...</text>
+            <rect x="426" y="26" width="44" height="38" rx="4" fill="#6b728020" stroke="#6b7280" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+            <text x="448" y="50" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.35">...</text>
+            <rect x="470" y="26" width="44" height="38" rx="4" fill="#6b728020" stroke="#6b7280" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+            <text x="492" y="50" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.35">...</text>
+            <rect x="514" y="26" width="44" height="38" rx="4" fill="#6b728020" stroke="#6b7280" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+            <text x="536" y="50" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.35">...</text>
+
+            <!-- формула -->
+            <text x="240" y="112" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.45" font-family="JetBrains Mono">addr[i] = base + i × 8</text>
+          </svg>
+          <figcaption>Массив занимает непрерывный участок памяти. Элементы лежат вплотную друг к другу — именно поэтому доступ по индексу O(1): адрес = base + i × sizeof(T).</figcaption>
+        </figure>
 
         <div class="codeblock">
           <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">array.go</span></div>
-          <pre><code class="language-go">var a [3]int              // [0 0 0]
-b := [3]int{1, 2, 3}
-c := [...]int{1, 2, 3, 4}  // компилятор сам посчитает длину → [4]int
+          <pre><code class="language-go">var a [3]int               // [0 0 0]
+b := [3]int{1, 2, 3}       // [1 2 3]
+c := [...]int{1, 2, 3, 4}  // компилятор считает размер сам → [4]int
+d := [5]int{1, 2, 3}       // [1 2 3 0 0] — остальное нули
+e := [5]int{3: 4}          // [0 0 0 4 0] — index: value
+f := [5]int{2: 5, 6, 1: 7} // [0 7 5 6 0] — смешанный (после idx: следующий = idx+1)
+var g [2][5]int             // 2D: [[0 0 0 0 0] [0 0 0 0 0]]
 
-fmt.Println(a == [3]int{0, 0, 0}) // true — массивы сравнимы и копируются целиком</code></pre>
+fmt.Println(a == [3]int{0, 0, 0}) // true — массивы сравнимы
+fmt.Println(len(b), cap(b))       // 3 3 — cap всегда равен len</code></pre>
         </div>
 
         <div class="callout interview">
@@ -1751,7 +1898,7 @@ seen[Point{1, 2}] = true // валидно — массив сравним и х
       </section>
 
       <section class="topic" id="slices">
-        <h2><span class="idx">4.2</span>Слайсы</h2>
+        <h2><span class="idx">4.2</span>Слайсы <button type="button" class="impl-btn" onclick="openImpl('slice')" style="margin-left:10px;vertical-align:middle">под капотом →</button></h2>
         <p class="tight">Слайс — это не массив, а маленький заголовок из трёх полей: указатель на массив, длина и вместимость.</p>
 
         <div class="codeblock">
@@ -1764,7 +1911,7 @@ t = append(t, 4, 5)       // cap не хватило → НОВЫЙ массив
         </div>
 
         <figure>
-          <svg viewBox="0 0 640 300" role="img" aria-label="Пока хватает вместимости, append дописывает в тот же массив. Когда вместимость исчерпана, append выделяет новый массив и указатель заголовка меняется — старые ссылки на массив остаются со старыми данными.">
+          <svg viewBox="0 0 640 420" role="img" aria-label="Пока хватает вместимости, append дописывает в тот же массив. Когда вместимость исчерпана, append выделяет новый массив и указатель заголовка меняется — старые ссылки на массив остаются со старыми данными.">
             <defs>
               <marker id="arr4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
                 <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
@@ -1815,23 +1962,31 @@ t = append(t, 4, 5)       // cap не хватило → НОВЫЙ массив
             </g>
             <text x="500" y="264" text-anchor="middle" font-size="10.5" fill="currentColor" opacity="0.6">новый массив (cap 8),</text>
             <text x="500" y="277" text-anchor="middle" font-size="10.5" fill="currentColor" opacity="0.6">старый — если жив у кого-то ещё</text>
+
+            <!-- стрелка вниз от красного блока -->
+            <line x1="500" y1="290" x2="500" y2="315" stroke="#af4433" opacity="0.7" marker-end="url(#arr4)"/>
+            <text x="516" y="303" font-size="10.5" fill="#af4433" opacity="0.8">cap × 2</text>
+            <text x="516" y="315" font-size="9.5" fill="#af4433" opacity="0.55">(пока oldCap &lt; 256)</text>
+
+            <!-- новый массив: 8 ячеек, первые 4 красные, последние 4 пустые -->
+            <g font-family="JetBrains Mono" font-size="12">
+              <!-- заполненные (старые данные) -->
+              <rect x="372" y="320" width="34" height="30" fill="#af443322" stroke="#af4433"/><text x="389" y="340" text-anchor="middle" fill="#af4433">1</text>
+              <rect x="406" y="320" width="34" height="30" fill="#af443322" stroke="#af4433"/><text x="423" y="340" text-anchor="middle" fill="#af4433">2</text>
+              <rect x="440" y="320" width="34" height="30" fill="#af443322" stroke="#af4433"/><text x="457" y="340" text-anchor="middle" fill="#af4433">3</text>
+              <rect x="474" y="320" width="34" height="30" fill="#af443322" stroke="#af4433"/><text x="491" y="340" text-anchor="middle" fill="#af4433">4</text>
+              <!-- пустые (запас) -->
+              <rect x="508" y="320" width="34" height="30" fill="none" stroke="#af4433" stroke-dasharray="3 3" opacity="0.35"/>
+              <rect x="542" y="320" width="34" height="30" fill="none" stroke="#af4433" stroke-dasharray="3 3" opacity="0.35"/>
+              <rect x="576" y="320" width="34" height="30" fill="none" stroke="#af4433" stroke-dasharray="3 3" opacity="0.35"/>
+              <rect x="610" y="320" width="34" height="30" fill="none" stroke="#af4433" stroke-dasharray="3 3" opacity="0.35"/>
+            </g>
+            <!-- подписи -->
+            <text x="440" y="368" text-anchor="middle" font-size="10" fill="#af4433" opacity="0.8">← заняты (len 4) →</text>
+            <text x="576" y="368" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.45">← свободно →</text>
           </svg>
           <figcaption>Заголовок слайса копируется при передаче, а массив под ним — общий. Пока вместимости хватает, <code class="inline">append</code> пишет в тот же массив; как только она кончается — выделяется новый, и указатель в заголовке меняется. Именно поэтому <code class="inline">append</code> нужно всегда переприсваивать: <code class="inline">s = append(s, …)</code>.</figcaption>
         </figure>
-
-        <div class="callout warn">
-          <div class="mark">камень</div>
-          <p>Срез большого слайса держит в памяти <b>весь</b> исходный массив, пока жив хотя бы один под-срез:</p>
-        </div>
-
-        <div class="codeblock">
-          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">leak.go</span></div>
-          <pre><code class="language-go">big := make([]byte, 1<<20) // 1 МБ
-small := big[:10]           // держит весь big в памяти, пока жив small
-
-safe := make([]byte, 10)
-copy(safe, big[:10])        // независимая копия — big можно освобождать</code></pre>
-        </div>
 
         <div class="callout interview">
           <div class="mark">собес</div>
@@ -1839,48 +1994,269 @@ copy(safe, big[:10])        // независимая копия — big мож�
         </div>
 
         <details class="deep">
-          <summary>Подробнее: точная формула роста cap и защита three-index slicing <span class="tag">deep</span></summary>
+          <summary>Подробнее: срез слайса — общий массив, общие изменения <span class="tag">deep</span></summary>
           <div class="deep-body">
-            <p class="tight">Стратегия роста ёмкости, сверенная напрямую с исходником <code class="inline">runtime/slice.go</code> (функция <code class="inline">nextslicecap</code>): порог — ровно <b>256</b> элементов. При <code class="inline">cap &lt; 256</code> — удвоение (<code class="inline">newcap = 2×oldcap</code>). При <code class="inline">cap ≥ 256</code> — рост по формуле <code class="inline">newcap += (newcap + 3×256) >> 2</code>, что стремится к <b>×1.25</b>. Сам исходник поясняет это в комментарии: «переход от роста ×2 для маленьких слайсов к росту ×1.25 для больших — специально сделан плавным».</p>
+            <p class="tight">Срез <code class="inline">s[low:high]</code> не копирует данные — новый слайс смотрит на тот же массив, но с другим ptr и len/cap:</p>
 
-            <p class="tight">Опасный сосед этой темы — срез, полученный из другого слайса, при <code class="inline">append</code> может писать в тот же базовый массив, если в оставшуюся ёмкость помещается:</p>
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">subslice.go</span></div>
+              <pre><code class="language-go">a := []int{0, 1, 2, 3, 4, 5, 6, 7, 8} // len=9, cap=9
+//          ↑ ptr
+
+s1 := a[4:7]   // len=3, cap=5, ptr → на a[4]
+//              cap = 9-4 = 5 (от ptr до конца массива)
+
+s2 := a[6:9]   // len=3, cap=3, ptr → на a[6]
+
+// a, s1, s2 — смотрят на ОДИН массив в памяти
+s1[0] = 99     // меняет a[4] одновременно!</code></pre>
+            </div>
+
+            <p class="tight"><b>cap подслайса</b> = от нового ptr до конца исходного массива. <code class="inline">a[4:7]</code> → cap = 9 − 4 = 5.</p>
+
+            <p class="tight"><b>Изменение через любой подслайс видно всем остальным</b> — один массив на всех:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">shared_mutation.go</span></div>
+              <pre><code class="language-go">a  := []int{0, 1, 2, 3, 4}
+s1 := a[1:3]  // [1, 2]
+s2 := a[1:4]  // [1, 2, 3]
+
+s1[0] = 99
+
+fmt.Println(a)   // [0, 99, 2, 3, 4] ← поменялось
+fmt.Println(s1)  // [99, 2]          ← поменялось
+fmt.Println(s2)  // [99, 2, 3]       ← тоже поменялось!
+
+// независимая копия:
+b := make([]int, len(s1))
+copy(b, s1)</code></pre>
+            </div>
+
+            <div class="callout warn">
+              <div class="mark">камень</div>
+              <p>Срез большого слайса держит в памяти <b>весь</b> исходный массив, пока жив хотя бы один под-срез — GC видит <code class="inline">ptr</code> внутри слайса и считает весь массив достижимым, независимо от <code class="inline">len</code>:</p>
+            </div>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">leak.go</span></div>
+              <pre><code class="language-go">big := make([]byte, 10<<30) // ~10 ГБ (например, считали огромный файл)
+small := big[:10]            // нужны только первые 10 байт...
+                             // но в памяти по-прежнему висит весь 10 ГБ массив!
+                             // GC видит ptr внутри small → big недостижим для сборки
+
+safe := make([]byte, 10)
+copy(safe, big[:10])         // копируем только нужное — теперь big можно собрать
+
+// альтернатива через append — короче:
+safe2 := append([]byte(nil), big[:10]...)</code></pre>
+            </div>
+          </div>
+        </details>
+
+        <details class="deep">
+          <summary>Подробнее: nil-слайс vs пустой слайс — в чём разница и почему важно для JSON <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <div class="callout warn">
+              <div class="mark">камень</div>
+              <p><b>nil-слайс ≠ пустой слайс</b> — проверяй пустоту через <code class="inline">len(s) == 0</code>, а не <code class="inline">s == nil</code>.</p>
+            </div>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">nil_vs_empty.go</span></div>
+              <pre><code class="language-go">var s []int    // nil-слайс:   {ptr=nil, len=0, cap=0} — массива нет вообще
+s = []int(nil) // то же самое — nil приводится к типу []int, результат идентичен
+               // просто []int написать нельзя — это тип, а не значение
+e := []int{}   // пустой слайс: {ptr=0xc0, len=0, cap=0} — массив выделен (пусть и нулевой)
+
+fmt.Println(s == nil)  // true
+fmt.Println(e == nil)  // false
+fmt.Println(len(s), len(e)) // 0  0 — одинаково
+fmt.Println(cap(s), cap(e)) // 0  0 — одинаково
+
+// append работает с обоими одинаково:
+s = append(s, 1) // ok
+e = append(e, 1) // ok
+
+// но JSON-сериализация различает:
+json.Marshal(s)  // → null
+json.Marshal(e)  // → []   ← клиент может сломаться если ждёт массив</code></pre>
+            </div>
+
+            <p class="tight">Внутри структуры <code class="inline">{ptr, len, cap}</code> разница только в <code class="inline">ptr</code>: у nil-слайса он равен <code class="inline">nil</code> — никакого массива в памяти нет совсем. У пустого слайса <code class="inline">ptr</code> ненулевой — Go использует специальный глобальный адрес <code class="inline">runtime.zerobase</code>. Это не массив с данными — просто валидный адрес в памяти, по которому ничего не хранится. Нужен потому что в Go любой указатель должен быть либо <code class="inline">nil</code>, либо валидным: разыменование <code class="inline">nil</code> → <code class="inline">SIGSEGV</code>, разыменование <code class="inline">zerobase</code> → ok, просто пустота. При этом <code class="inline">zerobase</code> один на всю программу — все <code class="inline">[]int{}</code>, <code class="inline">[]string{}</code>, <code class="inline">[]MyStruct{}</code> смотрят на один адрес, память не тратится. <code class="inline">len</code> и <code class="inline">cap</code> у обоих — 0.</p>
+          </div>
+        </details>
+
+        <details class="deep">
+          <summary>Подробнее: предварительная аллокация — <code class="inline">make([]T, len, cap)</code> <span class="tag">perf</span></summary>
+          <div class="deep-body">
+            <p class="tight">Когда заранее известно (или можно оценить) количество элементов — создавай слайс с нужной ёмкостью через <code class="inline">make</code>. Без этого каждый <code class="inline">append</code>, исчерпывающий текущий cap, заставляет рантайм выделить новый массив и <b>скопировать все данные</b> — и так несколько раз по мере роста:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">prealloc.go</span></div>
+              <pre><code class="language-go">n := 10_000
+
+// ❌ без преаллокации — ~13 реаллокаций для 10 000 элементов
+s := []int{}
+for i := range n {
+    s = append(s, i)
+}
+
+// ✅ с преаллокацией — ноль реаллокаций
+s := make([]int, 0, n) // len=0, cap=n — пустой, но место зарезервировано
+for i := range n {
+    s = append(s, i)
+}</code></pre>
+            </div>
+
+            <div class="callout warn">
+              <div class="mark">камень</div>
+              <p><b><code class="inline">make([]T, n)</code> vs <code class="inline">make([]T, 0, n)</code></b> — распространённая путаница. В первом случае len=n уже заполнен нулями, append пишет <em>после</em> них:</p>
+            </div>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">len_vs_cap_make.go</span></div>
+              <pre><code class="language-go">a := make([]int, 10)   // len=10, cap=10 — уже 10 нулей
+a = append(a, 99)
+fmt.Println(a) // [0 0 0 0 0 0 0 0 0 0 99]  ← 99 в конце, не в начале!
+
+b := make([]int, 0, 10) // len=0, cap=10 — пустой, место зарезервировано
+b = append(b, 99)
+fmt.Println(b) // [99]  ← то что ожидаешь
+
+// если нужны оба параметра явно: make([]T, k, n)
+// k — сколько нулей сразу, n — общая ёмкость
+c := make([]int, 3, 10) // [0 0 0], cap=10, append пишет с индекса 3</code></pre>
+            </div>
+
+            <p class="tight">Правило: если заполняешь слайс через <code class="inline">append</code> — используй <code class="inline">make([]T, 0, n)</code>. Если хочешь сразу индексировать (<code class="inline">s[i] = x</code>) — используй <code class="inline">make([]T, n)</code>.</p>
+
+            <p class="tight">Если точный размер неизвестен — даже грубая оценка лучше нуля: лучше аллоцировать чуть больше и не иметь реаллокаций, чем аллоцировать чуть меньше и иметь одну-две лишних.</p>
+          </div>
+        </details>
+
+        <details class="deep">
+          <summary>Подробнее: append к подслайсу может тихо затереть данные родителя <span class="tag">deep</span></summary>
+          <div class="deep-body">
+            <p class="tight">Если взять подслайс и у него ещё остался cap — <code class="inline">append</code> запишет новый элемент прямо в общий массив, затерев данные родительского слайса. Никакой ошибки не будет, всё молча сломается:</p>
 
             <div class="codeblock">
               <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">shareoverwrite.go</span></div>
-              <pre><code class="language-go">a := make([]int, 3, 5)     // len 3, cap 5
-b := a[:2]                   // делит память с a
-b = append(b, 99)            // затирает a[2], потому что cap ещё не исчерпан!
+              <pre><code class="language-go">a := make([]int, 3, 5)  // [0, 0, 0], cap=5
+b := a[:2]              // [0, 0], cap=3 (смотрит на тот же массив)
 
-// защита — three-index slicing: принудительно режет cap нового среза
-c := a[:2:2]                 // cap(c) == 2 → append(c, …) точно реаллоцирует</code></pre>
+b = append(b, 99)       // cap хватает → пишет в a[2] !
+fmt.Println(a)          // [0, 0, 99] ← a молча изменился</code></pre>
             </div>
 
-            <p class="tight">Полная форма <code class="inline">s[low:high:max]</code> задаёт третий индекс — предел ёмкости нового среза (<code class="inline">cap = max - low</code>), гарантируя, что <code class="inline">append</code> к нему всегда получит новый массив вместо тихой записи в чужие данные.</p>
+            <p class="tight"><b>Защита — three-index slicing</b> <code class="inline">s[low:high:max]</code>: третий индекс явно обрезает cap нового среза до нуля свободного места. Тогда любой <code class="inline">append</code> гарантированно уйдёт в реаллокацию и не тронет оригинал:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">three_index.go</span></div>
+              <pre><code class="language-go">c := a[:2:2]      // cap(c) == 2-0 == 2, свободных мест нет
+c = append(c, 99) // cap исчерпан → новый массив, a не тронут
+fmt.Println(a)    // [0, 0, 0] ← не изменился</code></pre>
+            </div>
           </div>
         </details>
 
         <details class="deep">
           <summary>Подробнее: почему <code class="inline">append</code> внутри функции с параметром <code class="inline">[]int</code> «не работает» <span class="tag">medium</span></summary>
           <div class="deep-body">
-            <p class="tight">Заголовок слайса (указатель, len, cap) передаётся в функцию по значению — как копия. Это создаёт два разных класса изменений с разной видимостью снаружи:</p>
+            <p class="tight">Слайс передаётся в функцию как <b>копия заголовка</b> {ptr, len, cap}. Сам массив данных не копируется. Отсюда 4 разных ситуации:</p>
 
-            <div class="codeblock">
-              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">valueptr.go</span></div>
-              <pre><code class="language-go">func mutateElem(s []int)  { s[0] = 99 }         // видно снаружи: тот же массив
-func growSlice(s []int)   { s = append(s, 1) }   // НЕ видно: append(...) вернул
-                                                  // новый заголовок, но это лишь
-                                                  // локальная копия переменной s
-func growViaPtr(s *[]int) { *s = append(*s, 1) } // видно: пишем через указатель
-                                                  // в заголовок caller'а напрямую</code></pre>
-            </div>
+            <!-- Случай 1 -->
+            <p class="tight" style="margin-top:14px"><b>1. Меняем элемент — видно снаружи ✅</b></p>
+            <p class="tight" style="color:var(--text-dim);font-size:12.5px">Оба заголовка смотрят на один массив → запись идёт туда же</p>
+            <svg viewBox="0 0 520 90" style="width:100%;margin:6px 0 12px">
+              <defs><marker id="a1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+              <rect x="2" y="8" width="130" height="52" rx="6" fill="none" stroke="currentColor" opacity="0.4"/>
+              <text x="67" y="24" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6">оригинал (снаружи)</text>
+              <text x="12" y="44" font-family="JetBrains Mono" font-size="10" fill="currentColor">ptr / len=3 / cap=3</text>
+              <rect x="160" y="8" width="130" height="52" rx="6" fill="none" stroke="currentColor" opacity="0.4"/>
+              <text x="225" y="24" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6">копия (внутри функции)</text>
+              <text x="170" y="44" font-family="JetBrains Mono" font-size="10" fill="currentColor">ptr / len=3 / cap=3</text>
+              <rect x="360" y="16" width="36" height="28" rx="3" fill="#3b7ec920" stroke="#3b7ec9"/><text x="378" y="35" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#3b7ec9">99</text>
+              <rect x="396" y="16" width="36" height="28" rx="3" fill="none" stroke="currentColor" opacity="0.4"/><text x="414" y="35" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="currentColor">2</text>
+              <rect x="432" y="16" width="36" height="28" rx="3" fill="none" stroke="currentColor" opacity="0.4"/><text x="450" y="35" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="currentColor">3</text>
+              <text x="378" y="60" text-anchor="middle" font-size="9" fill="#3b7ec9">s[0]=99</text>
+              <line x1="132" y1="34" x2="356" y2="30" stroke="#3b7ec9" opacity="0.7" marker-end="url(#a1)"/>
+              <line x1="290" y1="34" x2="356" y2="30" stroke="#3b7ec9" opacity="0.7" marker-end="url(#a1)"/>
+              <text x="490" y="35" text-anchor="middle" font-size="11" fill="#3b7ec9">✅</text>
+            </svg>
 
-            <p class="tight">Изменение <b>элемента</b> слайса всегда видно вызывающему коду — оба заголовка (оригинал и копия-параметр) указывают на один и тот же массив. А вот переприсваивание самой переменной <code class="inline">s</code> внутри функции (в том числе через <code class="inline">append</code>, которому не хватило вместимости, — тогда меняются сразу все три поля заголовка, включая указатель) правит только локальную копию заголовка и снаружи не видно никак. Чтобы функция могла надёжно расширить чужой слайс, ей нужен указатель на сам слайс (<code class="inline">*[]int</code>), а не сам слайс — именно поэтому у стандартных функций вроде <code class="inline">json.Unmarshal</code> в сигнатуре указатель. <em>(источник: habr.com/ru/companies/ru_mts/articles/909158/)</em></p>
+            <!-- Случай 2 -->
+            <p class="tight"><b>2. append когда cap хватает — данные изменились, но len снаружи не вырос ⚠️</b></p>
+            <p class="tight" style="color:var(--text-dim);font-size:12.5px">Элемент записан в общий массив, но len в оригинале остался старый — потому что len это поле заголовка, а заголовок передался как копия. append увеличил len только в своей копии, оригинал об этом не знает.</p>
+            <svg viewBox="0 0 520 100" style="width:100%;margin:6px 0 12px">
+              <defs><marker id="a2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+              <rect x="2" y="8" width="140" height="52" rx="6" fill="none" stroke="currentColor" opacity="0.4"/>
+              <text x="71" y="24" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6">оригинал — len не вырос!</text>
+              <text x="10" y="44" font-family="JetBrains Mono" font-size="10" fill="currentColor">ptr / len=3 / cap=4</text>
+              <rect x="158" y="8" width="140" height="52" rx="6" fill="none" stroke="#3b7ec9" opacity="0.7"/>
+              <text x="228" y="24" text-anchor="middle" font-size="10" fill="#3b7ec9" opacity="0.8">копия — len вырос</text>
+              <text x="166" y="44" font-family="JetBrains Mono" font-size="10" fill="#3b7ec9">ptr / len=4 / cap=4</text>
+              <rect x="360" y="16" width="32" height="26" rx="3" fill="none" stroke="currentColor" opacity="0.4"/><text x="376" y="33" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="currentColor">1</text>
+              <rect x="392" y="16" width="32" height="26" rx="3" fill="none" stroke="currentColor" opacity="0.4"/><text x="408" y="33" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="currentColor">2</text>
+              <rect x="424" y="16" width="32" height="26" rx="3" fill="none" stroke="currentColor" opacity="0.4"/><text x="440" y="33" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="currentColor">3</text>
+              <rect x="456" y="16" width="32" height="26" rx="3" fill="#f5a62320" stroke="#f5a623"/><text x="472" y="33" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#f5a623">4</text>
+              <text x="472" y="56" text-anchor="middle" font-size="9" fill="#f5a623">добавлен</text>
+              <line x1="142" y1="34" x2="356" y2="29" stroke="currentColor" opacity="0.4" marker-end="url(#a2)"/>
+              <line x1="298" y1="34" x2="356" y2="29" stroke="#3b7ec9" opacity="0.6" marker-end="url(#a2)"/>
+              <text x="500" y="35" text-anchor="middle" font-size="11" fill="#f5a623">⚠️</text>
+            </svg>
+
+            <!-- Случай 3 -->
+            <p class="tight"><b>3. append когда cap НЕ хватает — снаружи ничего не видно ❌</b></p>
+            <p class="tight" style="color:var(--text-dim);font-size:12.5px">append создал новый массив и обновил только локальную копию заголовка</p>
+            <svg viewBox="0 0 520 110" style="width:100%;margin:6px 0 12px">
+              <defs><marker id="a3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+              <rect x="2" y="8" width="130" height="52" rx="6" fill="none" stroke="currentColor" opacity="0.4"/>
+              <text x="67" y="24" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6">оригинал — не изменился</text>
+              <text x="10" y="44" font-family="JetBrains Mono" font-size="10" fill="currentColor">ptr₁ / len=3 / cap=3</text>
+              <rect x="158" y="8" width="140" height="52" rx="6" fill="none" stroke="#af4433" opacity="0.7"/>
+              <text x="228" y="24" text-anchor="middle" font-size="10" fill="#af4433" opacity="0.8">копия — ptr сменился</text>
+              <text x="166" y="44" font-family="JetBrains Mono" font-size="10" fill="#af4433">ptr₂ / len=4 / cap=6</text>
+              <rect x="340" y="8" width="32" height="26" rx="3" fill="none" stroke="currentColor" opacity="0.35"/><text x="356" y="25" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="currentColor" opacity="0.5">1</text>
+              <rect x="372" y="8" width="32" height="26" rx="3" fill="none" stroke="currentColor" opacity="0.35"/><text x="388" y="25" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="currentColor" opacity="0.5">2</text>
+              <rect x="404" y="8" width="32" height="26" rx="3" fill="none" stroke="currentColor" opacity="0.35"/><text x="420" y="25" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="currentColor" opacity="0.5">3</text>
+              <text x="380" y="48" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.4">старый массив</text>
+              <rect x="340" y="62" width="32" height="26" rx="3" fill="none" stroke="#af4433" opacity="0.6"/><text x="356" y="79" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#af4433">1</text>
+              <rect x="372" y="62" width="32" height="26" rx="3" fill="none" stroke="#af4433" opacity="0.6"/><text x="388" y="79" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#af4433">2</text>
+              <rect x="404" y="62" width="32" height="26" rx="3" fill="none" stroke="#af4433" opacity="0.6"/><text x="420" y="79" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#af4433">3</text>
+              <rect x="436" y="62" width="32" height="26" rx="3" fill="#af443320" stroke="#af4433"/><text x="452" y="79" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#af4433">4</text>
+              <text x="396" y="102" text-anchor="middle" font-size="9" fill="#af4433">новый массив</text>
+              <line x1="132" y1="34" x2="336" y2="21" stroke="currentColor" opacity="0.35" marker-end="url(#a3)"/>
+              <line x1="298" y1="34" x2="336" y2="75" stroke="#af4433" opacity="0.6" marker-end="url(#a3)"/>
+              <text x="500" y="55" text-anchor="middle" font-size="11" fill="#af4433">❌</text>
+            </svg>
+
+            <!-- Случай 4 -->
+            <p class="tight"><b>4. Через указатель *[]int — видно снаружи ✅</b></p>
+            <p class="tight" style="color:var(--text-dim);font-size:12.5px">Функция получила адрес самого заголовка → пишет прямо в него</p>
+            <svg viewBox="0 0 520 90" style="width:100%;margin:6px 0 12px">
+              <defs><marker id="a4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+              <rect x="2" y="18" width="150" height="52" rx="6" fill="none" stroke="#3b7ec9"/>
+              <text x="77" y="34" text-anchor="middle" font-size="10" fill="#3b7ec9">оригинал — обновился!</text>
+              <text x="10" y="54" font-family="JetBrains Mono" font-size="10" fill="#3b7ec9">ptr₂ / len=4 / cap=6</text>
+              <rect x="170" y="28" width="100" height="32" rx="4" fill="none" stroke="currentColor" opacity="0.4"/>
+              <text x="220" y="49" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6">*[]int → &amp;оригинал</text>
+              <rect x="360" y="18" width="32" height="26" rx="3" fill="none" stroke="#3b7ec9" opacity="0.6"/><text x="376" y="35" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#3b7ec9">1</text>
+              <rect x="392" y="18" width="32" height="26" rx="3" fill="none" stroke="#3b7ec9" opacity="0.6"/><text x="408" y="35" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#3b7ec9">2</text>
+              <rect x="424" y="18" width="32" height="26" rx="3" fill="none" stroke="#3b7ec9" opacity="0.6"/><text x="440" y="35" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#3b7ec9">3</text>
+              <rect x="456" y="18" width="32" height="26" rx="3" fill="#3b7ec920" stroke="#3b7ec9"/><text x="472" y="35" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#3b7ec9">4</text>
+              <line x1="220" y1="28" x2="77" y2="52" stroke="currentColor" opacity="0.5" stroke-dasharray="3 3" marker-end="url(#a4)"/>
+              <line x1="152" y1="44" x2="356" y2="31" stroke="#3b7ec9" opacity="0.7" marker-end="url(#a4)"/>
+              <text x="500" y="40" text-anchor="middle" font-size="11" fill="#3b7ec9">✅</text>
+            </svg>
+
+            <p class="tight">Итог: <b>данные в массиве — общие, заголовок {ptr,len,cap} — личный</b>. Поменял данные — все видят. Поменял заголовок (append, переприсваивание) — только ты. Нужно чтобы снаружи увидели новый заголовок — передавай <code class="inline">*[]int</code>.</p>
           </div>
         </details>
       </section>
 
       <section class="topic" id="maps">
-        <h2><span class="idx">4.3</span>map</h2>
+        <h2><span class="idx">4.3</span>map <button type="button" class="impl-btn" onclick="openImpl('map')" style="margin-left:10px;vertical-align:middle">под капотом →</button></h2>
 
         <div class="codeblock">
           <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">map.go</span></div>
@@ -1920,7 +2296,7 @@ nilMap["y"] = 1    // panic: assignment to entry in nil map</code></pre>
       </section>
 
       <section class="topic" id="structs">
-        <h2><span class="idx">4.4</span>struct</h2>
+        <h2><span class="idx">4.4</span>struct <button type="button" class="impl-btn" onclick="openImpl('struct')" style="margin-left:10px;vertical-align:middle">под капотом →</button></h2>
 
         <div class="codeblock">
           <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">struct.go</span></div>
@@ -4892,6 +5268,33 @@ func (s *Stack[T]) Push(v T) {
 </div>
 
 <div class="impl-overlay" id="implOverlay"></div>
+
+<div id="tipPopover" style="
+  display:none;
+  position:fixed;
+  z-index:9999;
+  background:var(--bg, #1a1a1a);
+  border:1.5px solid var(--accent);
+  border-radius:10px;
+  padding:14px 16px;
+  max-width:520px;
+  box-shadow:0 12px 40px rgba(0,0,0,0.7);
+  font-size:13.5px;
+  line-height:1.55;
+  opacity:1;
+">
+  <div id="tipText"></div>
+  <button onclick="document.getElementById('tipPopover').style.display='none'" style="
+    margin-top:10px;
+    display:block;
+    font-size:11.5px;
+    color:var(--text-dim);
+    background:none;
+    border:none;
+    cursor:pointer;
+    padding:0;
+  ">закрыть ✕</button>
+</div>
 <div class="impl-panel" id="implPanel" role="dialog" aria-modal="true" aria-labelledby="implTitle">
   <div class="impl-head">
     <div>
@@ -5594,7 +5997,963 @@ reversed := string(r) // корректно</code></pre>
           <div class="impl-sources">Источники: github.com/golang/go (src/builtin/builtin.go, src/runtime/string.go, src/internal/goarch/goarch.go) · pkg.go.dev/builtin (len) · go.dev/ref/spec#Index_expressions (тип s[i] — byte) · groups.google.com/g/golang-nuts (обсуждение «why len returns int and not uint») · go.dev/wiki/CompilerOptimizations · go.dev/doc/go1.10 · go.dev/doc/go1.18 · go.dev/doc/go1.20 · pkg.go.dev/unsafe · pkg.go.dev/reflect#StringHeader · pkg.go.dev/strings#Builder · pkg.go.dev/unicode/utf8 (RuneError, RuneCountInString) · go.dev/blog/strings</div>
         `
       },
+
+  // ---------- "array" entry ----------
+      array: {
+        title: 'Массив — под капотом',
+        html: `
+          <p class="tight">Массив в Go — это просто <b>непрерывный блок памяти</b> фиксированного размера. Никаких заголовков, никаких указателей — только сами данные рядом друг с другом. Это описание именно <em>типа</em> массива (метаданные для компилятора и рефлексии), а не самих данных.</p>
+
+          <div class="codeblock">
+            <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">src/internal/abi/type.go</span></div>
+            <pre><code class="language-go">type ArrayType struct {
+    Type        // ① общие метаданные типа
+    Elem  *Type // ② тип одного элемента
+    Slice *Type // ③ соответствующий слайс-тип
+    Len   uintptr // ④ количество элементов
+}</code></pre>
+          </div>
+
+          <p class="tight"><b>① Type</b> — встроенная структура с общими данными о любом типе: размер в байтах (<code class="inline">Size_</code>), требуемое <span onclick="showTip(event, 'alignment')" style="cursor:help;border-bottom:1px dashed var(--accent);color:var(--accent)">выравнивание</span> (<code class="inline">Align_</code>), флаги (содержит ли указатели — нужно ли GC за ним следить). Для <code class="inline">[3]int32</code>: размер = 12, выравнивание = 4.</p>
+
+          <p class="tight"><b>② Elem *Type</b> — указатель на описание типа одного элемента. Для <code class="inline">[3]int32</code> это будет описание <code class="inline">int32</code>. Нужен компилятору чтобы знать: на сколько байт шагать при обращении <code class="inline">a[i]</code> (адрес = base + i × Elem.Size).</p>
+
+          <p class="tight"><b>③ Slice *Type</b> — указатель на описание соответствующего слайс-типа (<code class="inline">[]int32</code>). Нужен когда компилятор конвертирует массив в слайс: <code class="inline">s := a[:]</code> — он берёт этот тип напрямую, не создаёт заново. <span onclick="showTip(event, 'sliceType')" style="cursor:help;border-bottom:1px dashed var(--accent);color:var(--accent)">пример →</span></p>
+
+          <p class="tight"><b>④ Len uintptr</b> — количество элементов. Это не данные — это часть описания <em>типа</em>. Именно поэтому <code class="inline">[3]int</code> и <code class="inline">[4]int</code> — разные типы: у них разный <code class="inline">Len</code>, а значит разная структура <code class="inline">ArrayType</code>.</p>
+
+          <p class="tight">В памяти <code class="inline">[3]int32</code> выглядит так — три числа подряд, без лишних байт:</p>
+
+          <div class="bytefig">
+            <div class="bytefig-label">[3]int32 в памяти — 12 байт</div>
+            <div class="byterow">
+              <span class="byte-state">[0]</span>
+              <div class="bits"><span class="bit">a0</span><span class="bit">a1</span><span class="bit">a2</span><span class="bit">a3</span></div>
+              <span class="byte-tag">4 байта</span>
+            </div>
+            <div class="byterow">
+              <span class="byte-state">[1]</span>
+              <div class="bits"><span class="bit">b0</span><span class="bit">b1</span><span class="bit">b2</span><span class="bit">b3</span></div>
+              <span class="byte-tag">4 байта</span>
+            </div>
+            <div class="byterow">
+              <span class="byte-state">[2]</span>
+              <div class="bits"><span class="bit">c0</span><span class="bit">c1</span><span class="bit">c2</span><span class="bit">c3</span></div>
+              <span class="byte-tag">4 байта</span>
+            </div>
+          </div>
+
+          <p class="tight">Адрес элемента <code class="inline">a[i]</code> вычисляется как <code class="inline">base + i × sizeof(Elem)</code> — поэтому доступ по индексу всегда O(1), никакого обхода.</p>
+
+          <div class="callout interview">
+            <div class="mark">собес</div>
+            <p>Почему массив копируется целиком при передаче в функцию? Потому что он хранится по значению — нет никакого заголовка или указателя, только сами байты. Передать «ссылку» на массив без явного <code class="inline">&amp;arr</code> невозможно. Именно поэтому на практике почти всегда используют слайс — он передаёт только 24-байтный заголовок, а не все данные.</p>
+          </div>
+
+          <div class="impl-sources">Источники: github.com/golang/go (src/internal/abi/type.go) · go.dev/ref/spec#Array_types · go.dev/ref/spec#Size_and_alignment_guarantees</div>
+        `
+      },
+
+  // ---------- "slice" entry ----------
+      slice: {
+        title: 'Слайс — под капотом',
+        html: `
+          <p class="tight">Слайс — это <b>маленький заголовок из трёх полей</b>, который лежит на стеке и указывает на массив данных в heap. Сам массив данных нигде внутри слайса не хранится — только адрес на него.</p>
+
+          <div class="codeblock">
+            <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">src/runtime/slice.go</span></div>
+            <pre><code class="language-go">// SliceHeader — это и есть слайс в памяти:
+type slice struct {
+    array unsafe.Pointer // указатель на первый элемент массива
+    len   int            // сколько элементов сейчас «видно»
+    cap   int            // сколько элементов в массиве всего (с запасом)
+}
+// Итого: 8 + 8 + 8 = 24 байта на 64-битной платформе</code></pre>
+          </div>
+
+          <div class="bytefig">
+            <div class="bytefig-label">[]int{1,2,3} с cap 5 в памяти</div>
+            <div class="byterow">
+              <span class="byte-state">ptr</span>
+              <div class="bits"><span class="bit">→</span><span class="bit is-highlight">heap</span></div>
+              <span class="byte-tag">8 байт</span>
+            </div>
+            <div class="byterow">
+              <span class="byte-state">len</span>
+              <div class="bits"><span class="bit is-one">3</span></div>
+              <span class="byte-tag">8 байт</span>
+            </div>
+            <div class="byterow">
+              <span class="byte-state">cap</span>
+              <div class="bits"><span class="bit is-one">5</span></div>
+              <span class="byte-tag">8 байт</span>
+            </div>
+          </div>
+
+          <p class="tight"><b>Рост ёмкости</b> — актуально для Go 1.18+ (функция <code class="inline">nextslicecap</code> в <code class="inline">runtime/slice.go</code>). Порог — <b>256 элементов</b>:</p>
+
+          <div class="codeblock">
+            <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">src/runtime/slice.go — nextslicecap</span></div>
+            <pre><code class="language-go">func nextslicecap(newLen, oldCap int) int {
+    newcap := oldCap
+    doublecap := newcap + newcap
+    if newLen > doublecap {
+        return newLen
+    }
+    const threshold = 256
+    if oldCap < threshold {
+        return doublecap            // cap < 256 → удвоение (×2)
+    }
+    for {
+        // cap ≥ 256 → плавный переход к ×1.25
+        // формула: (newcap + 3×256) >> 2
+        newcap += (newcap + 3*threshold) >> 2
+        if uint(newcap) >= uint(newLen) {
+            break
+        }
+    }
+    return newcap
+}</code></pre>
+          </div>
+
+          <p class="tight"><b>Пример — как цикл считает newcap при oldCap = 512, newLen = 513:</b></p>
+
+          <div class="codeblock">
+            <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">nextslicecap_trace.go</span></div>
+            <pre><code class="language-go">// oldCap = 512, newLen = 513
+// 512 >= 256 → идём в цикл for
+
+// итерация 1:
+newcap = 512
+newcap += (512 + 3*256) >> 2
+//       = (512 + 768)  >> 2
+//       = 1280         >> 2   // >> 2 это деление на 4
+//       = 320
+newcap = 512 + 320 = 832
+// uint(832) >= uint(513) → break
+
+// результат: новый cap = 832 (рост ≈ ×1.625)
+
+// ещё пример — oldCap = 1000, newLen = 1001:
+// итерация 1:
+newcap = 1000
+newcap += (1000 + 768) >> 2
+//       = 1768 >> 2 = 442
+newcap = 1000 + 442 = 1442
+// uint(1442) >= uint(1001) → break
+
+// результат: новый cap = 1442 (рост ≈ ×1.44)
+
+// при очень большом cap формула даёт всё ближе к ×1.25:
+// oldCap = 10000, newLen = 10001:
+// newcap += (10000 + 768) >> 2 = 2692
+// newcap = 10000 + 2692 = 12692 (рост ≈ ×1.27)</code></pre>
+          </div>
+
+          <p class="tight">Чем больше cap — тем меньше коэффициент роста, тем ближе к ×1.25. Это и есть «плавный переход» о котором говорит комментарий в исходнике.</p>
+
+          <div class="callout interview">
+            <div class="mark">собес</div>
+            <p>Почему <code class="inline">append</code> нужно всегда переприсваивать: <code class="inline">s = append(s, x)</code>? Потому что если cap исчерпан — <code class="inline">append</code> выделяет <b>новый</b> массив, а старый заголовок остаётся указывать на старый. Без переприсваивания новые данные пропадут.</p>
+          </div>
+
+          <div class="impl-sources">Источники: github.com/golang/go (src/runtime/slice.go, src/internal/abi/type.go) · go.dev/ref/spec#Slice_types · go.dev/blog/slices-intro</div>
+        `
+      },
+
+  // ---------- "map" entry ----------
+      map: {
+        title: 'map — под капотом',
+        html: `
+          <p class="tight">Map в Go — хеш-таблица, реализованная в runtime. До Go 1.24 — <b>бакетная архитектура (hmap/bmap)</b>, с Go 1.24 — <b>Swiss Tables</b>. Все операции O(1) амортизированно.</p>
+
+          <!-- схема 1: концепция хеш-таблицы -->
+          <svg viewBox="0 0 500 130" style="width:100%;margin:10px 0 4px">
+            <defs>
+              <marker id="ma1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor" opacity="0.6"/></marker>
+            </defs>
+            <!-- ключи -->
+            <text x="10" y="14" font-size="10" fill="currentColor" opacity="0.45">ключи</text>
+            <rect x="10" y="20" width="70" height="22" rx="4" fill="none" stroke="currentColor" opacity="0.3"/>
+            <text x="45" y="35" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="currentColor">"alice"</text>
+            <rect x="10" y="48" width="70" height="22" rx="4" fill="none" stroke="currentColor" opacity="0.3"/>
+            <text x="45" y="63" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="currentColor">"bob"</text>
+            <rect x="10" y="76" width="70" height="22" rx="4" fill="none" stroke="currentColor" opacity="0.3"/>
+            <text x="45" y="91" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="currentColor">"carol"</text>
+
+            <!-- hash box -->
+            <rect x="120" y="44" width="90" height="34" rx="6" fill="#3b7ec918" stroke="#3b7ec9" stroke-width="1.5"/>
+            <text x="165" y="58" text-anchor="middle" font-size="10" fill="#3b7ec9">hash(key,</text>
+            <text x="165" y="70" text-anchor="middle" font-size="10" fill="#3b7ec9">seed)</text>
+
+            <!-- стрелки к hash -->
+            <line x1="80" y1="31" x2="118" y2="55" stroke="currentColor" opacity="0.3" marker-end="url(#ma1)"/>
+            <line x1="80" y1="59" x2="118" y2="61" stroke="currentColor" opacity="0.3" marker-end="url(#ma1)"/>
+            <line x1="80" y1="87" x2="118" y2="67" stroke="currentColor" opacity="0.3" marker-end="url(#ma1)"/>
+
+            <!-- бакеты -->
+            <text x="250" y="14" font-size="10" fill="currentColor" opacity="0.45">бакеты</text>
+            <rect x="250" y="20" width="80" height="22" rx="3" fill="#3b7ec910" stroke="#3b7ec9" stroke-width="1"/>
+            <text x="290" y="35" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#3b7ec9">bucket 0</text>
+            <rect x="250" y="46" width="80" height="22" rx="3" fill="#3b7ec910" stroke="#3b7ec9" stroke-width="1"/>
+            <text x="290" y="61" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#3b7ec9">bucket 1</text>
+            <rect x="250" y="72" width="80" height="22" rx="3" fill="#3b7ec910" stroke="#3b7ec9" stroke-width="1"/>
+            <text x="290" y="87" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#3b7ec9">bucket 2</text>
+            <rect x="250" y="98" width="80" height="22" rx="3" fill="#3b7ec910" stroke="#3b7ec9" stroke-width="1"/>
+            <text x="290" y="113" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#3b7ec9">bucket 3</text>
+
+            <!-- стрелки от hash к бакетам -->
+            <line x1="210" y1="55" x2="248" y2="35" stroke="#3b7ec9" opacity="0.5" marker-end="url(#ma1)"/>
+            <line x1="210" y1="61" x2="248" y2="83" stroke="#3b7ec9" opacity="0.5" marker-end="url(#ma1)"/>
+            <line x1="210" y1="67" x2="248" y2="109" stroke="#3b7ec9" opacity="0.5" marker-end="url(#ma1)"/>
+
+            <!-- значения -->
+            <text x="370" y="14" font-size="10" fill="currentColor" opacity="0.45">значения</text>
+            <rect x="370" y="20" width="55" height="22" rx="3" fill="none" stroke="currentColor" opacity="0.25"/>
+            <text x="397" y="35" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="currentColor">25</text>
+            <rect x="370" y="72" width="55" height="22" rx="3" fill="none" stroke="currentColor" opacity="0.25"/>
+            <text x="397" y="87" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="currentColor">42</text>
+            <rect x="370" y="98" width="55" height="22" rx="3" fill="none" stroke="currentColor" opacity="0.25"/>
+            <text x="397" y="113" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="currentColor">7</text>
+            <line x1="330" y1="31" x2="368" y2="31" stroke="currentColor" opacity="0.25" marker-end="url(#ma1)"/>
+            <line x1="330" y1="83" x2="368" y2="83" stroke="currentColor" opacity="0.25" marker-end="url(#ma1)"/>
+            <line x1="330" y1="109" x2="368" y2="109" stroke="currentColor" opacity="0.25" marker-end="url(#ma1)"/>
+
+            <text x="250" y="128" font-size="9.5" fill="currentColor" opacity="0.4">каждый бакет вмещает до 8 пар — поиск внутри O(1)</text>
+          </svg>
+
+          <details class="deep" style="margin:10px 0">
+            <summary>Старая реализация (до Go 1.24) — hmap / bmap / бакеты <span class="tag">deep</span></summary>
+            <div class="deep-body">
+
+              <!-- ══ 1. MapType ══ -->
+              <p class="tight"><b><a href="#" onclick="showTip(event,'descriptor');return false;" style="color:var(--accent);text-decoration:underline dotted">Дескриптор типа</a> — MapType:</b> runtime не знает конкретных типов K/V — работает через <code class="inline">unsafe.Pointer</code> и функции из дескриптора. <code class="inline">MapType</code> — описание <em>разновидности</em> map: размер ключа, значения, бакета, функция хеширования. Один <code class="inline">MapType</code> на тип, живёт в <code class="inline">.rodata</code>:</p>
+              <div class="codeblock">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">src/internal/abi/type.go</span></div>
+                <pre><code class="language-go">type MapType struct {
+    Type                // общие метаданные: size, align, gcdata...
+    Key        *Type    // дескриптор типа ключа
+    Elem       *Type    // дескриптор типа значения
+    Bucket     *Type    // дескриптор сгенерированного bmap
+    Hasher     func(unsafe.Pointer, uintptr) uintptr // хеш-функция для K
+    KeySize    uint8    // размер слота ключа в байтах
+    ValueSize  uint8    // размер слота значения в байтах
+    BucketSize uint16   // размер бакета в байтах
+    Flags      uint32
+}</code></pre>
+              </div>
+
+              <!-- ══ 2. hmap ══ -->
+              <p class="tight" style="margin-top:14px"><b>Конкретный экземпляр — hmap:</b> создаётся при <code class="inline">make(map[K]V)</code>, хранит живое состояние карты. В куче, один на переменную:</p>
+              <div class="codeblock">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">src/runtime/map.go</span></div>
+                <pre><code class="language-go">type hmap struct {
+    count      int            // len(m) — кол-во элементов
+    flags      uint8
+    B          uint8          // log₂ кол-ва бакетов: бакетов = 2^B
+    noverflow  uint16         // приблизительное кол-во overflow-бакетов
+    hash0      uint32         // случайный seed, генерируется при make(map)
+    buckets    unsafe.Pointer // указатель на массив бакетов
+    oldbuckets unsafe.Pointer // старый массив во время эвакуации
+    nevacuate  uintptr        // счётчик прогресса эвакуации
+    extra      *mapextra
+}</code></pre>
+              </div>
+
+              <!-- схема 2: hmap → массив бакетов -->
+              <svg viewBox="0 0 480 120" style="width:100%;margin:8px 0 4px">
+                <defs>
+                  <marker id="ma2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3b7ec9" opacity="0.7"/></marker>
+                </defs>
+                <rect x="10" y="10" width="140" height="100" rx="6" fill="#3b7ec910" stroke="#3b7ec9" stroke-width="1.5"/>
+                <text x="80" y="26" text-anchor="middle" font-size="11" fill="#3b7ec9" font-weight="bold">hmap</text>
+                <text x="18" y="42" font-family="JetBrains Mono" font-size="9.5" fill="currentColor">count   int</text>
+                <text x="18" y="55" font-family="JetBrains Mono" font-size="9.5" fill="currentColor">B       uint8</text>
+                <text x="18" y="68" font-family="JetBrains Mono" font-size="9.5" fill="currentColor">hash0   uint32</text>
+                <text x="18" y="81" font-family="JetBrains Mono" font-size="9.5" fill="#3b7ec9">buckets *bmap</text>
+                <text x="18" y="94" font-family="JetBrains Mono" font-size="9.5" fill="currentColor" opacity="0.5">oldbuckets</text>
+                <text x="18" y="106" font-family="JetBrains Mono" font-size="9.5" fill="currentColor" opacity="0.5">nevacuate</text>
+                <line x1="150" y1="81" x2="198" y2="55" stroke="#3b7ec9" stroke-width="1.5" marker-end="url(#ma2)"/>
+                <text x="200" y="18" font-size="10" fill="currentColor" opacity="0.45">массив бакетов (2^B штук)</text>
+                <rect x="200" y="24" width="64" height="42" rx="4" fill="#3b7ec918" stroke="#3b7ec9" stroke-width="1.2"/>
+                <text x="232" y="40" text-anchor="middle" font-size="9" fill="#3b7ec9">bmap 0</text>
+                <text x="232" y="52" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="currentColor" opacity="0.5">tophash</text>
+                <text x="232" y="62" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="currentColor" opacity="0.5">8 k / 8 v</text>
+                <rect x="270" y="24" width="64" height="42" rx="4" fill="#3b7ec918" stroke="#3b7ec9" stroke-width="1.2"/>
+                <text x="302" y="40" text-anchor="middle" font-size="9" fill="#3b7ec9">bmap 1</text>
+                <text x="302" y="52" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="currentColor" opacity="0.5">tophash</text>
+                <text x="302" y="62" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="currentColor" opacity="0.5">8 k / 8 v</text>
+                <rect x="340" y="24" width="64" height="42" rx="4" fill="#3b7ec918" stroke="#3b7ec9" stroke-width="1.2"/>
+                <text x="372" y="40" text-anchor="middle" font-size="9" fill="#3b7ec9">bmap 2</text>
+                <text x="372" y="52" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="currentColor" opacity="0.5">tophash</text>
+                <text x="372" y="62" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="currentColor" opacity="0.5">8 k / 8 v</text>
+                <text x="422" y="46" font-size="12" fill="currentColor" opacity="0.35">…</text>
+                <rect x="200" y="82" width="64" height="30" rx="4" fill="none" stroke="#f5a623" stroke-width="1" stroke-dasharray="3 2"/>
+                <text x="232" y="101" text-anchor="middle" font-size="9" fill="#f5a623">overflow</text>
+                <line x1="232" y1="66" x2="232" y2="80" stroke="#f5a623" stroke-dasharray="3 2" opacity="0.6" marker-end="url(#ma2)"/>
+                <text x="272" y="101" font-size="9" fill="#f5a623" opacity="0.7">← 9-й элемент</text>
+              </svg>
+              <p class="tight" style="margin-top:4px;margin-bottom:10px"><code class="inline">hmap</code> — не сами данные. Это управляющая структура с указателем <code class="inline">buckets</code> на массив бакетов в куче.</p>
+
+              <!-- ══ 3. MapType ↔ hmap ══ -->
+              <p class="tight"><b>MapType и hmap вместе:</b> <code class="inline">MapType</code> — чертёж (один на тип, в <code class="inline">.rodata</code>), <code class="inline">hmap</code> — экземпляр (один на переменную, в куче). Runtime всегда получает оба — <code class="inline">t</code> говорит <em>как</em> хешировать и сравнивать, <code class="inline">h</code> — <em>где</em> лежат данные:</p>
+              <div class="codeblock">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">two_objects.go</span></div>
+                <pre><code class="language-go">m1 := make(map[string]int) // hmap#1 ──┐
+m2 := make(map[string]int) // hmap#2 ──┼── один общий MapType в .rodata
+                           //
+mapaccess1(t, h, k)        // t=MapType, h=hmap — всегда оба</code></pre>
+              </div>
+
+              <!-- ══ 4. bmap — внутри бакета ══ -->
+              <p class="tight" style="margin-top:14px"><b>Внутри одного бакета — bmap:</b> ровно <code class="inline">bucketCnt = 8</code> пар (эмпирически выбранная константа в runtime). Сначала все ключи, потом все значения — чтобы минимизировать padding при выравнивании:</p>
+
+              <!-- схема bmap layout -->
+              <svg viewBox="0 0 460 160" style="width:100%;margin:8px 0 4px">
+                <defs>
+                  <marker id="ma3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor" opacity="0.5"/></marker>
+                </defs>
+                <text x="10" y="14" font-size="10" fill="currentColor" opacity="0.45">bmap (один бакет)</text>
+                <text x="10" y="30" font-family="JetBrains Mono" font-size="9" fill="#f5a623">tophash[8]uint8</text>
+                <rect x="10" y="34" width="28" height="24" rx="3" fill="#f5a62318" stroke="#f5a623" stroke-width="1.2"/>
+                <text x="24" y="50" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#f5a623">h₀</text>
+                <rect x="38" y="34" width="28" height="24" rx="3" fill="#f5a62318" stroke="#f5a623" stroke-width="1.2"/>
+                <text x="52" y="50" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#f5a623">h₁</text>
+                <rect x="66" y="34" width="28" height="24" rx="3" fill="#f5a62318" stroke="#f5a623" stroke-width="1.2"/>
+                <text x="80" y="50" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#f5a623">h₂</text>
+                <rect x="94" y="34" width="28" height="24" rx="3" fill="#f5a62318" stroke="#f5a623" stroke-width="1.2"/>
+                <text x="108" y="50" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#f5a623">…</text>
+                <rect x="122" y="34" width="28" height="24" rx="3" fill="#f5a62318" stroke="#f5a623" stroke-width="1.2"/>
+                <text x="136" y="50" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#f5a623">h₇</text>
+                <text x="10" y="76" font-family="JetBrains Mono" font-size="9" fill="#3b7ec9">keys[8]K</text>
+                <rect x="10" y="80" width="36" height="24" rx="3" fill="#3b7ec918" stroke="#3b7ec9" stroke-width="1.2"/>
+                <text x="28" y="96" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#3b7ec9">k₀</text>
+                <rect x="46" y="80" width="36" height="24" rx="3" fill="#3b7ec918" stroke="#3b7ec9" stroke-width="1.2"/>
+                <text x="64" y="96" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#3b7ec9">k₁</text>
+                <rect x="82" y="80" width="36" height="24" rx="3" fill="#3b7ec918" stroke="#3b7ec9" stroke-width="1.2"/>
+                <text x="100" y="96" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#3b7ec9">…</text>
+                <rect x="118" y="80" width="36" height="24" rx="3" fill="#3b7ec918" stroke="#3b7ec9" stroke-width="1.2"/>
+                <text x="136" y="96" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#3b7ec9">k₇</text>
+                <text x="10" y="122" font-family="JetBrains Mono" font-size="9" fill="#4caf7d">values[8]V</text>
+                <rect x="10" y="126" width="36" height="24" rx="3" fill="#4caf7d18" stroke="#4caf7d" stroke-width="1.2"/>
+                <text x="28" y="142" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#4caf7d">v₀</text>
+                <rect x="46" y="126" width="36" height="24" rx="3" fill="#4caf7d18" stroke="#4caf7d" stroke-width="1.2"/>
+                <text x="64" y="142" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#4caf7d">v₁</text>
+                <rect x="82" y="126" width="36" height="24" rx="3" fill="#4caf7d18" stroke="#4caf7d" stroke-width="1.2"/>
+                <text x="100" y="142" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#4caf7d">…</text>
+                <rect x="118" y="126" width="36" height="24" rx="3" fill="#4caf7d18" stroke="#4caf7d" stroke-width="1.2"/>
+                <text x="136" y="142" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#4caf7d">v₇</text>
+                <rect x="164" y="126" width="60" height="24" rx="3" fill="none" stroke="currentColor" stroke-dasharray="3 2" opacity="0.4"/>
+                <text x="194" y="142" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.5">overflow*</text>
+                <text x="240" y="46" font-size="10" fill="#f5a623">← быстрый pre-filter:</text>
+                <text x="240" y="58" font-size="10" fill="#f5a623">   сравниваем 1 байт</text>
+                <text x="240" y="70" font-size="10" fill="#f5a623">   до полного compare</text>
+                <text x="240" y="98" font-size="10" fill="#3b7ec9">← блочное хранение:</text>
+                <text x="240" y="110" font-size="10" fill="#3b7ec9">   нет padding между k и v</text>
+                <text x="240" y="142" font-size="10" fill="#4caf7d">← значения отдельным блоком</text>
+              </svg>
+
+              <div class="codeblock">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">src/runtime/map.go</span></div>
+                <pre><code class="language-go">const bucketCnt = 8  // жёсткая константа в runtime — всегда 8 слотов
+
+// bmap генерируется компилятором для каждой конкретной map[K]V
+type bmap struct {
+    tophash  [bucketCnt]uint8  // старшие 8 бит хеша (быстрый pre-filter)
+    // далее в памяти (генерируется компилятором):
+    // keys     [bucketCnt]K
+    // values   [bucketCnt]V
+    // overflow *bmap
+}
+
+// Почему ключи блоком, а не k0,v0,k1,v1...?
+// map[int8]int64: при чередовании после int8 → 7 байт padding под int64
+// Блочно: 8×int8 = 8B (нет padding) + 8×int64 = 64B — меньше памяти</code></pre>
+              </div>
+
+              <!-- ══ 5. Hash → откуда он берётся ══ -->
+              <p class="tight" style="margin-top:16px"><b>Откуда берётся hash?</b> Runtime вызывает <code class="inline">Hasher</code> из <code class="inline">MapType</code>, передавая ключ и случайный seed. Требования: равномерное распределение, скорость, детерминированность (ключ + seed → одинаковый хеш). От Hash Flooding защищает не алгоритм, а случайный <code class="inline">hash0</code> из <code class="inline">hmap</code> — атакующий не знает seed.</p>
+
+              <!-- ══ 6. B + LOB + HOB — как hash приводит к бакету ══ -->
+              <p class="tight" style="margin-top:12px"><b>B и количество бакетов:</b> <code class="inline">B</code> — это log₂ количества бакетов. Так, <code class="inline">B=2</code> → 4 бакета, <code class="inline">B=3</code> → 8 бакетов. Хранить логарифм вместо счётчика позволяет заменить дорогое <code class="inline">hash % count</code> на быстрое побитовое <code class="inline">hash &amp; mask</code>:</p>
+              <div class="codeblock">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">bucket_mask.go</span></div>
+                <pre><code class="language-go">// B = 2 → 4 бакета (количество бакетов = 2^B — всегда степень двойки)
+mask := (1 << B) - 1          // 0b011
+bucketIndex := hash &amp; mask    // младшие B бит хеша → номер бакета
+// & быстрее % потому что 2^B → побитовое AND работает за 1 такт CPU</code></pre>
+              </div>
+
+              <p class="tight" style="margin-top:10px"><b>LOB и HOB — как хеш делится на две части:</b> LOB (Low Order Bits) выбирает <em>бакет</em>, HOB (High Order Bits) — <em>слот внутри бакета</em> (tophash). Это две функции одного числа:</p>
+
+              <!-- SVG 1: LOB — конкретный пример выбора бакета -->
+              <svg viewBox="0 0 460 158" style="width:100%;margin:8px 0 6px">
+                <defs>
+                  <marker id="ma_lob" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3b7ec9" opacity="0.9"/></marker>
+                </defs>
+
+                <!-- заголовок блока -->
+                <text x="10" y="15" font-size="10.5" font-weight="bold" fill="#3b7ec9">LOB — Low Order Bits → выбор бакета</text>
+
+                <!-- 4 бакета справа (B=2 → 2^2=4) -->
+                <text x="305" y="13" font-size="8.5" fill="currentColor" opacity="0.4">B=2 → 4 бакета</text>
+                <rect x="305" y="18" width="34" height="28" rx="5" fill="none" stroke="currentColor" stroke-width="1.1" opacity="0.28"/>
+                <text x="322" y="29" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.35">0</text>
+                <text x="322" y="41" text-anchor="middle" font-size="8.5" fill="currentColor" opacity="0.2">[ ]</text>
+
+                <rect x="339" y="18" width="34" height="28" rx="5" fill="#3b7ec922" stroke="#3b7ec9" stroke-width="2"/>
+                <text x="356" y="29" text-anchor="middle" font-size="7.5" fill="#3b7ec9" font-weight="bold">1</text>
+                <text x="356" y="41" text-anchor="middle" font-size="11" fill="#3b7ec9">★</text>
+
+                <rect x="373" y="18" width="34" height="28" rx="5" fill="none" stroke="currentColor" stroke-width="1.1" opacity="0.28"/>
+                <text x="390" y="29" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.35">2</text>
+                <text x="390" y="41" text-anchor="middle" font-size="8.5" fill="currentColor" opacity="0.2">[ ]</text>
+
+                <rect x="407" y="18" width="34" height="28" rx="5" fill="none" stroke="currentColor" stroke-width="1.1" opacity="0.28"/>
+                <text x="424" y="29" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.35">3</text>
+                <text x="424" y="41" text-anchor="middle" font-size="8.5" fill="currentColor" opacity="0.2">[ ]</text>
+
+                <!-- разделитель -->
+                <line x1="10" y1="54" x2="450" y2="54" stroke="currentColor" opacity="0.08"/>
+
+                <!-- строка 1: Hash(key) -->
+                <text x="10" y="70" font-size="10" fill="currentColor" opacity="0.55">Hash(key)</text>
+                <text x="96" y="70" font-family="JetBrains Mono" font-size="10.5" fill="currentColor">=</text>
+                <text x="112" y="70" font-family="JetBrains Mono" font-size="12" font-weight="bold" fill="currentColor">5461</text>
+
+                <!-- строка 2: 5461 % 4 -->
+                <text x="10" y="89" font-size="10" fill="currentColor" opacity="0.5">5461 % 4</text>
+                <text x="82" y="89" font-family="JetBrains Mono" font-size="10.5" fill="currentColor">=</text>
+                <text x="98" y="89" font-family="JetBrains Mono" font-size="12" font-weight="bold" fill="#3b7ec9">1</text>
+                <text x="120" y="89" font-size="9" fill="currentColor" opacity="0.4">← попадаем в бакет 1</text>
+
+                <!-- строка 3: двоичное с выделением LOB -->
+                <text x="10" y="108" font-size="9.5" fill="currentColor" opacity="0.5">двоичн.:</text>
+                <text x="74" y="108" font-family="JetBrains Mono" font-size="10" fill="currentColor" opacity="0.25">1 0 1 0 1 0 1 0 1 0 1</text>
+                <!-- LOB — последние 2 бита выделены -->
+                <rect x="220" y="96" width="30" height="16" rx="3" fill="#3b7ec920" stroke="#3b7ec9" stroke-width="1.4"/>
+                <text x="235" y="108" text-anchor="middle" font-family="JetBrains Mono" font-size="10" font-weight="bold" fill="#3b7ec9">01</text>
+
+                <!-- LOB label + стрелка к бакету -->
+                <text x="10" y="127" font-size="10" fill="#3b7ec9">LOB(Hash) =</text>
+                <text x="93" y="127" font-family="JetBrains Mono" font-size="10.5" font-weight="bold" fill="#3b7ec9"> 01</text>
+                <text x="116" y="127" font-size="10" fill="#3b7ec9"> = 1  →  бакет 1</text>
+                <path d="M 195 116 Q 270 80 340 50" stroke="#3b7ec9" stroke-width="1.5" fill="none" opacity="0.7" marker-end="url(#ma_lob)"/>
+
+                <!-- формула Go -->
+                <text x="10" y="146" font-family="JetBrains Mono" font-size="9.5" fill="#3b7ec9">bucketIndex = hash &amp; mask</text>
+                <text x="222" y="146" font-size="9.5" fill="currentColor" opacity="0.35">  // mask=(1&lt;&lt;B)-1=0b11</text>
+                <text x="10" y="158" font-size="8.5" fill="currentColor" opacity="0.4">&amp; быстрее %, т.к. кол-во бакетов всегда 2^B (степень двойки) → побитовое AND</text>
+              </svg>
+
+              <!-- SVG 2: 64-битный обзор — LOB + HOB вместе -->
+              <svg viewBox="0 0 460 95" style="width:100%;margin:6px 0 10px">
+                <defs>
+                  <marker id="ma4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor" opacity="0.6"/></marker>
+                </defs>
+
+                <!-- заголовок -->
+                <text x="10" y="13" font-size="10" fill="currentColor" opacity="0.45">hash (64 бита) — полный обзор:</text>
+
+                <!-- HOB: биты 56–63 (8 бит) -->
+                <rect x="10" y="18" width="78" height="30" rx="5" fill="#f5a62320" stroke="#f5a623" stroke-width="1.7"/>
+                <text x="49" y="30" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#f5a623">биты 56–63</text>
+                <text x="49" y="42" text-anchor="middle" font-size="8.5" fill="#f5a623" opacity="0.8">HOB (8 бит)</text>
+
+                <!-- средние биты -->
+                <rect x="88" y="18" width="168" height="30" rx="5" fill="none" stroke="currentColor" opacity="0.12"/>
+                <text x="172" y="36" text-anchor="middle" font-size="8.5" fill="currentColor" opacity="0.22">не используются</text>
+
+                <!-- LOB: биты 0–B -->
+                <rect x="256" y="18" width="68" height="30" rx="5" fill="#3b7ec920" stroke="#3b7ec9" stroke-width="1.7"/>
+                <text x="290" y="30" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#3b7ec9">биты 0–B</text>
+                <text x="290" y="42" text-anchor="middle" font-size="8.5" fill="#3b7ec9" opacity="0.8">LOB (B бит)</text>
+
+                <!-- стрелки и подписи вниз -->
+                <line x1="49" y1="48" x2="49" y2="64" stroke="#f5a623" opacity="0.65" marker-end="url(#ma4)"/>
+                <text x="49" y="76" text-anchor="middle" font-size="10" font-weight="bold" fill="#f5a623">tophash</text>
+                <text x="49" y="88" text-anchor="middle" font-size="8" fill="#f5a623" opacity="0.65">uint8(hash &gt;&gt; 56)</text>
+
+                <line x1="290" y1="48" x2="290" y2="64" stroke="#3b7ec9" opacity="0.65" marker-end="url(#ma4)"/>
+                <text x="290" y="76" text-anchor="middle" font-size="10" font-weight="bold" fill="#3b7ec9">bucketIndex</text>
+                <text x="290" y="88" text-anchor="middle" font-size="8" fill="#3b7ec9" opacity="0.65">hash &amp; mask</text>
+
+                <!-- пояснение справа -->
+                <text x="340" y="32" font-size="9.5" fill="#f5a623">← pre-filter внутри бакета:</text>
+                <text x="340" y="44" font-size="9.5" fill="#f5a623">   сравниваем 1 байт до</text>
+                <text x="340" y="56" font-size="9.5" fill="#f5a623">   полного compare ключа</text>
+                <text x="340" y="72" font-size="9.5" fill="#3b7ec9">← выбор бакета:</text>
+                <text x="340" y="84" font-size="9.5" fill="#3b7ec9">   O(1) прыжок в массиве</text>
+              </svg>
+
+              <p class="tight" style="margin-top:12px"><b>Алгоритм поиска (mapaccess1):</b></p>
+              <div class="codeblock">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">lookup.go (упрощённо)</span></div>
+                <pre><code class="language-go">hash := hasher(key, hash0)           // 1. хешируем ключ с seed
+mask := (1 << B) - 1
+bi   := hash &amp; mask                  // 2. младшие B бит → номер бакета
+b    := add(buckets, bi*bucketSize)  // 3. прыжок к бакету (unsafe арифметика)
+top  := uint8(hash >> 56)            // 4. старшие 8 бит → tophash
+
+for ; b != nil; b = b.overflow {
+    for i := 0; i < 8; i++ {
+        if b.tophash[i] != top { continue } // 5. быстрый pre-filter по байту
+        if key == b.keys[i] { return &amp;b.values[i] } // 6. полное сравнение
+    }
+}</code></pre>
+              </div>
+
+              <p class="tight" style="margin-top:12px"><b>Go-синтаксис → runtime-функции:</b> компилятор транслирует каждую операцию с map в конкретный вызов:</p>
+              <div class="codeblock">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">map_calls.go</span></div>
+                <pre><code class="language-go">v := m["k"]       // → mapaccess1(t *maptype, h *hmap, k unsafe.Pointer) unsafe.Pointer
+v, ok := m["k"]   // → mapaccess2(t *maptype, h *hmap, k unsafe.Pointer) (unsafe.Pointer, bool)
+m["k"] = 9001     // → mapassign(t *maptype, h *hmap, k unsafe.Pointer) unsafe.Pointer
+delete(m, "k")    // → mapdelete(t *maptype, h *hmap, k unsafe.Pointer)</code></pre>
+              </div>
+
+              <p class="tight" style="margin-top:12px"><b>Переполнение:</b> 9-й элемент в бакет → создаётся <b>overflow bucket</b> (связанный список бакетов):</p>
+
+              <!-- SVG: overflow bucket chain -->
+              <svg viewBox="0 0 460 182" style="width:100%;margin:8px 0 6px">
+                <defs>
+                  <marker id="ma_ov" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor" opacity="0.65"/></marker>
+                </defs>
+
+                <!-- BUCKET 1 (full, 8/8) -->
+                <rect x="10" y="8" width="430" height="86" rx="6" fill="none" stroke="currentColor" stroke-width="1.1" opacity="0.3"/>
+                <text x="225" y="19" text-anchor="middle" font-size="8.5" fill="currentColor" opacity="0.38">Bucket</text>
+
+                <!-- index 0-7 -->
+                <text x="37" y="29" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.4">0</text>
+                <text x="86" y="29" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.4">1</text>
+                <text x="135" y="29" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.4">2</text>
+                <text x="184" y="29" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.4">3</text>
+                <text x="233" y="29" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.4">4</text>
+                <text x="282" y="29" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.4">5</text>
+                <text x="331" y="29" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.4">6</text>
+                <text x="380" y="29" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.4">7</text>
+
+                <!-- tophash: all 8 filled (HOB Hash) -->
+                <rect x="15" y="32" width="44" height="20" rx="3" fill="#f5a62322" stroke="#f5a623" stroke-width="1.2"/><text x="37" y="41" text-anchor="middle" font-size="6.5" fill="#f5a623">HOB</text><text x="37" y="49" text-anchor="middle" font-size="6.5" fill="#f5a623">Hash</text>
+                <rect x="64" y="32" width="44" height="20" rx="3" fill="#f5a62322" stroke="#f5a623" stroke-width="1.2"/><text x="86" y="41" text-anchor="middle" font-size="6.5" fill="#f5a623">HOB</text><text x="86" y="49" text-anchor="middle" font-size="6.5" fill="#f5a623">Hash</text>
+                <rect x="113" y="32" width="44" height="20" rx="3" fill="#f5a62322" stroke="#f5a623" stroke-width="1.2"/><text x="135" y="41" text-anchor="middle" font-size="6.5" fill="#f5a623">HOB</text><text x="135" y="49" text-anchor="middle" font-size="6.5" fill="#f5a623">Hash</text>
+                <rect x="162" y="32" width="44" height="20" rx="3" fill="#f5a62322" stroke="#f5a623" stroke-width="1.2"/><text x="184" y="41" text-anchor="middle" font-size="6.5" fill="#f5a623">HOB</text><text x="184" y="49" text-anchor="middle" font-size="6.5" fill="#f5a623">Hash</text>
+                <rect x="211" y="32" width="44" height="20" rx="3" fill="#f5a62322" stroke="#f5a623" stroke-width="1.2"/><text x="233" y="41" text-anchor="middle" font-size="6.5" fill="#f5a623">HOB</text><text x="233" y="49" text-anchor="middle" font-size="6.5" fill="#f5a623">Hash</text>
+                <rect x="260" y="32" width="44" height="20" rx="3" fill="#f5a62322" stroke="#f5a623" stroke-width="1.2"/><text x="282" y="41" text-anchor="middle" font-size="6.5" fill="#f5a623">HOB</text><text x="282" y="49" text-anchor="middle" font-size="6.5" fill="#f5a623">Hash</text>
+                <rect x="309" y="32" width="44" height="20" rx="3" fill="#f5a62322" stroke="#f5a623" stroke-width="1.2"/><text x="331" y="41" text-anchor="middle" font-size="6.5" fill="#f5a623">HOB</text><text x="331" y="49" text-anchor="middle" font-size="6.5" fill="#f5a623">Hash</text>
+                <rect x="358" y="32" width="44" height="20" rx="3" fill="#f5a62322" stroke="#f5a623" stroke-width="1.2"/><text x="380" y="41" text-anchor="middle" font-size="6.5" fill="#f5a623">HOB</text><text x="380" y="49" text-anchor="middle" font-size="6.5" fill="#f5a623">Hash</text>
+
+                <!-- separator -->
+                <line x1="15" y1="54" x2="425" y2="54" stroke="currentColor" opacity="0.12"/>
+
+                <!-- K row (8 blue) -->
+                <rect x="15" y="57" width="44" height="12" rx="2" fill="#3b7ec920" stroke="#3b7ec9" stroke-width="0.9"/><text x="37" y="67" text-anchor="middle" font-size="8" fill="#3b7ec9">K</text>
+                <rect x="64" y="57" width="44" height="12" rx="2" fill="#3b7ec920" stroke="#3b7ec9" stroke-width="0.9"/><text x="86" y="67" text-anchor="middle" font-size="8" fill="#3b7ec9">K</text>
+                <rect x="113" y="57" width="44" height="12" rx="2" fill="#3b7ec920" stroke="#3b7ec9" stroke-width="0.9"/><text x="135" y="67" text-anchor="middle" font-size="8" fill="#3b7ec9">K</text>
+                <rect x="162" y="57" width="44" height="12" rx="2" fill="#3b7ec920" stroke="#3b7ec9" stroke-width="0.9"/><text x="184" y="67" text-anchor="middle" font-size="8" fill="#3b7ec9">K</text>
+                <rect x="211" y="57" width="44" height="12" rx="2" fill="#3b7ec920" stroke="#3b7ec9" stroke-width="0.9"/><text x="233" y="67" text-anchor="middle" font-size="8" fill="#3b7ec9">K</text>
+                <rect x="260" y="57" width="44" height="12" rx="2" fill="#3b7ec920" stroke="#3b7ec9" stroke-width="0.9"/><text x="282" y="67" text-anchor="middle" font-size="8" fill="#3b7ec9">K</text>
+                <rect x="309" y="57" width="44" height="12" rx="2" fill="#3b7ec920" stroke="#3b7ec9" stroke-width="0.9"/><text x="331" y="67" text-anchor="middle" font-size="8" fill="#3b7ec9">K</text>
+                <rect x="358" y="57" width="44" height="12" rx="2" fill="#3b7ec920" stroke="#3b7ec9" stroke-width="0.9"/><text x="380" y="67" text-anchor="middle" font-size="8" fill="#3b7ec9">K</text>
+
+                <!-- V row (8 green) -->
+                <rect x="15" y="71" width="44" height="12" rx="2" fill="#4caf7d18" stroke="#4caf7d" stroke-width="0.9"/><text x="37" y="81" text-anchor="middle" font-size="8" fill="#4caf7d">V</text>
+                <rect x="64" y="71" width="44" height="12" rx="2" fill="#4caf7d18" stroke="#4caf7d" stroke-width="0.9"/><text x="86" y="81" text-anchor="middle" font-size="8" fill="#4caf7d">V</text>
+                <rect x="113" y="71" width="44" height="12" rx="2" fill="#4caf7d18" stroke="#4caf7d" stroke-width="0.9"/><text x="135" y="81" text-anchor="middle" font-size="8" fill="#4caf7d">V</text>
+                <rect x="162" y="71" width="44" height="12" rx="2" fill="#4caf7d18" stroke="#4caf7d" stroke-width="0.9"/><text x="184" y="81" text-anchor="middle" font-size="8" fill="#4caf7d">V</text>
+                <rect x="211" y="71" width="44" height="12" rx="2" fill="#4caf7d18" stroke="#4caf7d" stroke-width="0.9"/><text x="233" y="81" text-anchor="middle" font-size="8" fill="#4caf7d">V</text>
+                <rect x="260" y="71" width="44" height="12" rx="2" fill="#4caf7d18" stroke="#4caf7d" stroke-width="0.9"/><text x="282" y="81" text-anchor="middle" font-size="8" fill="#4caf7d">V</text>
+                <rect x="309" y="71" width="44" height="12" rx="2" fill="#4caf7d18" stroke="#4caf7d" stroke-width="0.9"/><text x="331" y="81" text-anchor="middle" font-size="8" fill="#4caf7d">V</text>
+                <rect x="358" y="71" width="44" height="12" rx="2" fill="#4caf7d18" stroke="#4caf7d" stroke-width="0.9"/><text x="380" y="81" text-anchor="middle" font-size="8" fill="#4caf7d">V</text>
+
+                <!-- overflow label + arrow -->
+                <rect x="184" y="87" width="80" height="14" rx="3" fill="none" stroke="currentColor" stroke-dasharray="3 2" opacity="0.35"/>
+                <text x="224" y="98" text-anchor="middle" font-size="8.5" fill="currentColor" opacity="0.5">Overflow</text>
+                <line x1="224" y1="101" x2="224" y2="113" stroke="currentColor" opacity="0.45" stroke-width="1.3" marker-end="url(#ma_ov)"/>
+
+                <!-- BUCKET 2 (overflow, 1 element) -->
+                <rect x="10" y="116" width="430" height="62" rx="6" fill="none" stroke="currentColor" stroke-dasharray="4 2" stroke-width="1.1" opacity="0.3"/>
+                <text x="225" y="127" text-anchor="middle" font-size="8.5" fill="currentColor" opacity="0.38">Overflow Bucket</text>
+
+                <!-- index 0-7 (overflow bucket) -->
+                <text x="37" y="137" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.4">0</text>
+                <text x="86" y="137" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.25">1</text>
+                <text x="135" y="137" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.25">2</text>
+                <text x="184" y="137" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.25">3</text>
+                <text x="233" y="137" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.25">4</text>
+                <text x="282" y="137" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.25">5</text>
+                <text x="331" y="137" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.25">6</text>
+                <text x="380" y="137" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.25">7</text>
+
+                <!-- slot 0: HOB Hash; slots 1-7: Empty -->
+                <rect x="15" y="140" width="44" height="20" rx="3" fill="#f5a62322" stroke="#f5a623" stroke-width="1.2"/><text x="37" y="149" text-anchor="middle" font-size="6.5" fill="#f5a623">HOB</text><text x="37" y="157" text-anchor="middle" font-size="6.5" fill="#f5a623">Hash</text>
+                <rect x="64" y="140" width="44" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.18"/><text x="86" y="153" text-anchor="middle" font-size="7" fill="currentColor" opacity="0.28">Empty</text>
+                <rect x="113" y="140" width="44" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.18"/><text x="135" y="153" text-anchor="middle" font-size="7" fill="currentColor" opacity="0.28">Empty</text>
+                <rect x="162" y="140" width="44" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.18"/><text x="184" y="153" text-anchor="middle" font-size="7" fill="currentColor" opacity="0.28">Empty</text>
+                <rect x="211" y="140" width="44" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.18"/><text x="233" y="153" text-anchor="middle" font-size="7" fill="currentColor" opacity="0.28">Empty</text>
+                <rect x="260" y="140" width="44" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.18"/><text x="282" y="153" text-anchor="middle" font-size="7" fill="currentColor" opacity="0.28">Empty</text>
+                <rect x="309" y="140" width="44" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.18"/><text x="331" y="153" text-anchor="middle" font-size="7" fill="currentColor" opacity="0.28">Empty</text>
+                <rect x="358" y="140" width="44" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.18"/><text x="380" y="153" text-anchor="middle" font-size="7" fill="currentColor" opacity="0.28">Empty</text>
+
+                <!-- K+V row in overflow slot 0 -->
+                <rect x="15" y="162" width="44" height="12" rx="2" fill="#3b7ec920" stroke="#3b7ec9" stroke-width="0.8"/><text x="37" y="172" text-anchor="middle" font-size="7.5" fill="#3b7ec9">K</text>
+                <rect x="15" y="162" width="44" height="12" rx="2" fill="none"/><!-- placeholder so V aligns -->
+                <!-- simplified: K row just slot 0, rest empty outline -->
+                <rect x="64" y="162" width="44" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="0.6" opacity="0.12"/>
+                <rect x="113" y="162" width="44" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="0.6" opacity="0.12"/>
+                <rect x="162" y="162" width="44" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="0.6" opacity="0.12"/>
+                <rect x="211" y="162" width="44" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="0.6" opacity="0.12"/>
+                <rect x="260" y="162" width="44" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="0.6" opacity="0.12"/>
+                <rect x="309" y="162" width="44" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="0.6" opacity="0.12"/>
+                <rect x="358" y="162" width="44" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="0.6" opacity="0.12"/>
+              </svg>
+              <p class="tight" style="margin-top:4px;opacity:0.55;font-size:0.88em">Указатель <code class="inline">overflow *bmap</code> — последнее поле бакета; <code class="inline">nil</code> если цепочки нет.</p>
+
+              <p class="tight"><b>Рост (эвакуация):</b> <b>load factor</b> = среднее число элементов на бакет по всей map. Когда он превышает <b>6.5</b> — runtime выделяет новый массив вдвое больше (<code class="inline">B++</code>, бакетов становится <code class="inline">2^(B+1)</code>). Переносить всё сразу нельзя — это заморозило бы программу (STW). Поэтому эвакуация <b>инкрементальная</b>: каждый вызов <code class="inline">mapassign</code> или <code class="inline">mapdelete</code> переносит 1–2 бакета из старого массива в новый. Пока эвакуация идёт, <code class="inline">hmap</code> держит оба массива — <code class="inline">buckets</code> (новый) и <code class="inline">oldbuckets</code> (старый), а <code class="inline">nevacuate</code> — счётчик уже перенесённых бакетов. При поиске <code class="inline">mapaccess</code> проверяет оба массива:</p>
+
+              <!-- SVG: evacuation diagram -->
+              <svg viewBox="0 0 460 290" style="width:100%;margin:8px 0 6px">
+                <defs>
+                  <marker id="ma_ev" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4caf7d" opacity="0.7"/></marker>
+                  <marker id="ma_ev2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e04434" opacity="0.7"/></marker>
+                </defs>
+
+                <!-- helper: рисует одну ячейку keys+values -->
+                <!-- OLD BUCKETS: B=2, 4 штуки -->
+                <text x="10" y="11" font-size="8.5" fill="currentColor" opacity="0.38">oldbuckets — B=2, 4 бакета (почти полные)</text>
+
+                <!-- макрос бакета: metadata + 8 пар k/v -->
+                <!-- old[0] — evacuated, серый -->
+                <g opacity="0.22">
+                  <rect x="10" y="16" width="96" height="110" rx="5" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="3 2"/>
+                  <rect x="16" y="20" width="84" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="0.8"/>
+                  <text x="58" y="30" text-anchor="middle" font-size="7" fill="currentColor">tophash</text>
+                  <!-- 6 пар заполнено -->
+                  <rect x="16" y="37" width="38" height="8" rx="2" fill="#3b7ec9" opacity="0.5"/><rect x="58" y="37" width="38" height="8" rx="2" fill="#e07070" opacity="0.5"/>
+                  <rect x="16" y="48" width="38" height="8" rx="2" fill="#3b7ec9" opacity="0.5"/><rect x="58" y="48" width="38" height="8" rx="2" fill="#e07070" opacity="0.5"/>
+                  <rect x="16" y="59" width="38" height="8" rx="2" fill="#3b7ec9" opacity="0.5"/><rect x="58" y="59" width="38" height="8" rx="2" fill="#e07070" opacity="0.5"/>
+                  <rect x="16" y="70" width="38" height="8" rx="2" fill="#3b7ec9" opacity="0.5"/><rect x="58" y="70" width="38" height="8" rx="2" fill="#e07070" opacity="0.5"/>
+                  <rect x="16" y="81" width="38" height="8" rx="2" fill="#3b7ec9" opacity="0.5"/><rect x="58" y="81" width="38" height="8" rx="2" fill="#e07070" opacity="0.5"/>
+                  <rect x="16" y="92" width="38" height="8" rx="2" fill="#3b7ec9" opacity="0.5"/><rect x="58" y="92" width="38" height="8" rx="2" fill="#e07070" opacity="0.5"/>
+                  <rect x="16" y="103" width="38" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="0.5"/><rect x="58" y="103" width="38" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="0.5"/>
+                  <rect x="16" y="114" width="38" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="0.5"/><rect x="58" y="114" width="38" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="0.5"/>
+                  <text x="35" y="133" text-anchor="middle" font-size="7" fill="currentColor">keys</text><text x="77" y="133" text-anchor="middle" font-size="7" fill="currentColor">vals</text>
+                  <text x="58" y="143" text-anchor="middle" font-size="7.5" fill="currentColor">✓ эвакуирован</text>
+                </g>
+
+                <!-- old[1] — evacuated, серый -->
+                <g opacity="0.22">
+                  <rect x="116" y="16" width="96" height="110" rx="5" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="3 2"/>
+                  <rect x="122" y="20" width="84" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="0.8"/>
+                  <text x="164" y="30" text-anchor="middle" font-size="7" fill="currentColor">tophash</text>
+                  <rect x="122" y="37" width="38" height="8" rx="2" fill="#3b7ec9" opacity="0.5"/><rect x="164" y="37" width="38" height="8" rx="2" fill="#e07070" opacity="0.5"/>
+                  <rect x="122" y="48" width="38" height="8" rx="2" fill="#3b7ec9" opacity="0.5"/><rect x="164" y="48" width="38" height="8" rx="2" fill="#e07070" opacity="0.5"/>
+                  <rect x="122" y="59" width="38" height="8" rx="2" fill="#3b7ec9" opacity="0.5"/><rect x="164" y="59" width="38" height="8" rx="2" fill="#e07070" opacity="0.5"/>
+                  <rect x="122" y="70" width="38" height="8" rx="2" fill="#3b7ec9" opacity="0.5"/><rect x="164" y="70" width="38" height="8" rx="2" fill="#e07070" opacity="0.5"/>
+                  <rect x="122" y="81" width="38" height="8" rx="2" fill="#3b7ec9" opacity="0.5"/><rect x="164" y="81" width="38" height="8" rx="2" fill="#e07070" opacity="0.5"/>
+                  <rect x="122" y="92" width="38" height="8" rx="2" fill="#3b7ec9" opacity="0.5"/><rect x="164" y="92" width="38" height="8" rx="2" fill="#e07070" opacity="0.5"/>
+                  <rect x="122" y="103" width="38" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="0.5"/><rect x="164" y="103" width="38" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="0.5"/>
+                  <rect x="122" y="114" width="38" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="0.5"/><rect x="164" y="114" width="38" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="0.5"/>
+                  <text x="141" y="133" text-anchor="middle" font-size="7" fill="currentColor">keys</text><text x="183" y="133" text-anchor="middle" font-size="7" fill="currentColor">vals</text>
+                  <text x="164" y="143" text-anchor="middle" font-size="7.5" fill="currentColor">✓ эвакуирован</text>
+                </g>
+
+                <!-- old[2] — сейчас эвакуируется, оранжевый -->
+                <rect x="222" y="16" width="96" height="110" rx="5" fill="#f5a62308" stroke="#f5a623" stroke-width="1.5"/>
+                <rect x="228" y="20" width="84" height="14" rx="3" fill="#f5a62318" stroke="#f5a623" stroke-width="0.8"/>
+                <text x="270" y="30" text-anchor="middle" font-size="7" fill="#f5a623">tophash</text>
+                <rect x="228" y="37" width="38" height="8" rx="2" fill="#3b7ec9" opacity="0.7"/><rect x="270" y="37" width="38" height="8" rx="2" fill="#e07070" opacity="0.7"/>
+                <rect x="228" y="48" width="38" height="8" rx="2" fill="#3b7ec9" opacity="0.7"/><rect x="270" y="48" width="38" height="8" rx="2" fill="#e07070" opacity="0.7"/>
+                <rect x="228" y="59" width="38" height="8" rx="2" fill="#3b7ec9" opacity="0.7"/><rect x="270" y="59" width="38" height="8" rx="2" fill="#e07070" opacity="0.7"/>
+                <rect x="228" y="70" width="38" height="8" rx="2" fill="#3b7ec9" opacity="0.7"/><rect x="270" y="70" width="38" height="8" rx="2" fill="#e07070" opacity="0.7"/>
+                <rect x="228" y="81" width="38" height="8" rx="2" fill="#3b7ec9" opacity="0.7"/><rect x="270" y="81" width="38" height="8" rx="2" fill="#e07070" opacity="0.7"/>
+                <rect x="228" y="92" width="38" height="8" rx="2" fill="#3b7ec9" opacity="0.7"/><rect x="270" y="92" width="38" height="8" rx="2" fill="#e07070" opacity="0.7"/>
+                <rect x="228" y="103" width="38" height="8" rx="2" fill="none" stroke="#f5a623" stroke-width="0.6" opacity="0.4"/><rect x="270" y="103" width="38" height="8" rx="2" fill="none" stroke="#f5a623" stroke-width="0.6" opacity="0.4"/>
+                <rect x="228" y="114" width="38" height="8" rx="2" fill="none" stroke="#f5a623" stroke-width="0.6" opacity="0.4"/><rect x="270" y="114" width="38" height="8" rx="2" fill="none" stroke="#f5a623" stroke-width="0.6" opacity="0.4"/>
+                <text x="247" y="133" text-anchor="middle" font-size="7" fill="#f5a623">keys</text><text x="289" y="133" text-anchor="middle" font-size="7" fill="#f5a623">vals</text>
+                <text x="270" y="143" text-anchor="middle" font-size="7.5" fill="#f5a623" font-weight="bold">↓ сейчас</text>
+
+                <!-- old[3] — ждёт -->
+                <rect x="328" y="16" width="96" height="110" rx="5" fill="none" stroke="currentColor" stroke-width="1.1" opacity="0.4"/>
+                <rect x="334" y="20" width="84" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.4"/>
+                <text x="376" y="30" text-anchor="middle" font-size="7" fill="currentColor" opacity="0.4">tophash</text>
+                <rect x="334" y="37" width="38" height="8" rx="2" fill="#3b7ec9" opacity="0.35"/><rect x="376" y="37" width="38" height="8" rx="2" fill="#e07070" opacity="0.35"/>
+                <rect x="334" y="48" width="38" height="8" rx="2" fill="#3b7ec9" opacity="0.35"/><rect x="376" y="48" width="38" height="8" rx="2" fill="#e07070" opacity="0.35"/>
+                <rect x="334" y="59" width="38" height="8" rx="2" fill="#3b7ec9" opacity="0.35"/><rect x="376" y="59" width="38" height="8" rx="2" fill="#e07070" opacity="0.35"/>
+                <rect x="334" y="70" width="38" height="8" rx="2" fill="#3b7ec9" opacity="0.35"/><rect x="376" y="70" width="38" height="8" rx="2" fill="#e07070" opacity="0.35"/>
+                <rect x="334" y="81" width="38" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="0.5" opacity="0.3"/><rect x="376" y="81" width="38" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="0.5" opacity="0.3"/>
+                <rect x="334" y="92" width="38" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="0.5" opacity="0.3"/><rect x="376" y="92" width="38" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="0.5" opacity="0.3"/>
+                <rect x="334" y="103" width="38" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="0.5" opacity="0.3"/><rect x="376" y="103" width="38" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="0.5" opacity="0.3"/>
+                <rect x="334" y="114" width="38" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="0.5" opacity="0.3"/><rect x="376" y="114" width="38" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="0.5" opacity="0.3"/>
+                <text x="353" y="133" text-anchor="middle" font-size="7" fill="currentColor" opacity="0.4">keys</text><text x="395" y="133" text-anchor="middle" font-size="7" fill="currentColor" opacity="0.4">vals</text>
+                <text x="376" y="143" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.35">ждёт</text>
+
+                <!-- nevacuate label -->
+                <text x="10" y="154" font-size="8" fill="#e04434" opacity="0.7">nevacuate = 2 — бакеты 0 и 1 перенесены, сейчас переносится bmap[2]</text>
+
+                <!-- стрелка old[2] → new[4] -->
+                <line x1="270" y1="160" x2="270" y2="172" stroke="#4caf7d" stroke-width="1.4" stroke-dasharray="3 2" marker-end="url(#ma_ev)"/>
+
+                <!-- NEW BUCKETS: B=3, 8 штук — разреженные -->
+                <text x="10" y="170" font-size="8.5" fill="currentColor" opacity="0.38">buckets — B=3, 8 бакетов (каждый ~вдвое свободнее)</text>
+
+                <!-- Макрос для бакета: x, цвет, кол-во заполненных, метка -->
+                <!-- green filled: new[0], new[1], new[4], new[5] — из old[0] и old[1] -->
+                <!-- orange: new[2], new[6] — из old[2], сейчас заполняется -->
+                <!-- gray empty: new[3], new[7] — ждут old[3] -->
+
+                <!-- new[0] green -->
+                <rect x="10" y="176" width="50" height="100" rx="4" fill="#4caf7d08" stroke="#4caf7d" stroke-width="1.1"/>
+                <rect x="14" y="180" width="42" height="11" rx="2" fill="#4caf7d18" stroke="#4caf7d" stroke-width="0.7"/>
+                <text x="35" y="189" text-anchor="middle" font-size="6" fill="#4caf7d">tophash</text>
+                <rect x="14" y="194" width="18" height="7" rx="1" fill="#3b7ec9" opacity="0.6"/><rect x="36" y="194" width="18" height="7" rx="1" fill="#e07070" opacity="0.6"/>
+                <rect x="14" y="204" width="18" height="7" rx="1" fill="#3b7ec9" opacity="0.6"/><rect x="36" y="204" width="18" height="7" rx="1" fill="#e07070" opacity="0.6"/>
+                <rect x="14" y="214" width="18" height="7" rx="1" fill="#3b7ec9" opacity="0.6"/><rect x="36" y="214" width="18" height="7" rx="1" fill="#e07070" opacity="0.6"/>
+                <rect x="14" y="224" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/><rect x="36" y="224" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/>
+                <rect x="14" y="234" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/><rect x="36" y="234" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/>
+                <rect x="14" y="244" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/><rect x="36" y="244" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/>
+                <rect x="14" y="254" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/><rect x="36" y="254" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/>
+                <rect x="14" y="264" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/><rect x="36" y="264" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/>
+                <text x="23" y="277" text-anchor="middle" font-size="6" fill="#4caf7d" opacity="0.6">k</text><text x="45" y="277" text-anchor="middle" font-size="6" fill="#4caf7d" opacity="0.6">v</text>
+                <text x="35" y="285" text-anchor="middle" font-size="7" fill="#4caf7d" opacity="0.8">new[0]</text>
+
+                <!-- new[1] green -->
+                <rect x="66" y="176" width="50" height="100" rx="4" fill="#4caf7d08" stroke="#4caf7d" stroke-width="1.1"/>
+                <rect x="70" y="180" width="42" height="11" rx="2" fill="#4caf7d18" stroke="#4caf7d" stroke-width="0.7"/>
+                <text x="91" y="189" text-anchor="middle" font-size="6" fill="#4caf7d">tophash</text>
+                <rect x="70" y="194" width="18" height="7" rx="1" fill="#3b7ec9" opacity="0.6"/><rect x="92" y="194" width="18" height="7" rx="1" fill="#e07070" opacity="0.6"/>
+                <rect x="70" y="204" width="18" height="7" rx="1" fill="#3b7ec9" opacity="0.6"/><rect x="92" y="204" width="18" height="7" rx="1" fill="#e07070" opacity="0.6"/>
+                <rect x="70" y="214" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/><rect x="92" y="214" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/>
+                <rect x="70" y="224" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/><rect x="92" y="224" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/>
+                <rect x="70" y="234" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/><rect x="92" y="234" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/>
+                <rect x="70" y="244" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/><rect x="92" y="244" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/>
+                <rect x="70" y="254" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/><rect x="92" y="254" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/>
+                <rect x="70" y="264" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/><rect x="92" y="264" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/>
+                <text x="79" y="277" text-anchor="middle" font-size="6" fill="#4caf7d" opacity="0.6">k</text><text x="101" y="277" text-anchor="middle" font-size="6" fill="#4caf7d" opacity="0.6">v</text>
+                <text x="91" y="285" text-anchor="middle" font-size="7" fill="#4caf7d" opacity="0.8">new[1]</text>
+
+                <!-- new[2] orange (из old[2], сейчас заполняется) -->
+                <rect x="122" y="176" width="50" height="100" rx="4" fill="#f5a62308" stroke="#f5a623" stroke-width="1.4" stroke-dasharray="3 2"/>
+                <rect x="126" y="180" width="42" height="11" rx="2" fill="#f5a62318" stroke="#f5a623" stroke-width="0.7"/>
+                <text x="147" y="189" text-anchor="middle" font-size="6" fill="#f5a623">tophash</text>
+                <rect x="126" y="194" width="18" height="7" rx="1" fill="#3b7ec9" opacity="0.5"/><rect x="148" y="194" width="18" height="7" rx="1" fill="#e07070" opacity="0.5"/>
+                <rect x="126" y="204" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/><rect x="148" y="204" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/>
+                <rect x="126" y="214" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/><rect x="148" y="214" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/>
+                <rect x="126" y="224" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/><rect x="148" y="224" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/>
+                <rect x="126" y="234" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/><rect x="148" y="234" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/>
+                <rect x="126" y="244" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/><rect x="148" y="244" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/>
+                <rect x="126" y="254" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/><rect x="148" y="254" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/>
+                <rect x="126" y="264" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/><rect x="148" y="264" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/>
+                <text x="135" y="277" text-anchor="middle" font-size="6" fill="#f5a623" opacity="0.7">k</text><text x="157" y="277" text-anchor="middle" font-size="6" fill="#f5a623" opacity="0.7">v</text>
+                <text x="147" y="285" text-anchor="middle" font-size="7" fill="#f5a623">new[2] ↑</text>
+
+                <!-- new[3] gray empty (ждёт old[3]) -->
+                <rect x="178" y="176" width="50" height="100" rx="4" fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.18"/>
+                <text x="203" y="230" text-anchor="middle" font-size="7" fill="currentColor" opacity="0.2">new[3]</text>
+
+                <!-- new[4] green (из old[0]) -->
+                <rect x="234" y="176" width="50" height="100" rx="4" fill="#4caf7d08" stroke="#4caf7d" stroke-width="1.1"/>
+                <rect x="238" y="180" width="42" height="11" rx="2" fill="#4caf7d18" stroke="#4caf7d" stroke-width="0.7"/>
+                <text x="259" y="189" text-anchor="middle" font-size="6" fill="#4caf7d">tophash</text>
+                <rect x="238" y="194" width="18" height="7" rx="1" fill="#3b7ec9" opacity="0.6"/><rect x="260" y="194" width="18" height="7" rx="1" fill="#e07070" opacity="0.6"/>
+                <rect x="238" y="204" width="18" height="7" rx="1" fill="#3b7ec9" opacity="0.6"/><rect x="260" y="204" width="18" height="7" rx="1" fill="#e07070" opacity="0.6"/>
+                <rect x="238" y="214" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/><rect x="260" y="214" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/>
+                <rect x="238" y="224" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/><rect x="260" y="224" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/>
+                <rect x="238" y="234" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/><rect x="260" y="234" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/>
+                <rect x="238" y="244" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/><rect x="260" y="244" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/>
+                <rect x="238" y="254" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/><rect x="260" y="254" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/>
+                <rect x="238" y="264" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/><rect x="260" y="264" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/>
+                <text x="247" y="277" text-anchor="middle" font-size="6" fill="#4caf7d" opacity="0.6">k</text><text x="269" y="277" text-anchor="middle" font-size="6" fill="#4caf7d" opacity="0.6">v</text>
+                <text x="259" y="285" text-anchor="middle" font-size="7" fill="#4caf7d" opacity="0.8">new[4]</text>
+
+                <!-- new[5] green (из old[1]) -->
+                <rect x="290" y="176" width="50" height="100" rx="4" fill="#4caf7d08" stroke="#4caf7d" stroke-width="1.1"/>
+                <rect x="294" y="180" width="42" height="11" rx="2" fill="#4caf7d18" stroke="#4caf7d" stroke-width="0.7"/>
+                <text x="315" y="189" text-anchor="middle" font-size="6" fill="#4caf7d">tophash</text>
+                <rect x="294" y="194" width="18" height="7" rx="1" fill="#3b7ec9" opacity="0.6"/><rect x="316" y="194" width="18" height="7" rx="1" fill="#e07070" opacity="0.6"/>
+                <rect x="294" y="204" width="18" height="7" rx="1" fill="#3b7ec9" opacity="0.6"/><rect x="316" y="204" width="18" height="7" rx="1" fill="#e07070" opacity="0.6"/>
+                <rect x="294" y="214" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/><rect x="316" y="214" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/>
+                <rect x="294" y="224" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/><rect x="316" y="224" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/>
+                <rect x="294" y="234" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/><rect x="316" y="234" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/>
+                <rect x="294" y="244" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/><rect x="316" y="244" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/>
+                <rect x="294" y="254" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/><rect x="316" y="254" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/>
+                <rect x="294" y="264" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/><rect x="316" y="264" width="18" height="7" rx="1" fill="none" stroke="#4caf7d" stroke-width="0.5" opacity="0.3"/>
+                <text x="303" y="277" text-anchor="middle" font-size="6" fill="#4caf7d" opacity="0.6">k</text><text x="325" y="277" text-anchor="middle" font-size="6" fill="#4caf7d" opacity="0.6">v</text>
+                <text x="315" y="285" text-anchor="middle" font-size="7" fill="#4caf7d" opacity="0.8">new[5]</text>
+
+                <!-- new[6] orange (из old[2], сейчас заполняется) -->
+                <rect x="346" y="176" width="50" height="100" rx="4" fill="#f5a62308" stroke="#f5a623" stroke-width="1.4" stroke-dasharray="3 2"/>
+                <rect x="350" y="180" width="42" height="11" rx="2" fill="#f5a62318" stroke="#f5a623" stroke-width="0.7"/>
+                <text x="371" y="189" text-anchor="middle" font-size="6" fill="#f5a623">tophash</text>
+                <rect x="350" y="194" width="18" height="7" rx="1" fill="#3b7ec9" opacity="0.5"/><rect x="372" y="194" width="18" height="7" rx="1" fill="#e07070" opacity="0.5"/>
+                <rect x="350" y="204" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/><rect x="372" y="204" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/>
+                <rect x="350" y="214" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/><rect x="372" y="214" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/>
+                <rect x="350" y="224" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/><rect x="372" y="224" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/>
+                <rect x="350" y="234" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/><rect x="372" y="234" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/>
+                <rect x="350" y="244" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/><rect x="372" y="244" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/>
+                <rect x="350" y="254" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/><rect x="372" y="254" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/>
+                <rect x="350" y="264" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/><rect x="372" y="264" width="18" height="7" rx="1" fill="none" stroke="#f5a623" stroke-width="0.5" opacity="0.4"/>
+                <text x="359" y="277" text-anchor="middle" font-size="6" fill="#f5a623" opacity="0.7">k</text><text x="381" y="277" text-anchor="middle" font-size="6" fill="#f5a623" opacity="0.7">v</text>
+                <text x="371" y="285" text-anchor="middle" font-size="7" fill="#f5a623">new[6] ↑</text>
+
+                <!-- new[7] gray empty (ждёт old[3]) -->
+                <rect x="402" y="176" width="50" height="100" rx="4" fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.18"/>
+                <text x="427" y="230" text-anchor="middle" font-size="7" fill="currentColor" opacity="0.2">new[7]</text>
+
+                <!-- стрелки: old[2] → new[2] и new[6] -->
+                <line x1="242" y1="160" x2="147" y2="174" stroke="#f5a623" stroke-width="1.2" stroke-dasharray="3 2" marker-end="url(#ma_ev)"/>
+                <line x1="298" y1="160" x2="371" y2="174" stroke="#f5a623" stroke-width="1.2" stroke-dasharray="3 2" marker-end="url(#ma_ev)"/>
+              </svg>
+              <p class="tight" style="margin-top:4px;opacity:0.55;font-size:0.88em"><code class="inline">mapaccess</code> проверяет ОБА массива (old + new) пока эвакуация не завершена — нет STW.</p>
+
+              <div class="codeblock">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">evacuation.go (концептуально)</span></div>
+                <pre><code class="language-go">// При load factor > 6.5:
+// 1. Создаётся новый массив бакетов в 2× больше (B++)
+// 2. oldbuckets → старый массив
+// 3. Каждый mapassign/mapdelete переносит 1-2 бакета из old в new
+// 4. mapaccess проверяет ОБА массива пока эвакуация не завершена
+//
+// Нет STW (stop-the-world) — перенос растянут по времени</code></pre>
+              </div>
+
+              <p class="tight" style="margin-top:12px"><b>Следствия для практики:</b></p>
+              <p class="tight">• <b>&amp;m[key] — ошибка компиляции</b>: эвакуация перемещает данные, сохранённый указатель стал бы висячим</p>
+              <p class="tight">• <b>Случайный порядок range</b>: <code class="inline">mapiterinit</code> вызывает <code class="inline">fastrand()</code> — выбирает случайный стартовый бакет и слот. Защита от зависимости кода от порядка</p>
+              <p class="tight">• <b>fmt.Println кажется отсортированным</b>: пакет <code class="inline">reflect</code> принудительно сортирует ключи перед выводом — это поведение fmt, не map</p>
+              <p class="tight">• <b>make(map[K]V, hint)</b>: заранее аллоцирует нужное кол-во бакетов, избегая нескольких циклов эвакуации</p>
+
+              <div class="impl-sources">Источники: runtime/map.go · src/internal/abi/type.go · github.com/golang/go</div>
+            </div>
+          </details>
+
+          <details class="deep" style="margin:10px 0">
+            <summary>Go 1.24+ — Swiss Tables (open addressing) <span class="tag">new</span></summary>
+            <div class="deep-body">
+              <p class="tight" style="color:var(--text-dim);font-style:italic">— место для конспекта по Swiss Tables, добавь сюда после изучения —</p>
+
+              <div class="codeblock">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">src/internal/runtime/maps/map.go</span></div>
+                <pre><code class="language-go">type Map struct {
+    used        uint64         // len(m)
+    seed        uintptr        // seed для хеш-функции
+    dirPtr      unsafe.Pointer // указатель на directory таблиц
+    dirLen      int            // = 1 << globalDepth
+    globalDepth uint8          // кол-во бит для routing по directory
+}</code></pre>
+              </div>
+
+              <div class="callout interview">
+                <div class="mark">собес</div>
+                <p><b>Swiss Tables</b> — open addressing вместо chaining. Каждая группа слотов имеет 1-байтный control byte (h2-хеш). SIMD-инструкция сравнивает сразу 8–16 control bytes за одну операцию → ~2–3× быстрее поиска чем бакеты.</p>
+              </div>
+
+              <div class="impl-sources">Источники: src/internal/runtime/maps/map.go · go.dev/doc/go1.24 · abseil.io/about/design/swisstables</div>
+            </div>
+          </details>
+
+          <p class="tight" style="margin-top:8px"><b>map нельзя сравнить через ==</b> — только с <code class="inline">nil</code>. <b>Не потокобезопасна</b> — конкурентные чтение+запись вызовут панику; нужен <code class="inline">sync.Map</code> или мьютекс.</p>
+        `
+      },
+
+  // ---------- "struct" entry ----------
+      struct: {
+        title: 'struct — под капотом',
+        html: `
+          <p class="tight">Struct — это <b>набор именованных полей, уложенных в памяти подряд</b> с учётом выравнивания. Компилятор может вставлять <b>padding</b> (байты-заглушки) между полями, чтобы каждое поле начиналось по адресу, кратному его размеру.</p>
+
+          <div class="codeblock">
+            <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">src/internal/abi/type.go</span></div>
+            <pre><code class="language-go">type StructType struct {
+    Type            // общие метаданные (размер, выравнивание)
+    PkgPath Name    // пакет, где объявлен тип
+    Fields  []StructField
+}
+
+type StructField struct {
+    Name   Name    // имя поля
+    Typ    *Type   // тип поля
+    Offset uintptr // байтовое смещение от начала структуры
+}</code></pre>
+          </div>
+
+          <p class="tight"><b>Пример с padding:</b></p>
+
+          <div class="codeblock">
+            <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">padding.go</span></div>
+            <pre><code class="language-go">// Плохой порядок — 24 байта из-за padding
+type Bad struct {
+    a bool   // 1 байт + 7 байт padding
+    b int64  // 8 байт
+    c bool   // 1 байт + 7 байт padding
+} // итого: 24 байта
+
+// Хороший порядок — 16 байт
+type Good struct {
+    b int64  // 8 байт
+    a bool   // 1 байт
+    c bool   // 1 байт + 6 байт padding до кратного 8
+} // итого: 16 байт</code></pre>
+          </div>
+
+          <p class="tight">Поля нужно <b>сортировать от большего к меньшему</b> чтобы минимизировать padding и размер структуры.</p>
+
+          <div class="callout interview">
+            <div class="mark">собес</div>
+            <p><code class="inline">struct{}</code> — пустая структура занимает <b>0 байт</b>. Это единственный тип в Go с нулевым размером. Используется как значение в <code class="inline">map[T]struct{}</code> (множество без лишней памяти) и как тип канала-сигнала <code class="inline">chan struct{}</code> (только факт события, без данных).</p>
+          </div>
+
+          <div class="impl-sources">Источники: github.com/golang/go (src/internal/abi/type.go) · go.dev/ref/spec#Struct_types · go.dev/ref/spec#Size_and_alignment_guarantees · pkg.go.dev/unsafe#Sizeof</div>
+        `
+      },
+
     };
+
+    var TIP_DATA = {
+      sliceType: `<b>Slice *Type — пример</b><br><br>Когда пишешь <code>s := a[:]</code>, компилятор не строит новый тип <code>[]int32</code> с нуля — он берёт его прямо из поля <code>Slice</code> структуры <code>ArrayType</code>:<br><br><pre style="font-size:11px;line-height:1.6;margin:6px 0">a := [3]int32{1, 2, 3}  // тип: [3]int32
+s := a[:]               // тип: []int32
+//  ↑ компилятор берёт []int32
+//    из ArrayType.Slice — уже готов</pre>Без этого поля пришлось бы каждый раз заново создавать описание слайс-типа в рантайме. <code>Slice *Type</code> — это кеш на уровне типа.<br><br><a href="https://github.com/golang/go/blob/master/src/internal/abi/type.go" target="_blank" style="color:var(--accent)">→ src/internal/abi/type.go на GitHub</a>`,
+      descriptor: `<b>Дескриптор типа (Type descriptor)</b> — структура в памяти, которую компилятор создаёт для каждого типа один раз. Хранит всё что нужно рантайму чтобы работать с данными этого типа не зная его статически.<br><br><pre style="font-size:11px;line-height:1.6;margin:6px 0">// src/internal/abi/type.go
+type Type struct {
+    Size_       uintptr  // сколько байт занимает значение
+    PtrBytes    uintptr  // сколько байт содержат указатели (для GC)
+    Hash_       uint32   // хеш типа (для быстрого сравнения типов)
+    Tflag       Tflag    // флаги: есть ли методы, comparable и т.д.
+    Align_      uint8    // выравнивание значения
+    FieldAlign_ uint8    // выравнивание в структуре
+    Kind_       uint8    // вид типа: int, slice, map, struct…
+    Equal  func(unsafe.Pointer, unsafe.Pointer) bool // ==
+    GCData *byte        // битовая маска указателей для GC
+    Str_   NameOff      // имя типа ("int", "[]string"…)
+    PtrToThis TypeOff   // *T для этого типа
+}</pre>Все конкретные типы (MapType, SliceType, ArrayType…) <b>встраивают</b> Type и добавляют свои поля. Рантайм всегда начинает с общего Type, а потом кастует к нужному через <code>unsafe.Pointer</code>.<br><br><a href="https://github.com/golang/go/blob/go1.23.0/src/internal/abi/type.go" target="_blank" style="color:var(--accent)">→ src/internal/abi/type.go на GitHub</a>`,
+      alignment: `<b>Выравнивание (alignment)</b> — правило: данные должны начинаться по адресу, кратному их размеру. <code>int32</code> (4 байта) — только по адресам 0, 4, 8, 12…<br><br><b>Что будет если нет:</b><br><br><b>x86</b> — читает в два приёма:<pre style="font-size:11px;line-height:1.6;margin:6px 0;overflow-x:auto">адреса: 0    4    8
+память: [....][..XX|XX..][....]
+                ↑↑↑↑
+         int32 разбит на два слова
+→ два чтения вместо одного</pre><b>ARM</b> — падает с <code>SIGBUS</code>: шина просто не умеет читать невыровненный адрес.<br><br>Компилятор вставляет байты-заглушки (padding) чтобы это никогда не случилось.`,
+    };
+
+    window.showTip = function(event, key) {
+      var html = TIP_DATA[key] || key;
+      var pop = document.getElementById('tipPopover');
+      document.getElementById('tipText').innerHTML = html;
+      pop.style.display = 'block';
+      var rect = event.target.getBoundingClientRect();
+      var left = rect.left;
+      var top = rect.bottom + 8;
+      // не выйти за правый край
+      if (left + 316 > window.innerWidth) left = window.innerWidth - 320;
+      pop.style.left = left + 'px';
+      pop.style.top = top + 'px';
+      event.stopPropagation();
+    };
+    document.addEventListener('click', function() {
+      var pop = document.getElementById('tipPopover');
+      if (pop) pop.style.display = 'none';
+    });
 
     var overlay = document.getElementById('implOverlay');
     var panel = document.getElementById('implPanel');
