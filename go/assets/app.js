@@ -3806,6 +3806,28 @@ type Good struct {
           </div>
           <!-- /ALIGNMENT WIDGET -->
 
+          <div class="callout" style="margin-top:12px;background:rgba(127,119,221,.07);border-left:3px solid #7F77DD;">
+            <div class="mark" style="background:#7F77DD22;color:#7F77DD;">perf</div>
+            <p><b>False sharing (cache thrashing).</b> Кэш-линия процессора — обычно <b>64 байта</b>. Каждое ядро держит её копию в L1/L2 кэше. Если горутина пишет в поле — ядро помечает всю линию «грязной» и рассылает сигнал остальным ядрам: «ваши копии устарели, выбросьте». Они вынуждены перечитать линию из L3 или RAM.</p>
+            <p style="margin-top:6px">Проблема: если два ядра пишут в <em>разные</em> поля одной структуры, но поля в одной кэш-линии — они постоянно инвалидируют кэш друг друга, хотя данные логически независимы. Итог: <b>вместо параллельной записи — очередь за кэш-линией</b>, производительность падает в разы. Решение: <code class="inline">_ [56]byte</code> между полями разносит их по разным линиям.</p>
+          </div>
+          <div class="codeblock">
+            <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">false_sharing.go</span></div>
+            <pre><code class="language-go">// ❌ плохо: CounterA и CounterB в одной кэш-линии (16 байт < 64)
+// горутина 1 пишет A, горутина 2 пишет B → инвалидируют кэш друг друга
+type Bad struct {
+    CounterA int64  // offset 0
+    CounterB int64  // offset 8
+}
+
+// ✓ хорошо: padding разводит поля по разным кэш-линиям
+type Good struct {
+    CounterA int64
+    _        [56]byte // padding до конца кэш-линии (64 - 8 = 56)
+    CounterB int64
+}</code></pre>
+          </div>
+
           <div class="callout interview">
             <div class="mark">собес</div>
             <p><code class="inline">struct{}</code> — пустая структура занимает <b>0 байт</b>. Это единственный тип в Go с нулевым размером. Используется как значение в <code class="inline">map[T]struct{}</code> (множество без лишней памяти) и как тип канала-сигнала <code class="inline">chan struct{}</code> (только факт события, без данных).</p>
