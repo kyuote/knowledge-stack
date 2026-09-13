@@ -169,6 +169,12 @@
 
 <!-- impl-panel (shared overlay) -->
 <div class="impl-overlay" id="implOverlay"></div>
+
+<div id="tipPopover" style="display:none;position:fixed;z-index:9999;background:var(--surface,#1a1a1a);border:1.5px solid var(--accent,#7F77DD);border-radius:10px;padding:14px 16px;max-width:520px;max-height:70vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,0.4);font-size:13.5px;line-height:1.55;">
+  <div id="tipText"></div>
+  <button onclick="document.getElementById('tipPopover').style.display='none'" style="margin-top:10px;display:block;font-size:11.5px;color:var(--text-dim);background:none;border:none;cursor:pointer;padding:0;">закрыть ✕</button>
+</div>
+
 <div class="impl-panel" id="implPanel" role="dialog" aria-modal="true" aria-labelledby="implTitle">
   <div class="impl-header">
     <h3 id="implTitle">под капотом</h3>

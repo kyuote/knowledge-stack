@@ -3832,6 +3832,12 @@ type Type struct {
       var top = rect.bottom + 8;
       // не выйти за правый край
       if (left + 316 > window.innerWidth) left = window.innerWidth - 320;
+      if (left < 8) left = 8;
+      // не выйти за нижний край — показать выше элемента если не влезает снизу
+      var popH = Math.min(pop.scrollHeight, window.innerHeight * 0.7);
+      if (top + popH > window.innerHeight - 16) {
+        top = Math.max(8, rect.top - popH - 8);
+      }
       pop.style.left = left + 'px';
       pop.style.top = top + 'px';
       event.stopPropagation();
