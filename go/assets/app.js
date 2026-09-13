@@ -2669,15 +2669,56 @@ delete(m, "k")    // → mapdelete(t *maptype, h *hmap, k unsafe.Pointer)</code>
                 </div>
               </div>
 
+              <!-- theme-aware styles for hash routing + probing sections -->
+              <style>
+                .mhs-wrap{font-family:'JetBrains Mono',monospace;font-size:11px;min-width:700px;}
+                .mhs-hdr{color:var(--text,#1d1d1d);font-size:11px;margin-bottom:10px;}
+                .mhs-hdr-val{color:var(--text-dim,#666);}
+                .mhs-section{background:var(--bg,#f5f5f5);border:1px solid var(--border,#e0e0e0);border-radius:7px;padding:10px 14px;margin-bottom:8px;}
+                .mhs-lbl{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim,#888);opacity:.7;margin-bottom:8px;}
+                .mhs-code{background:var(--surface,#fff);border:1px solid var(--border,#e0e0e0);border-radius:4px;padding:5px 10px;display:inline-block;font-size:11px;margin-bottom:6px;}
+                .mhs-note{font-size:10px;color:var(--text-dim,#666);line-height:1.7;}
+                .mhs-note-border{font-size:9.5px;color:var(--text-dim,#666);border-left:2px solid var(--border,#ddd);padding-left:8px;line-height:1.7;margin-top:8px;}
+                .mhs-code-comment{color:var(--text-dim,#888);}
+                .mhs-and-box{font-size:10px;line-height:1.9;background:var(--surface,#f5f5f5);border:1px solid var(--border,#e8e8e8);border-radius:5px;padding:8px 10px;}
+                .mhs-and-sep{border-top:1px solid var(--border,#ddd);margin:2px 0 2px 52px;}
+                .mhs-bit-faded{color:var(--text-dim,#bbb);}
+                .mhs-bit-faded2{color:var(--border,#ddd);}
+                .mhs-summary{margin-top:10px;padding:8px 12px;background:var(--bg,#f5f5f5);border:1px solid var(--border,#e0e0e0);border-radius:5px;font-size:10px;color:var(--text-dim,#666);line-height:2;}
+                .mhs-toggle-lbl{font-size:10px;color:var(--text-dim,#666);}
+                .mhs-btn{background:var(--surface,#fff);border:1px solid var(--border,#ddd);border-radius:4px;color:var(--text-dim,#888);font-family:monospace;font-size:11px;padding:4px 12px;cursor:pointer;}
+                .mhs-btn-active{background:rgba(52,211,153,.1);border-color:#34d399;color:#34d399;}
+                /* probing */
+                .prob-outer{margin-top:18px;padding:14px;background:var(--bg,#f5f5f5);border:1px solid var(--border,#e0e0e0);border-radius:10px;}
+                .prob-title{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim,#888);margin-bottom:12px;}
+                .prob-formula{display:flex;align-items:center;gap:14px;background:var(--surface,#fff);border:1px solid var(--border,#e0e0e0);border-radius:7px;padding:12px 16px;margin-bottom:14px;}
+                .prob-formula-lbl{font-size:9px;color:var(--text-dim,#888);white-space:nowrap;}
+                .prob-mod{color:var(--text-dim,#888);}
+                .prob-formula-desc{margin-left:auto;font-size:9px;color:var(--text-dim,#888);line-height:1.7;text-align:right;}
+                .prob-card{flex:1;background:var(--surface,#fff);border:1px solid var(--border,#e0e0e0);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;}
+                .prob-card-go{background:rgba(52,211,153,.06);border-color:#34d399;}
+                .prob-num{font-size:8px;color:var(--text-dim,#aaa);letter-spacing:.1em;text-transform:uppercase;}
+                .prob-name{font-size:12px;font-weight:700;color:var(--text,#1d1d1d);}
+                .prob-eq{background:var(--bg,#f5f5f5);border-radius:5px;padding:7px 10px;font-size:12px;text-align:center;}
+                .prob-seq-lbl{font-size:8px;color:var(--text-dim,#888);}
+                .prob-step-val{color:var(--text-dim,#888);}
+                .prob-step-num{font-weight:700;font-size:9px;color:var(--text,#1d1d1d);}
+                .prob-slot{width:22px;height:22px;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;border:1px solid var(--border,#e0e0e0);background:var(--bg,#f5f5f5);color:var(--text-dim,#bbb);}
+                .prob-slot-lin{border-color:#4a9fd4!important;background:rgba(74,159,212,.12)!important;color:#4a9fd4!important;}
+                .prob-slot-quad{border-color:#a78bfa!important;background:rgba(167,139,250,.12)!important;color:#a78bfa!important;}
+                .prob-slot-tri{border-color:#34d399!important;background:rgba(52,211,153,.12)!important;color:#34d399!important;}
+                .prob-slot-occ{background:var(--bg,#f0f0f0)!important;color:var(--text-dim,#bbb)!important;}
+              </style>
+
               <!-- Схема: маршрутизация хэша → Table → Group → h2 -->
               <div style="margin-top:18px;">
                 <p class="tight" style="margin-bottom:10px"><b>Как хэш маршрутизируется: Table → Group → control byte</b></p>
                 <div style="overflow-x:auto;">
-                  <div style="font-family:'JetBrains Mono',monospace;font-size:11px;min-width:700px;">
+                  <div class="mhs-wrap">
 
                     <!-- hash header -->
-                    <div style="font-size:11px;margin-bottom:10px;color:rgba(255,255,255,.4);">
-                      <span style="color:rgba(255,255,255,.85);">hash("hello")</span> = <span style="color:#d97706;">14333275774295595135</span> &nbsp;(64 bit)
+                    <div class="mhs-hdr">
+                      <span style="color:var(--text);">hash("hello")</span> = <span style="color:#d97706;">14333275774295595135</span> &nbsp;(64 bit)
                     </div>
 
                     <!-- bit strip -->
@@ -2690,58 +2731,55 @@ delete(m, "k")    // → mapdelete(t *maptype, h *hmap, k unsafe.Pointer)</code>
 
                     <!-- toggle -->
                     <div style="display:flex;gap:8px;align-items:center;margin-bottom:18px;">
-                      <span style="font-size:10px;color:rgba(255,255,255,.3);">global_depth =</span>
-                      <button id="mapGdBtn1" onclick="(function(){var s=document.getElementById('mapHashStrip');if(s)Array.from(s.children).forEach(function(d,i){d.style.background=i<1?'#d97706':i<57?'#4a9fd4':'#a78bfa';});var b1=document.getElementById('mapGdBtn1'),b2=document.getElementById('mapGdBtn2');if(b1){b1.style.background='#1e2a1a';b1.style.borderColor='#34d399';b1.style.color='#34d399';}if(b2){b2.style.background='#1a1a1a';b2.style.borderColor='#333';b2.style.color='#888';}})()" style="background:#1a1a1a;border:1px solid #333;border-radius:4px;color:#888;font-family:monospace;font-size:11px;padding:4px 12px;cursor:pointer;">1 &nbsp;(2 таблицы)</button>
-                      <button id="mapGdBtn2" onclick="(function(){var s=document.getElementById('mapHashStrip');if(s)Array.from(s.children).forEach(function(d,i){d.style.background=i<2?'#d97706':i<57?'#4a9fd4':'#a78bfa';});var b1=document.getElementById('mapGdBtn1'),b2=document.getElementById('mapGdBtn2');if(b1){b1.style.background='#1a1a1a';b1.style.borderColor='#333';b1.style.color='#888';}if(b2){b2.style.background='#1e2a1a';b2.style.borderColor='#34d399';b2.style.color='#34d399';}})()" style="background:#1e2a1a;border:1px solid #34d399;border-radius:4px;color:#34d399;font-family:monospace;font-size:11px;padding:4px 12px;cursor:pointer;">2 &nbsp;(4 таблицы)</button>
+                      <span class="mhs-toggle-lbl">global_depth =</span>
+                      <button id="mapGdBtn1" class="mhs-btn" onclick="(function(){var s=document.getElementById('mapHashStrip');if(s)Array.from(s.children).forEach(function(d,i){d.style.background=i<1?'#d97706':i<57?'#4a9fd4':'#a78bfa';});var b1=document.getElementById('mapGdBtn1'),b2=document.getElementById('mapGdBtn2');if(b1){b1.className='mhs-btn';}if(b2){b2.className='mhs-btn mhs-btn-active';}})()">1 &nbsp;(2 таблицы)</button>
+                      <button id="mapGdBtn2" class="mhs-btn mhs-btn-active" onclick="(function(){var s=document.getElementById('mapHashStrip');if(s)Array.from(s.children).forEach(function(d,i){d.style.background=i<2?'#d97706':i<57?'#4a9fd4':'#a78bfa';});var b1=document.getElementById('mapGdBtn1'),b2=document.getElementById('mapGdBtn2');if(b1){b1.className='mhs-btn mhs-btn-active';}if(b2){b2.className='mhs-btn';}})()">2 &nbsp;(4 таблицы)</button>
                     </div>
 
                     <!-- Section 1 -->
-                    <div style="background:currentColor;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:7px;padding:10px 14px;margin-bottom:8px;">
-                      <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.4;margin-bottom:8px;">① Table index</div>
-                      <div style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);border-radius:4px;padding:5px 10px;display:inline-block;font-size:11px;margin-bottom:6px;">
+                    <div class="mhs-section">
+                      <div class="mhs-lbl">① Table index</div>
+                      <div class="mhs-code" style="margin-bottom:6px;">
                         tableIdx = hash <span style="color:#34d399">&gt;&gt;</span> (64 − <span style="color:#d97706">globalDepth</span>)
-                        <span style="color:rgba(255,255,255,.25);margin-left:8px;">// топ-N бит → номер таблицы</span>
+                        <span class="mhs-code-comment" style="margin-left:8px;">// топ-N бит → номер таблицы</span>
                       </div>
-                      <div style="font-size:10px;color:rgba(255,255,255,.4);line-height:1.7;">
+                      <div class="mhs-note">
                         gd=1 → 2 таблицы, нужен 1 бит &nbsp;·&nbsp; gd=2 → 4 таблицы, нужно 2 бита<br>
                         <span style="color:#34d399">&gt;&gt;</span> — 1 инструкция CPU, цикл по 64 битам = 64 шага
                       </div>
                     </div>
 
                     <!-- Section 2: AND table -->
-                    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:7px;padding:10px 14px;margin-bottom:8px;">
-                      <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.4;margin-bottom:8px;">② Group index — h1 + маска</div>
+                    <div class="mhs-section">
+                      <div class="mhs-lbl">② Group index — h1 + маска</div>
                       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
-                        <div style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);border-radius:4px;padding:5px 10px;font-size:11px;display:inline-block;">
-                          h1 = hash <span style="color:#34d399">&gt;&gt;</span> 7
-                        </div>
-                        <div style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);border-radius:4px;padding:5px 10px;font-size:11px;display:inline-block;">
+                        <div class="mhs-code">h1 = hash <span style="color:#34d399">&gt;&gt;</span> 7</div>
+                        <div class="mhs-code">
                           groupIdx = h1 <span style="color:#34d399">&amp;</span> (numGroups − 1)
-                          <span style="color:rgba(255,255,255,.25);margin-left:6px;">// 1024−1 = 0x3FF</span>
+                          <span class="mhs-code-comment" style="margin-left:6px;">// 1024−1 = 0x3FF</span>
                         </div>
                       </div>
-                      <!-- AND visual -->
-                      <div style="font-size:10px;line-height:1.9;background:rgba(0,0,0,.25);border-radius:5px;padding:8px 10px;">
-                        <div><span style="color:#4a9fd4;display:inline-block;width:52px;">h1&nbsp;:</span><span style="color:rgba(255,255,255,.15);">0 0 0 0 0 0 0 &nbsp;1 1 0 0 0 …</span>&nbsp;<span style="color:#4a9fd4">1 1 0 0 1 1 1 0 1 1</span></div>
-                        <div><span style="color:rgba(255,255,255,.25);display:inline-block;width:52px;">&amp;&nbsp;mask:</span><span style="color:rgba(255,255,255,.1);">0 0 0 0 0 0 0 &nbsp;0 0 0 0 0 …</span>&nbsp;<span style="color:#34d399">1 1 1 1 1 1 1 1 1 1</span></div>
-                        <div style="border-top:1px solid rgba(255,255,255,.08);margin:2px 0 2px 52px;"></div>
-                        <div><span style="color:#34d399;display:inline-block;width:52px;">idx&nbsp;:</span><span style="color:rgba(255,255,255,.1);">0 0 0 0 0 0 0 &nbsp;0 0 0 0 0 …</span>&nbsp;<span style="background:rgba(52,211,153,.12);color:#34d399;padding:1px 4px;border-radius:3px;">1 1 0 0 1 1 1 0 1 1</span>&nbsp;<span style="color:#34d399">= group #827</span></div>
+                      <div class="mhs-and-box">
+                        <div><span style="color:#4a9fd4;display:inline-block;width:52px;">h1&nbsp;:</span><span class="mhs-bit-faded">0 0 0 0 0 0 0 &nbsp;1 1 0 0 0 …</span>&nbsp;<span style="color:#4a9fd4">1 1 0 0 1 1 1 0 1 1</span></div>
+                        <div><span class="mhs-bit-faded" style="display:inline-block;width:52px;">&amp;&nbsp;mask:</span><span class="mhs-bit-faded2">0 0 0 0 0 0 0 &nbsp;0 0 0 0 0 …</span>&nbsp;<span style="color:#34d399">1 1 1 1 1 1 1 1 1 1</span></div>
+                        <div class="mhs-and-sep"></div>
+                        <div><span style="color:#34d399;display:inline-block;width:52px;">idx&nbsp;:</span><span class="mhs-bit-faded2">0 0 0 0 0 0 0 &nbsp;0 0 0 0 0 …</span>&nbsp;<span style="background:rgba(52,211,153,.12);color:#34d399;padding:1px 4px;border-radius:3px;">1 1 0 0 1 1 1 0 1 1</span>&nbsp;<span style="color:#34d399">= group #827</span></div>
                       </div>
-                      <div style="margin-top:8px;font-size:9.5px;color:rgba(255,255,255,.35);border-left:2px solid rgba(255,255,255,.08);padding-left:8px;line-height:1.7;">
-                        Почему не ещё <span style="color:rgba(255,255,255,.55)">&gt;&gt;</span>: уже убрали h2, ещё раз — потеряем средние биты.<br>
-                        Почему не <span style="color:rgba(255,255,255,.55)">&lt;&lt;</span>: вытолкнет старшие биты, средние не вытащить.<br>
+                      <div class="mhs-note-border">
+                        Почему не ещё <span style="color:#34d399">&gt;&gt;</span>: уже убрали h2, ещё раз — потеряем средние биты.<br>
+                        Почему не <span style="color:#34d399">&lt;&lt;</span>: вытолкнет старшие биты, средние не вытащить.<br>
                         Маска <span style="color:#34d399">0x3FF</span> = 11&nbsp;1111&nbsp;1111 — берёт нижние 10 бит h1 за 1 такт.
                       </div>
                     </div>
 
                     <!-- Section 3: h2 -->
-                    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:7px;padding:10px 14px;">
-                      <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.4;margin-bottom:8px;">③ h2 — 7-битный fingerprint</div>
+                    <div class="mhs-section" style="margin-bottom:0;">
+                      <div class="mhs-lbl">③ h2 — 7-битный fingerprint</div>
                       <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;">
-                        <div style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);border-radius:4px;padding:5px 10px;font-size:11px;display:inline-block;flex-shrink:0;">
-                          h2 = hash <span style="color:#34d399">&amp;</span> 0x7F &nbsp;<span style="color:rgba(255,255,255,.25)">// нижние 7 бит</span>
+                        <div class="mhs-code" style="flex-shrink:0;">
+                          h2 = hash <span style="color:#34d399">&amp;</span> 0x7F &nbsp;<span class="mhs-code-comment">// нижние 7 бит</span>
                         </div>
-                        <div style="font-size:10px;color:rgba(255,255,255,.45);line-height:1.7;">
+                        <div class="mhs-note">
                           Хранится в control bytes каждого слота группы.<br>
                           При поиске: сравниваем <span style="color:#a78bfa">h2</span> со всеми 8 control bytes сразу (SIMD).<br>
                           Полное сравнение ключа — только если h2 совпал.
@@ -2754,7 +2792,7 @@ delete(m, "k")    // → mapdelete(t *maptype, h *hmap, k unsafe.Pointer)</code>
                     </div>
 
                     <!-- summary -->
-                    <div style="margin-top:10px;padding:8px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);border-radius:5px;font-size:10px;color:rgba(255,255,255,.35);line-height:2;">
+                    <div class="mhs-summary">
                       <span style="color:#d97706">hash &gt;&gt; (64−gd)</span> → tableIdx &nbsp;·&nbsp;
                       <span style="color:#4a9fd4">(hash &gt;&gt; 7) &amp; 0x3FF</span> → groupIdx &nbsp;·&nbsp;
                       <span style="color:#a78bfa">hash &amp; 0x7F</span> → h2
@@ -2763,8 +2801,917 @@ delete(m, "k")    // → mapdelete(t *maptype, h *hmap, k unsafe.Pointer)</code>
                 </div>
               </div>
 
+              <!-- PROBING SECTION -->
+              <div class="prob-outer">
+                <div class="prob-title">пробирование при коллизии</div>
 
-              <div class="impl-sources">Источники: src/internal/runtime/maps/map.go · src/internal/runtime/maps/table.go · go.dev/doc/go1.24 · abseil.io/about/design/swisstables</div>
+                <!-- Base formula -->
+                <div class="prob-formula">
+                  <div class="prob-formula-lbl">общая<br>формула</div>
+                  <div style="font-size:14px;letter-spacing:.02em;">
+                    <span style="color:#4a9fd4">slot</span>
+                    &nbsp;=&nbsp;
+                    (<span style="color:#f0c352">h</span> + <span style="color:#34d399">f(i)</span>)
+                    &nbsp;<span class="prob-mod">mod</span>&nbsp;
+                    <span style="color:#a78bfa">N</span>
+                  </div>
+                  <div class="prob-formula-desc">
+                    <span style="display:block"><span style="color:#f0c352">h</span> — начальный слот (hash mod N)</span>
+                    <span style="display:block"><span style="color:#34d399">f(i)</span> — функция шага, i = 0, 1, 2 …</span>
+                    <span style="display:block"><span style="color:#a78bfa">N</span> — размер таблицы</span>
+                  </div>
+                </div>
+
+                <!-- 3 cards -->
+                <div style="display:flex;gap:10px;">
+
+                  <!-- Linear -->
+                  <div class="prob-card">
+                    <div class="prob-num">① вариант</div>
+                    <div class="prob-name">Линейное</div>
+                    <div class="prob-eq"><span style="color:#34d399">f(i)</span> = <span style="color:#fb923c">i</span></div>
+                    <div class="prob-seq-lbl">N=16, h=5, занято 5,6,7</div>
+                    <div style="display:flex;gap:3px;flex-wrap:wrap;">${Array.from({length:16},(_,i)=>{
+                      const hit=[8].includes(i), occ=[5,6,7].includes(i);
+                      return '<div class="prob-slot'+(hit?' prob-slot-lin':occ?' prob-slot-occ':'')+'">'+( occ?'×':i)+'</div>';
+                    }).join('')}</div>
+                    <div style="display:flex;flex-direction:column;gap:3px;">
+                      <div style="display:flex;align-items:baseline;gap:5px;font-size:8px;"><span style="color:#fb923c;min-width:18px;">i=0</span><span class="prob-step-val">5+0 =</span><span class="prob-step-num">5</span><span style="color:#d97706">✗</span></div>
+                      <div style="display:flex;align-items:baseline;gap:5px;font-size:8px;"><span style="color:#fb923c;min-width:18px;">i=1</span><span class="prob-step-val">5+1 =</span><span class="prob-step-num">6</span><span style="color:#d97706">✗</span></div>
+                      <div style="display:flex;align-items:baseline;gap:5px;font-size:8px;"><span style="color:#fb923c;min-width:18px;">i=2</span><span class="prob-step-val">5+2 =</span><span class="prob-step-num">7</span><span style="color:#d97706">✗</span></div>
+                      <div style="display:flex;align-items:baseline;gap:5px;font-size:8px;"><span style="color:#fb923c;min-width:18px;">i=3</span><span class="prob-step-val">5+3 =</span><span class="prob-step-num">8</span><span style="color:#4a9fd4">✓</span></div>
+                    </div>
+                    <div style="font-size:8px;color:#d97706;background:rgba(217,119,6,.08);border:1px solid rgba(217,119,6,.2);border-radius:4px;padding:5px 7px;line-height:1.5;">⚠ первичная кластеризация — занятые слоты слипаются в длинные цепочки</div>
+                  </div>
+
+                  <!-- Quadratic -->
+                  <div class="prob-card">
+                    <div class="prob-num">② вариант</div>
+                    <div class="prob-name">Квадратичное</div>
+                    <div class="prob-eq"><span style="color:#34d399">f(i)</span> = <span style="color:#fb923c">i</span><sup style="font-size:8px;color:#a78bfa">2</sup></div>
+                    <div class="prob-seq-lbl">N=16, h=5, занято 5,6</div>
+                    <div style="display:flex;gap:3px;flex-wrap:wrap;">${Array.from({length:16},(_,i)=>{
+                      const hit=[9,14].includes(i), occ=[5,6].includes(i);
+                      return '<div class="prob-slot'+(hit?' prob-slot-quad':occ?' prob-slot-occ':'')+'">'+( occ?'×':i)+'</div>';
+                    }).join('')}</div>
+                    <div style="display:flex;flex-direction:column;gap:3px;">
+                      <div style="display:flex;align-items:baseline;gap:5px;font-size:8px;"><span style="color:#fb923c;min-width:18px;">i=0</span><span class="prob-step-val">5+0 =</span><span class="prob-step-num">5</span><span style="color:#d97706">✗</span></div>
+                      <div style="display:flex;align-items:baseline;gap:5px;font-size:8px;"><span style="color:#fb923c;min-width:18px;">i=1</span><span class="prob-step-val">5+1 =</span><span class="prob-step-num">6</span><span style="color:#d97706">✗</span></div>
+                      <div style="display:flex;align-items:baseline;gap:5px;font-size:8px;"><span style="color:#fb923c;min-width:18px;">i=2</span><span class="prob-step-val">5+4 =</span><span class="prob-step-num">9</span><span style="color:#a78bfa">✓</span></div>
+                      <div style="display:flex;align-items:baseline;gap:5px;font-size:8px;"><span style="color:#fb923c;min-width:18px;">i=3</span><span class="prob-step-val">5+9 =</span><span class="prob-step-num">14</span><span style="color:#a78bfa">✓</span></div>
+                    </div>
+                    <div style="font-size:8px;color:#a78bfa;background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.2);border-radius:4px;padding:5px 7px;line-height:1.5;">лучше линейного, но не гарантирует обход всех слотов — можно застрять в цикле</div>
+                  </div>
+
+                  <!-- Triangular — Go -->
+                  <div class="prob-card prob-card-go" style="position:relative;">
+                    <div style="position:absolute;top:9px;right:9px;background:#34d399;color:#0a1a12;font-size:8px;font-weight:700;letter-spacing:.08em;padding:2px 6px;border-radius:100px;">Go ✓</div>
+                    <div class="prob-num">③ вариант</div>
+                    <div class="prob-name" style="color:#34d399;">Треугольное</div>
+                    <div class="prob-eq" style="background:rgba(52,211,153,.06);"><span style="color:#34d399">f(i)</span> = <span style="color:#34d399">i·(i+1)</span> / <span style="color:#a78bfa">2</span></div>
+                    <div class="prob-seq-lbl">треугольные числа:</div>
+                    <div style="display:flex;gap:4px;flex-wrap:wrap;">${[0,1,3,6,10,15].map(n=>'<span style="background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25);border-radius:3px;padding:2px 5px;color:#34d399;font-size:8px;">'+n+'</span>').join('')}<span class="prob-seq-lbl" style="align-self:center;margin-left:2px;">…</span></div>
+                    <div class="prob-seq-lbl">N=16, h=5</div>
+                    <div style="display:flex;gap:3px;flex-wrap:wrap;">${Array.from({length:16},(_,i)=>{
+                      const hit=[5,6,8,11].includes(i);
+                      return '<div class="prob-slot'+(hit?' prob-slot-tri':'')+'">'+i+'</div>';
+                    }).join('')}</div>
+                    <div style="display:flex;flex-direction:column;gap:3px;">
+                      <div style="display:flex;align-items:baseline;gap:5px;font-size:8px;"><span style="color:#fb923c;min-width:18px;">i=0</span><span class="prob-step-val">5+0 =</span><span class="prob-step-num">5</span></div>
+                      <div style="display:flex;align-items:baseline;gap:5px;font-size:8px;"><span style="color:#fb923c;min-width:18px;">i=1</span><span class="prob-step-val">5+1 =</span><span class="prob-step-num">6</span></div>
+                      <div style="display:flex;align-items:baseline;gap:5px;font-size:8px;"><span style="color:#fb923c;min-width:18px;">i=2</span><span class="prob-step-val">5+3 =</span><span class="prob-step-num">8</span></div>
+                      <div style="display:flex;align-items:baseline;gap:5px;font-size:8px;"><span style="color:#fb923c;min-width:18px;">i=3</span><span class="prob-step-val">5+6 =</span><span class="prob-step-num">11</span></div>
+                    </div>
+                    <div style="font-size:8px;color:#34d399;background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.2);border-radius:4px;padding:5px 7px;line-height:1.5;">✓ при N = 2ⁿ гарантирует обход <b>всех</b> N слотов — математически доказано</div>
+                  </div>
+
+                </div>
+
+                <!-- GROUPS ANIMATION -->
+                <style>
+                  .pgv-wrap{margin-top:16px;padding:14px;background:var(--bg,#f5f5f5);border:1px solid var(--border,#e0e0e0);border-radius:8px;}
+                  .pgv-title{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim,#888);margin-bottom:12px;}
+                  .pgv-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;}
+                  .pgv-group{flex:0 0 auto;width:64px;border:2px solid var(--border,#e0e0e0);border-radius:6px;padding:6px;display:flex;flex-direction:column;gap:4px;position:relative;transition:border-color .2s,box-shadow .2s;}
+                  .pgv-glbl{font-size:7.5px;font-weight:700;color:var(--text-dim,#888);text-align:center;letter-spacing:.04em;}
+                  .pgv-slots{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;}
+                  .pgv-slot{height:8px;border-radius:1px;}
+                  .pgv-slot-on{background:#4a9fd4;opacity:.7;}
+                  .pgv-slot-off{background:var(--border,#e0e0e0);}
+                  .pgv-badge{position:absolute;top:-9px;left:50%;transform:translateX(-50%);font-size:7.5px;font-weight:700;white-space:nowrap;opacity:0;transition:opacity .3s;}
+                  .pgv-step-lbl{font-size:7.5px;text-align:center;color:var(--text-dim,#aaa);margin-top:2px;}
+                  /* probe animations — 8s loop, 4 steps of 2s each */
+                  /* step 1: G0 active 0-25% */
+                  @keyframes pgv-a0{0%{border-color:#4a9fd4;box-shadow:0 0 0 3px rgba(74,159,212,.18);}24%{border-color:#4a9fd4;box-shadow:0 0 0 3px rgba(74,159,212,.18);}25%,100%{border-color:var(--border,#e0e0e0);box-shadow:none;}}
+                  @keyframes pgv-b0{0%{opacity:1;}24%{opacity:1;}25%,100%{opacity:0;}}
+                  /* step 2: G1 active 25-50% */
+                  @keyframes pgv-a1{0%,25%{border-color:var(--border,#e0e0e0);box-shadow:none;}25.5%{border-color:#4a9fd4;box-shadow:0 0 0 3px rgba(74,159,212,.18);}49%{border-color:#4a9fd4;box-shadow:0 0 0 3px rgba(74,159,212,.18);}50%,100%{border-color:var(--border,#e0e0e0);box-shadow:none;}}
+                  @keyframes pgv-b1{0%,25%{opacity:0;}25.5%{opacity:1;}49%{opacity:1;}50%,100%{opacity:0;}}
+                  /* step 3: G3 active 50-75% */
+                  @keyframes pgv-a3{0%,50%{border-color:var(--border,#e0e0e0);box-shadow:none;}50.5%{border-color:#4a9fd4;box-shadow:0 0 0 3px rgba(74,159,212,.18);}74%{border-color:#4a9fd4;box-shadow:0 0 0 3px rgba(74,159,212,.18);}75%,100%{border-color:var(--border,#e0e0e0);box-shadow:none;}}
+                  @keyframes pgv-b3{0%,50%{opacity:0;}50.5%{opacity:1;}74%{opacity:1;}75%,100%{opacity:0;}}
+                  /* step 4: G6 active 75-100% — green (found!) */
+                  @keyframes pgv-a6{0%,75%{border-color:var(--border,#e0e0e0);box-shadow:none;}75.5%,100%{border-color:#34d399;box-shadow:0 0 0 3px rgba(52,211,153,.2);}}
+                  @keyframes pgv-b6{0%,75%{opacity:0;}75.5%,100%{opacity:1;}}
+                  /* slot fill animation for G6 at step 4 */
+                  @keyframes pgv-insert{0%,75%{background:#4a9fd4;opacity:.7;}76%{background:#34d399;opacity:1;}100%{background:#34d399;opacity:1;}}
+                  #pgv-g0{animation:pgv-a0 8s infinite;}#pgv-b0{animation:pgv-b0 8s infinite;color:#4a9fd4;}
+                  #pgv-g1{animation:pgv-a1 8s infinite;}#pgv-b1{animation:pgv-b1 8s infinite;color:#4a9fd4;}
+                  #pgv-g3{animation:pgv-a3 8s infinite;}#pgv-b3{animation:pgv-b3 8s infinite;color:#4a9fd4;}
+                  #pgv-g6{animation:pgv-a6 8s infinite;}#pgv-b6{animation:pgv-b6 8s infinite;color:#34d399;}
+                  #pgv-ins{animation:pgv-insert 8s infinite;}
+                  /* probe arrow row */
+                  .pgv-arrow-row{display:flex;align-items:center;gap:0;margin-top:10px;font-size:8.5px;font-family:'JetBrains Mono',monospace;flex-wrap:wrap;gap:4px;}
+                  .pgv-ar-step{display:flex;align-items:center;gap:4px;}
+                  .pgv-ar-g{padding:2px 7px;border-radius:4px;font-weight:700;font-size:9px;}
+                  .pgv-ar-arrow{color:var(--text-dim,#aaa);}
+                  /* load factor note */
+                  .pgv-note{margin-top:12px;font-size:9px;line-height:1.7;color:var(--text-dim,#666);border-left:2px solid #34d399;padding-left:10px;}
+                </style>
+
+                <div class="pgv-wrap">
+                  <div class="pgv-title">пробирование по группам (треугольное, 8 групп)</div>
+                  <div class="pgv-row">${(()=>{
+                    // slots per group: 1=occupied, 0=free
+                    const gs=[
+                      [1,1,1,1,1,1,1,1], // G0 full  → skip ①
+                      [1,1,1,1,1,1,1,1], // G1 full  → skip ②
+                      [1,1,1,1,1,1,0,0], // G2 6/8
+                      [1,1,1,1,1,1,1,1], // G3 full  → skip ③
+                      [1,1,1,1,1,1,0,0], // G4 6/8
+                      [1,1,1,1,1,1,1,0], // G5 7/8
+                      [1,1,1,1,1,0,0,0], // G6 5/8 → INSERT ④
+                      [1,1,1,1,1,1,1,0], // G7 7/8
+                    ];
+                    const probeSteps=[0,1,3,6]; // triangular mod 8
+                    return gs.map((slots,gi)=>{
+                      const stepIdx=probeSteps.indexOf(gi);
+                      const isProbed=stepIdx!==-1;
+                      const isFound=gi===6;
+                      const stepNum=stepIdx+1;
+                      const slotsHtml=slots.map((s,si)=>{
+                        const isInsertSlot=isFound&&s===0&&si===5; // first free slot in G6
+                        return '<div class="pgv-slot '+(isInsertSlot?'" id="pgv-ins"':s?'pgv-slot-on"':'pgv-slot-off"')+'></div>';
+                      }).join('');
+                      const badgeId=isProbed?'id="pgv-b'+gi+'"':'';
+                      const groupId=isProbed?'id="pgv-g'+gi+'"':'';
+                      const badgeTxt=isFound?'✓ вставка!':'✗ занято';
+                      const stepLabel=isProbed?'<div class="pgv-step-lbl">i='+(stepIdx)+'→G'+gi+'</div>':'<div class="pgv-step-lbl" style="opacity:0">–</div>';
+                      return '<div class="pgv-group" '+groupId+'>'
+                        +'<div class="pgv-badge" '+badgeId+'>'+badgeTxt+'</div>'
+                        +'<div class="pgv-glbl">G'+gi+'</div>'
+                        +'<div class="pgv-slots">'+slotsHtml+'</div>'
+                        +stepLabel
+                        +'</div>';
+                    }).join('');
+                  })()}</div>
+
+                  <!-- probe sequence -->
+                  <div class="pgv-arrow-row">
+                    <div class="pgv-ar-step"><span class="pgv-ar-g" style="background:rgba(74,159,212,.12);color:#4a9fd4;">G0</span><span class="pgv-ar-arrow">→ все заняты →</span></div>
+                    <div class="pgv-ar-step"><span class="pgv-ar-g" style="background:rgba(74,159,212,.12);color:#4a9fd4;">G1</span><span class="pgv-ar-arrow">→ все заняты →</span></div>
+                    <div class="pgv-ar-step"><span class="pgv-ar-g" style="background:rgba(74,159,212,.12);color:#4a9fd4;">G3</span><span class="pgv-ar-arrow">→ все заняты →</span></div>
+                    <div class="pgv-ar-step"><span class="pgv-ar-g" style="background:rgba(52,211,153,.12);color:#34d399;border:1px solid rgba(52,211,153,.3);">G6</span><span style="color:#34d399;font-weight:700;font-size:9px;">✓ есть место — вставляем!</span></div>
+                  </div>
+
+                  <div class="pgv-note">
+                    Треугольное пробирование при N=2ⁿ группах гарантирует обход <b>всех</b> N групп — поэтому поиск свободного места всегда завершится.<br>
+                    Но чем больше групп заполнено → тем длиннее цепочка до первой свободной.<br>
+                    Поэтому Go <b>растит таблицу при заполнении 7/8</b> — так в среднем хватает 1–2 шагов пробирования.
+                  </div>
+                </div>
+                <!-- /GROUPS ANIMATION -->
+
+                </div>
+              </div>
+              <!-- /PROBING SECTION -->
+
+              <!-- GROUP STRUCTURE LOOKUP SECTION -->
+              <style>
+                /* layout */
+                .grp-top{display:flex;align-items:flex-start;gap:14px;margin-bottom:12px;}
+                .grp-h2box{background:var(--bg,#f5f5f5);border:1px solid var(--border,#e0e0e0);border-radius:7px;padding:10px 14px;flex-shrink:0;}
+                .grp-h2lbl{font-size:8px;color:var(--text-dim,#888);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;}
+                .grp-h2val{font-size:17px;font-weight:700;letter-spacing:.04em;color:#a78bfa;}
+                .grp-h2bits{display:flex;gap:2px;margin-top:4px;}
+                .grp-bit{width:13px;height:13px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:5.5px;font-weight:700;background:var(--border,#e0e0e0);color:var(--text-dim,#bbb);border:1px solid var(--border,#ddd);}
+                .grp-bit-on{background:rgba(167,139,250,.18);border-color:#a78bfa;color:#a78bfa;}
+                .grp-stepbox{flex:1;background:var(--bg,#f5f5f5);border:1px solid var(--border,#e0e0e0);border-radius:7px;padding:10px 14px;min-height:58px;}
+                .grp-stepnum{font-size:8px;color:var(--text-dim,#888);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;}
+                /* step texts shown via CSS */
+                .grp-st{display:none;font-size:10px;line-height:1.65;color:var(--text,#1d1d1d);}
+                #grpW[data-step="0"] .grp-st[data-s="0"],
+                #grpW[data-step="1"] .grp-st[data-s="1"],
+                #grpW[data-step="2"] .grp-st[data-s="2"],
+                #grpW[data-step="3"] .grp-st[data-s="3"]{display:block;}
+                #grpW[data-step="0"] .grp-stepnum::after{content:"ШАГ 1 / 4";}
+                #grpW[data-step="1"] .grp-stepnum::after{content:"ШАГ 2 / 4";}
+                #grpW[data-step="2"] .grp-stepnum::after{content:"ШАГ 3 / 4";}
+                #grpW[data-step="3"] .grp-stepnum::after{content:"ШАГ 4 / 4";}
+                /* group box */
+                .grp-box{background:var(--surface,#fff);border:1px solid var(--border,#e0e0e0);border-radius:8px;overflow:hidden;}
+                .grp-hdr{background:var(--bg,#f5f5f5);border-bottom:1px solid var(--border,#e0e0e0);padding:5px 12px;font-size:9px;color:var(--text-dim,#888);display:flex;align-items:center;justify-content:space-between;}
+                .grp-hdr b{color:var(--text,#1d1d1d);}
+                .grp-cwrow{display:flex;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border,#e0e0e0);gap:6px;overflow-x:auto;}
+                .grp-cwlbl{font-size:8.5px;color:var(--text-dim,#888);width:28px;flex-shrink:0;}
+                .grp-cwbytes{display:flex;gap:4px;}
+                .grp-cwbyte{width:68px;flex-shrink:0;background:var(--bg,#f5f5f5);border:1.5px solid var(--border,#e0e0e0);border-radius:4px;padding:3px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;transition:border-color .25s,background .25s,box-shadow .25s;}
+                .grp-cwbits{display:flex;gap:1px;}
+                .grp-cwbit{width:6.5px;height:6.5px;border-radius:1px;display:flex;align-items:center;justify-content:center;font-size:5px;font-weight:700;}
+                .gcb-h2{background:rgba(167,139,250,.2);color:#a78bfa;}
+                .gcb-flag{background:rgba(74,159,212,.15);color:#4a9fd4;}
+                .gcb-empty{background:var(--border,#ddd);color:var(--text-dim,#bbb);opacity:.5;}
+                .grp-cwtag{font-size:6px;color:var(--text-dim,#bbb);}
+                .grp-cwbyte{transition:border-color .25s,background .25s,box-shadow .25s;}
+                /* CW highlights per step */
+                #grpW[data-step="1"] .gcw[data-i="0"],
+                #grpW[data-step="2"] .gcw[data-i="0"],
+                #grpW[data-step="3"] .gcw[data-i="0"]{border-color:#a78bfa;background:rgba(167,139,250,.08);box-shadow:0 0 0 2px rgba(167,139,250,.15);}
+                #grpW[data-step="1"] .gcw[data-i="1"],
+                #grpW[data-step="1"] .gcw[data-i="2"],
+                #grpW[data-step="1"] .gcw[data-i="3"]{border-color:#4a9fd4;background:rgba(74,159,212,.06);}
+                #grpW[data-step="1"] .gcw[data-i="4"],
+                #grpW[data-step="1"] .gcw[data-i="5"],
+                #grpW[data-step="1"] .gcw[data-i="6"],
+                #grpW[data-step="1"] .gcw[data-i="7"]{opacity:.35;}
+                /* slots */
+                .grp-slot{display:flex;align-items:center;padding:5px 12px;border-bottom:1px solid var(--border,#e0e0e0);gap:6px;}
+                .grp-slot:last-child{border-bottom:none;}
+                .grp-slbl{font-size:8.5px;color:var(--text-dim,#888);width:40px;flex-shrink:0;}
+                .grp-skey{width:100px;flex-shrink:0;padding:3px 7px;border-radius:4px;font-size:9px;font-weight:700;text-align:center;border:1px solid transparent;transition:all .25s;}
+                .grp-sval{flex:1;padding:3px 7px;border-radius:4px;font-size:9px;text-align:center;border:1px solid transparent;transition:all .25s;}
+                .grp-slot-full .grp-skey{background:rgba(147,197,253,.15);color:#60a5fa;border-color:rgba(147,197,253,.25);}
+                .grp-slot-full .grp-sval{background:rgba(252,165,165,.12);color:#f87171;border-color:rgba(252,165,165,.25);}
+                .grp-slot-empty .grp-skey,.grp-slot-empty .grp-sval{background:var(--bg,#f5f5f5);color:var(--text-dim,#bbb);border-color:var(--border,#e0e0e0);}
+                /* slot 0 highlights */
+                #grpW[data-step="2"] .gs[data-i="0"] .grp-skey,
+                #grpW[data-step="3"] .gs[data-i="0"] .grp-skey{background:rgba(52,211,153,.13);border-color:#34d399;color:#34d399;}
+                #grpW[data-step="2"] .gs[data-i="0"] .grp-sval{background:rgba(52,211,153,.08);border-color:rgba(52,211,153,.3);color:#34d399;}
+                #grpW[data-step="3"] .gs[data-i="0"] .grp-sval{background:rgba(52,211,153,.18);border-color:#34d399;color:#34d399;font-weight:700;}
+                /* value toggle */
+                .gsv-new{display:none;}
+                #grpW[data-step="3"] .gsv-orig{display:none;}
+                #grpW[data-step="3"] .gsv-new{display:inline;}
+                /* result */
+                .grp-result{display:none;margin-top:8px;padding:6px 12px;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25);border-radius:6px;font-size:9.5px;color:#34d399;line-height:1.6;}
+                #grpW[data-step="3"] .grp-result{display:block;}
+                .grp-simd{margin-top:8px;padding:5px 10px;background:rgba(167,139,250,.05);border:1px dashed rgba(167,139,250,.25);border-radius:5px;font-size:8.5px;color:#a78bfa;line-height:1.5;}
+                /* controls */
+                .grp-controls{display:flex;align-items:center;gap:10px;margin-top:10px;}
+                .grp-btn{padding:4px 13px;border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:9.5px;cursor:pointer;border:1px solid var(--border,#e0e0e0);background:var(--surface,#fff);color:var(--text,#1d1d1d);transition:border-color .15s,color .15s;}
+                .grp-btn:hover{border-color:#4a9fd4;color:#4a9fd4;}
+                .grp-btn:disabled{opacity:.35;cursor:default;}
+                .grp-btn-go{border-color:#34d399;color:#34d399;background:rgba(52,211,153,.06);}
+                .grp-dots{display:flex;gap:5px;}
+                .grp-dot{width:6px;height:6px;border-radius:50%;background:var(--border,#ddd);transition:background .2s;}
+                /* cw legend */
+                .grp-cwlegend{padding:6px 12px 7px;border-bottom:1px solid var(--border,#e0e0e0);display:flex;flex-wrap:wrap;gap:4px 10px;align-items:flex-start;}
+                .grp-cwleg-ttl{font-size:7.5px;color:var(--text-dim,#888);align-self:center;white-space:nowrap;margin-right:2px;}
+                .grp-cwleg-entry{display:flex;align-items:center;gap:4px;}
+                .grp-cwleg-bits{display:flex;gap:1px;}
+                .grp-cwleg-badge{font-size:7px;font-weight:700;padding:1px 5px;border-radius:3px;white-space:nowrap;}
+                .gcb-set{background:rgba(239,68,68,.15);color:#ef4444;}
+                .gcb-tomb{background:rgba(245,158,11,.15);color:#f59e0b;}
+                .gcb-tomb-last{background:rgba(245,158,11,.07);color:#f59e0b;}
+                /* bit role bar */
+                .grp-bitrole{display:flex;align-items:center;gap:0;padding:4px 12px 0;margin-left:34px;}
+                .grp-bitrole-flag{font-size:6px;color:#4a9fd4;text-align:center;padding:0 2px;border-top:1px solid rgba(74,159,212,.5);border-left:1px solid rgba(74,159,212,.5);border-right:1px solid rgba(74,159,212,.5);white-space:nowrap;min-width:8.5px;}
+                .grp-bitrole-h2{font-size:6px;color:#a78bfa;text-align:center;flex:1;padding:0 2px;border-top:1px solid rgba(167,139,250,.5);border-left:1px solid rgba(167,139,250,.5);border-right:1px solid rgba(167,139,250,.5);white-space:nowrap;}
+                #grpW[data-step="0"] .gd[data-i="0"],
+                #grpW[data-step="1"] .gd[data-i="1"],
+                #grpW[data-step="2"] .gd[data-i="2"],
+                #grpW[data-step="3"] .gd[data-i="3"]{background:#34d399;}
+                #grpBN::after{content:"далее →";}
+                #grpW[data-step="3"] #grpBN::after{content:"готово ✓";}
+              </style>
+
+              <div style="margin-top:18px;">
+                <p class="tight" style="margin-bottom:10px"><b>Структура Group: control bytes и поиск/обновление по ключу</b></p>
+                <div id="grpW" data-step="0" style="font-family:'JetBrains Mono',monospace;font-size:11px;">
+
+                  <div class="grp-top">
+                    <div class="grp-h2box">
+                      <div class="grp-h2lbl">h2 (fingerprint)</div>
+                      <div class="grp-h2val">1111111</div>
+                      <div class="grp-h2bits">${[1,1,1,1,1,1,1].map(b=>'<div class="grp-bit'+(b?' grp-bit-on':'')+'">'+b+'</div>').join('')}</div>
+                      <div style="font-size:8px;color:var(--text-dim,#888);margin-top:4px;">ключ: <span style="color:#60a5fa">"hello"</span></div>
+                    </div>
+                    <div class="grp-stepbox">
+                      <div class="grp-stepnum"></div>
+                      <div class="grp-st" data-s="0">Группа <b style="color:#4a9fd4">944</b> найдена пробированием. Внутри — 8 слотов и <b>control bytes (CW)</b>: по одному байту на слот. Хотим обновить значение для ключа <b style="color:#60a5fa">"hello"</b>.</div>
+                      <div class="grp-st" data-s="1">Берём <b style="color:#a78bfa">h2 = 1111111</b> и сравниваем нижние 7 бит каждого CW. Совпадение: <b>CW[0] = 0<span style="color:#a78bfa">1111111</span></b> — возможно это наш ключ!</div>
+                      <div class="grp-st" data-s="2">CW совпал → проверяем <b>полный ключ</b> в Slot 0. <b style="color:#60a5fa">"hello"</b> == <b style="color:#60a5fa">"hello"</b> <b style="color:#34d399">✓</b> — нашли!</div>
+                      <div class="grp-st" data-s="3">Ключ совпал → <b>обновляем значение</b>: <span style="color:#d97706">"world"</span> → <b style="color:#34d399">"go"</b>. Операция завершена!</div>
+                    </div>
+                  </div>
+
+                  <div class="grp-box">
+                    <div class="grp-hdr"><div>Group <b>944</b></div><div style="font-size:8px;">8 слотов · 4 занято</div></div>
+                    <div class="grp-cwlegend">
+                      <span class="grp-cwleg-ttl">control byte:</span>
+                      <div class="grp-cwleg-entry">
+                        <div class="grp-cwleg-bits"><div class="grp-cwbit gcb-flag">0</div>${Array(7).fill('<div class="grp-cwbit gcb-h2">h</div>').join('')}</div>
+                        <span class="grp-cwleg-badge" style="color:#34d399;background:rgba(52,211,153,.1);">full</span>
+                        <span style="font-size:7px;color:var(--text-dim,#888);">слот занят</span>
+                      </div>
+                      <div class="grp-cwleg-entry">
+                        <div class="grp-cwleg-bits"><div class="grp-cwbit gcb-set">1</div>${Array(7).fill('<div class="grp-cwbit gcb-empty">0</div>').join('')}</div>
+                        <span class="grp-cwleg-badge" style="color:var(--text-dim,#888);background:var(--bg,#f5f5f5);">empty</span>
+                        <span style="font-size:7px;color:var(--text-dim,#888);">пустой</span>
+                      </div>
+                      <div class="grp-cwleg-entry">
+                        <div class="grp-cwleg-bits"><div class="grp-cwbit gcb-set">1</div>${Array(6).fill('<div class="grp-cwbit gcb-tomb">1</div>').join('')}<div class="grp-cwbit gcb-tomb-last">0</div></div>
+                        <span class="grp-cwleg-badge" style="color:#f59e0b;background:rgba(245,158,11,.1);">deleted</span>
+                        <span style="font-size:7px;color:var(--text-dim,#888);">tombstone</span>
+                      </div>
+                    </div>
+                    <div class="grp-bitrole">
+                      <div class="grp-bitrole-flag">флаг</div>
+                      <div class="grp-bitrole-h2">h2 fingerprint (7 бит)</div>
+                    </div>
+                    <div class="grp-cwrow">
+                      <div class="grp-cwlbl">CW</div>
+                      <div class="grp-cwbytes">${(function(){
+                        var data=[['01111111','full'],['01100110','full'],['00101101','full'],['00011110','full'],['10000000','empty'],['10000000','empty'],['10000000','empty'],['10000000','empty']];
+                        return data.map(function(d,i){
+                          var bits=d[0].split('').map(function(b,bi){
+                            var cls=bi===0?'gcb-flag':(d[1]==='empty'?'gcb-empty':'gcb-h2');
+                            return '<div class="grp-cwbit '+cls+'">'+b+'</div>';
+                          }).join('');
+                          return '<div class="grp-cwbyte gcw" data-i="'+i+'"><div class="grp-cwbits">'+bits+'</div><div class="grp-cwtag">'+d[1]+'</div></div>';
+                        }).join('');
+                      })()}</div>
+                    </div>
+                    ${(function(){
+                      var data=[
+                        ['"hello"','<span class="gsv-orig">"world"</span><span class="gsv-new" style="color:#34d399;font-weight:700">"go"</span>','full'],
+                        ['"apple"','"fruit"','full'],['"wheel"','"round"','full'],['"sky"','"blue"','full'],
+                        ['','','empty'],['','','empty'],['','','empty'],['','','empty']
+                      ];
+                      return data.map(function(d,i){
+                        return '<div class="grp-slot gs grp-slot-'+d[2]+'" data-i="'+i+'">'
+                          +'<div class="grp-slbl">Slot '+i+'</div>'
+                          +'<div class="grp-skey">'+d[0]+'</div>'
+                          +'<div class="grp-sval">'+d[1]+'</div>'
+                          +'</div>';
+                      }).join('');
+                    })()}
+                  </div>
+
+                  <div class="grp-result">&#10003; ключ "hello" найден &#183; значение обновлено &#183; <b>полное сравнение ключа: 1 раз</b> (CW отфильтровал лишние слоты)</div>
+                  <div class="grp-simd">&#128161; сравнение h2 со всеми 8 CW &#8212; за 1 такт CPU (SIMD) &#183; разберём подробнее ниже</div>
+
+                  <div class="grp-controls">
+                    <button class="grp-btn" id="grpBP" disabled onclick="(function(){var w=document.getElementById('grpW');var n=Math.max(0,parseInt(w.getAttribute('data-step')||'0')-1);w.setAttribute('data-step',n);document.getElementById('grpBP').disabled=n<=0;document.getElementById('grpBN').disabled=false;})()">&#8592; назад</button>
+                    <div class="grp-dots">${[0,1,2,3].map(function(i){return '<div class="grp-dot gd" data-i="'+i+'"></div>';}).join('')}</div>
+                    <button class="grp-btn grp-btn-go" id="grpBN" onclick="(function(){var w=document.getElementById('grpW');var n=Math.min(3,parseInt(w.getAttribute('data-step')||'0')+1);w.setAttribute('data-step',n);document.getElementById('grpBP').disabled=false;document.getElementById('grpBN').disabled=n>=3;})()"></button>
+                  </div>
+                </div>
+              </div>
+              <!-- /GROUP STRUCTURE LOOKUP SECTION -->
+
+              <!-- SLOT SIZE / POINTER / DELETE SECTION -->
+              <style>
+                .slt-wrap{margin:14px 0;background:var(--bg,#f5f5f5);border:1px solid var(--border,#e0e0e0);border-radius:9px;overflow:hidden;}
+                .slt-hdr{padding:6px 14px;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim,#888);border-bottom:1px solid var(--border,#e0e0e0);}
+                .slt-body{padding:11px 14px;display:flex;flex-direction:column;gap:9px;}
+                .slt-row{display:flex;gap:10px;align-items:flex-start;}
+                .slt-badge{font-size:8.5px;font-weight:700;padding:2px 8px;border-radius:4px;white-space:nowrap;margin-top:2px;flex-shrink:0;}
+                .sb-inline{background:rgba(52,211,153,.12);color:#34d399;}
+                .sb-ptr{background:rgba(74,159,212,.12);color:#4a9fd4;}
+                .slt-text{font-size:10px;line-height:1.65;color:var(--text,#1d1d1d);}
+                .slt-ic{font-family:'JetBrains Mono',monospace;font-size:9px;background:var(--surface,#fff);border:1px solid var(--border,#e0e0e0);border-radius:3px;padding:1px 5px;}
+                .slt-sep{border-top:1px solid var(--border,#e0e0e0);margin:2px 0;}
+                .slt-bonus{font-size:10px;line-height:1.65;color:var(--text,#1d1d1d);}
+                .slt-bonus b{color:#a78bfa;}
+                .slt-del{padding:10px 14px;border-top:1px solid var(--border,#e0e0e0);}
+                .slt-del-hdr{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim,#888);margin-bottom:7px;}
+                .slt-del-row{display:flex;gap:7px;align-items:baseline;font-size:9.5px;margin-bottom:3px;}
+                .sdr-type{font-family:'JetBrains Mono',monospace;font-size:9px;color:#a78bfa;min-width:110px;flex-shrink:0;}
+                .sdr-arr{color:var(--text-dim,#bbb);}
+                .sdr-val{font-family:'JetBrains Mono',monospace;font-size:9px;color:#34d399;}
+                .sdr-why{color:var(--text-dim,#888);font-size:8.5px;}
+                .slt-del-tip{margin-top:6px;font-size:9px;color:var(--text-dim,#888);border-left:2px solid var(--border,#ddd);padding-left:8px;line-height:1.6;}
+              </style>
+              <div class="slt-wrap">
+                <div class="slt-hdr">слоты · 128 байт · inline vs указатель</div>
+                <div class="slt-body">
+                  <div class="slt-row">
+                    <span class="slt-badge sb-inline">inline</span>
+                    <div class="slt-text">
+                      Если <b>sizeof(key) ≤ 128</b> и <b>sizeof(val) ≤ 128</b> — ключ и значение хранятся прямо в слоте.
+                      Большинство типов вмещаются: <span class="slt-ic">int</span>, <span class="slt-ic">string</span> (16 байт), <span class="slt-ic">bool</span>, небольшие struct.
+                    </div>
+                  </div>
+                  <div class="slt-row">
+                    <span class="slt-badge sb-ptr">via *ptr</span>
+                    <div class="slt-text">
+                      Если тип крупнее — Go ставит флаг <span class="slt-ic">IndirectKey</span> / <span class="slt-ic">IndirectElem</span> при компиляции:
+                      слот хранит <b>указатель</b>, сам объект живёт в куче.<br>
+                      Пример: <span class="slt-ic">map[string]UserData</span> — если <span class="slt-ic">UserData</span> &gt; 128 байт, слот содержит <span class="slt-ic">*UserData</span>.
+                    </div>
+                  </div>
+                  <div class="slt-sep"></div>
+                  <div class="slt-bonus">
+                    <b>При росте таблицы</b> сами объекты в куче <b>не перемещаются</b> — rehash копирует только слоты (ключи + указатели/значения). Переаллокации крупных структур не происходит.
+                  </div>
+                </div>
+                <div class="slt-del">
+                  <div class="slt-del-hdr">delete() зануляет значение — Go очищает ссылки для GC</div>
+                  <div class="slt-del-row"><span class="sdr-type">string</span><span class="sdr-arr">→</span><span class="sdr-val">""</span><span class="sdr-why">пустая строка</span></div>
+                  <div class="slt-del-row"><span class="sdr-type">*T, interface{}</span><span class="sdr-arr">→</span><span class="sdr-val">nil</span><span class="sdr-why">объект отвязывается — GC может его собрать</span></div>
+                  <div class="slt-del-row"><span class="sdr-type">int, bool, …</span><span class="sdr-arr">→</span><span class="sdr-val">0 / false</span><span class="sdr-why">нулевое значение (без указателей — GC не нужен)</span></div>
+                  <div class="slt-del-tip">ключ зануляется только если содержит указатели; CW-байт слота → tombstone <span class="slt-ic" style="font-size:8px;">0xFE</span> — сам ключ трогать необязательно</div>
+                </div>
+              </div>
+              <!-- /SLOT SIZE / POINTER / DELETE SECTION -->
+
+              <!-- TOMBSTONE SECTION -->
+              <style>
+                .tomb-st{display:none;font-size:10px;line-height:1.65;color:var(--text,#1d1d1d);}
+                #tombW[data-step="0"] .tomb-st[data-s="0"],
+                #tombW[data-step="1"] .tomb-st[data-s="1"],
+                #tombW[data-step="2"] .tomb-st[data-s="2"],
+                #tombW[data-step="3"] .tomb-st[data-s="3"]{display:block;}
+                #tombW[data-step="0"] .tomb-stepnum::after{content:"ШАГ 1 / 4";}
+                #tombW[data-step="1"] .tomb-stepnum::after{content:"ШАГ 2 / 4";}
+                #tombW[data-step="2"] .tomb-stepnum::after{content:"ШАГ 3 / 4";}
+                #tombW[data-step="3"] .tomb-stepnum::after{content:"ШАГ 4 / 4";}
+                .tomb-stepnum{font-size:8px;color:var(--text-dim,#888);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;}
+                .tomb-cwrow{display:flex;align-items:flex-start;padding:8px 12px;border-bottom:1px solid var(--border,#e0e0e0);gap:5px;overflow-x:auto;}
+                .tomb-cwlbl{font-size:8.5px;color:var(--text-dim,#888);width:28px;flex-shrink:0;padding-top:6px;}
+                .tomb-cwbytes{display:flex;gap:3px;}
+                .tomb-cwbyte{min-width:62px;flex-shrink:0;background:var(--bg,#f5f5f5);border:1.5px solid var(--border,#e0e0e0);border-radius:4px;padding:3px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all .25s;font-family:'JetBrains Mono',monospace;}
+                .tomb-cwpat{font-size:7.5px;font-weight:700;letter-spacing:.04em;}
+                .tomb-cwtag{font-size:6px;color:var(--text-dim,#bbb);}
+                .tcv{display:none;flex-direction:column;align-items:center;gap:2px;}
+                #tombW[data-step="0"] .tcv-init{display:flex;}
+                #tombW[data-step="1"] .tcv-empty{display:flex;}
+                #tombW[data-step="2"] .tcv-tomb{display:flex;}
+                #tombW[data-step="3"] .tcv-tomb{display:flex;}
+                #tombW[data-step="0"] .tb-cw1{border-color:#a78bfa;background:rgba(167,139,250,.08);}
+                #tombW[data-step="1"] .tb-cw1{border-color:#ef4444;background:rgba(239,68,68,.07);}
+                #tombW[data-step="2"] .tb-cw1,#tombW[data-step="3"] .tb-cw1{border-color:#f59e0b;background:rgba(245,158,11,.07);}
+                #tombW[data-step="1"] .tb-cw2-later{opacity:.18;}
+                #tombW[data-step="2"] .tb-cw2,#tombW[data-step="3"] .tb-cw2{border-color:#34d399;background:rgba(52,211,153,.08);}
+                .tomb-stop-badge{display:none;font-size:7px;color:#ef4444;font-weight:700;margin-top:1px;}
+                #tombW[data-step="1"] .tb-cw1 .tomb-stop-badge{display:block;}
+                .tb-s1-full,.tb-s1-gone{display:none;}
+                #tombW[data-step="0"] .tb-s1-full{display:flex;}
+                #tombW[data-step="1"] .tb-s1-gone,
+                #tombW[data-step="2"] .tb-s1-gone,
+                #tombW[data-step="3"] .tb-s1-gone{display:flex;}
+                #tombW[data-step="1"] .tb-s2{opacity:.18;}
+                #tombW[data-step="2"] .tb-s2 .grp-skey,
+                #tombW[data-step="3"] .tb-s2 .grp-skey{background:rgba(52,211,153,.13);border-color:#34d399;color:#34d399;}
+                .tomb-note{display:none;margin-top:7px;padding:5px 10px;border-radius:6px;font-size:9px;line-height:1.55;}
+                .tomb-note-bad{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);color:#ef4444;}
+                .tomb-note-ok{background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.25);color:#34d399;}
+                .tomb-note-tip{background:rgba(167,139,250,.05);border:1px dashed rgba(167,139,250,.3);color:#a78bfa;}
+                #tombW[data-step="1"] .tomb-note-bad{display:block;}
+                #tombW[data-step="2"] .tomb-note-ok{display:block;}
+                #tombW[data-step="3"] .tomb-note-tip{display:block;}
+                .tomb-controls{display:flex;align-items:center;gap:10px;margin-top:10px;}
+                .tomb-btn{padding:4px 13px;border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:9.5px;cursor:pointer;border:1px solid var(--border,#e0e0e0);background:var(--surface,#fff);color:var(--text,#1d1d1d);transition:border-color .15s,color .15s;}
+                .tomb-btn:hover{border-color:#4a9fd4;color:#4a9fd4;}
+                .tomb-btn:disabled{opacity:.35;cursor:default;}
+                .tomb-btn-go{border-color:#f59e0b;color:#f59e0b;background:rgba(245,158,11,.06);}
+                .tomb-dots{display:flex;gap:5px;}
+                .tomb-dot{width:6px;height:6px;border-radius:50%;background:var(--border,#ddd);transition:background .2s;}
+                #tombW[data-step="0"] .td[data-i="0"],
+                #tombW[data-step="1"] .td[data-i="1"],
+                #tombW[data-step="2"] .td[data-i="2"],
+                #tombW[data-step="3"] .td[data-i="3"]{background:#f59e0b;}
+                #tombBN::after{content:"далее →";}
+                #tombW[data-step="3"] #tombBN::after{content:"понял ✓";}
+              </style>
+
+              <div style="margin-top:22px;">
+                <p class="tight" style="margin-bottom:10px"><b>Tombstone при удалении: зачем и когда</b></p>
+                <div id="tombW" data-step="0" style="font-family:'JetBrains Mono',monospace;font-size:11px;">
+                  <div class="grp-top">
+                    <div class="grp-stepbox">
+                      <div class="tomb-stepnum"></div>
+                      <div class="tomb-st" data-s="0">delete(m, <b style="color:#60a5fa">"apple"</b>) → h2 = <b style="color:#a78bfa">1100110</b>. Проверяем все CW: <b>CW[1] = 0<span style="color:#a78bfa">1100110</span></b> — совпадение! Slot 1 = "apple". Все 8 слотов заняты (нет ни одного empty в группе).</div>
+                      <div class="tomb-st" data-s="1">Ставим CW[1] = <b style="color:#ef4444">10000000</b> (empty). Ищем <b style="color:#60a5fa">"wheel"</b> (h2=0101101): натыкаемся на CW[1]=empty → <b style="color:#ef4444">стоп!</b> CW[2]="wheel" так и не проверен — ключ «потерян». Это баг!</div>
+                      <div class="tomb-st" data-s="2">Правильно: CW[1] = <b style="color:#f59e0b">11111110</b> (tombstone). Ищем <b style="color:#60a5fa">"wheel"</b>: tombstone → пропускаем, продолжаем → CW[2] совпал → <b style="color:#34d399">"wheel" найден ✓</b>. Цепочка не оборвалась.</div>
+                      <div class="tomb-st" data-s="3">При <b>вставке</b>: первый tombstone-слот запоминается. Если ключ не найден — вставляем туда. <b>Tombstone не нужен</b>, если в группе уже есть хоть один empty-слот: цепочка проб и так остановилась бы на нём, значит ничего «за ним» не могло оказаться по этому проходу.</div>
+                    </div>
+                  </div>
+
+                  <div class="grp-box">
+                    <div class="grp-hdr"><div>Group <b>944</b> — все 8 слотов заняты</div><div style="font-size:8px;color:#60a5fa;">delete("apple")</div></div>
+                    <div class="tomb-cwrow">
+                      <div class="tomb-cwlbl">CW</div>
+                      <div class="tomb-cwbytes">${(function(){
+                        var cws=['01111011','01100110','00101101','00011110','01110111','00010011','01111000','00100010'];
+                        return cws.map(function(pat,i){
+                          if(i===1){
+                            return '<div class="tomb-cwbyte tb-cw1">'
+                              +'<div class="tcv tcv-init"><div class="tomb-cwpat" style="color:#a78bfa">01100110</div><div class="tomb-cwtag">full · h2</div></div>'
+                              +'<div class="tcv tcv-empty"><div class="tomb-cwpat" style="color:#ef4444">10000000</div><div class="tomb-cwtag" style="color:#ef4444">empty?!</div><div class="tomb-stop-badge">STOP</div></div>'
+                              +'<div class="tcv tcv-tomb"><div class="tomb-cwpat" style="color:#f59e0b">11111110</div><div class="tomb-cwtag" style="color:#f59e0b">deleted</div></div>'
+                              +'</div>';
+                          }
+                          var cls = i===2 ? 'tb-cw2' : (i>1 ? 'tb-cw2-later' : '');
+                          var col = i===2 ? '#34d399' : 'var(--text,#1d1d1d)';
+                          var tag = i===0?'full':i===2?'wheel h2':'full';
+                          return '<div class="tomb-cwbyte '+cls+'">'
+                            +'<div class="tomb-cwpat" style="color:'+col+'">'+pat+'</div>'
+                            +'<div class="tomb-cwtag">'+tag+'</div>'
+                            +'</div>';
+                        }).join('');
+                      })()}</div>
+                    </div>
+                    ${(function(){
+                      var rows=[
+                        {slot:0,key:'"door"',val:'"lock"'},
+                        {slot:2,key:'"wheel"',val:'"round"',cls:'tb-s2'},
+                        {slot:3,key:'"sky"',val:'"blue"'},
+                        {slot:4,key:'"star"',val:'"bright"'},
+                        {slot:5,key:'"channel"',val:'"open"'},
+                        {slot:6,key:'"ice"',val:'"cold"'},
+                        {slot:7,key:'"code"',val:'"logic"'}
+                      ];
+                      var slot1Full='<div class="grp-slot gs grp-slot-full tb-s1-full" data-i="1">'
+                        +'<div class="grp-slbl">Slot 1</div>'
+                        +'<div class="grp-skey">"apple"</div>'
+                        +'<div class="grp-sval">"fruit"</div></div>';
+                      var slot1Gone='<div class="grp-slot gs grp-slot-empty tb-s1-gone" data-i="1">'
+                        +'<div class="grp-slbl">Slot 1</div>'
+                        +'<div class="grp-skey" style="color:var(--text-dim,#bbb);">—</div>'
+                        +'<div class="grp-sval" style="color:var(--text-dim,#bbb);font-size:8px;">удалено</div></div>';
+                      var out=rows.slice(0,1).map(function(d){
+                        return '<div class="grp-slot gs grp-slot-full '+(d.cls||'')+'" data-i="'+d.slot+'">'
+                          +'<div class="grp-slbl">Slot '+d.slot+'</div>'
+                          +'<div class="grp-skey">'+d.key+'</div>'
+                          +'<div class="grp-sval">'+d.val+'</div></div>';
+                      }).join('');
+                      out+=slot1Full+slot1Gone;
+                      out+=rows.slice(1).map(function(d){
+                        return '<div class="grp-slot gs grp-slot-full '+(d.cls||'')+'" data-i="'+d.slot+'">'
+                          +'<div class="grp-slbl">Slot '+d.slot+'</div>'
+                          +'<div class="grp-skey">'+d.key+'</div>'
+                          +'<div class="grp-sval">'+d.val+'</div></div>';
+                      }).join('');
+                      return out;
+                    })()}
+                  </div>
+
+                  <div class="tomb-note tomb-note-bad">✗ empty обрывает цепочку — "wheel" в Slot 2 никогда не найти. Поломанная карта.</div>
+                  <div class="tomb-note tomb-note-ok">✓ tombstone пропускается при поиске, не обрывая цепочку. "wheel" найден. Карта работает корректно.</div>
+                  <div class="tomb-note tomb-note-tip">Tombstone переиспользуется при вставке — он лучше empty (меньше движений при rehash). Если в группе уже есть empty — можно сразу поставить empty без tombstone: probe chain и без того оборвётся на нём.</div>
+
+                  <div class="tomb-controls">
+                    <button class="tomb-btn" id="tombBP" disabled onclick="(function(){var w=document.getElementById('tombW');var n=Math.max(0,parseInt(w.getAttribute('data-step')||'0')-1);w.setAttribute('data-step',n);document.getElementById('tombBP').disabled=n<=0;document.getElementById('tombBN').disabled=false;})()">← назад</button>
+                    <div class="tomb-dots">${[0,1,2,3].map(function(i){return '<div class="tomb-dot td" data-i="'+i+'"></div>';}).join('')}</div>
+                    <button class="tomb-btn tomb-btn-go" id="tombBN" onclick="(function(){var w=document.getElementById('tombW');var n=Math.min(3,parseInt(w.getAttribute('data-step')||'0')+1);w.setAttribute('data-step',n);document.getElementById('tombBP').disabled=false;document.getElementById('tombBN').disabled=n>=3;})()"></button>
+                  </div>
+                </div>
+              </div>
+              <!-- /TOMBSTONE SECTION -->
+
+              <!-- TOMBSTONE CLEANUP SECTION -->
+              <style>
+                .clean-st{display:none;font-size:10px;line-height:1.65;color:var(--text,#1d1d1d);}
+                #cleanW[data-step="0"] .clean-st[data-s="0"],
+                #cleanW[data-step="1"] .clean-st[data-s="1"],
+                #cleanW[data-step="2"] .clean-st[data-s="2"],
+                #cleanW[data-step="3"] .clean-st[data-s="3"]{display:block;}
+                #cleanW[data-step="0"] .clean-stepnum::after{content:"ШАГ 1 / 4";}
+                #cleanW[data-step="1"] .clean-stepnum::after{content:"ШАГ 2 / 4";}
+                #cleanW[data-step="2"] .clean-stepnum::after{content:"ШАГ 3 / 4";}
+                #cleanW[data-step="3"] .clean-stepnum::after{content:"ШАГ 4 / 4";}
+                .clean-stepnum{font-size:8px;color:var(--text-dim,#888);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;}
+                .clean-table{display:flex;gap:3px;overflow-x:auto;padding:2px 0 4px;}
+                .clean-group{display:flex;flex-direction:column;align-items:center;gap:3px;}
+                .clean-gbox{border:1.5px solid var(--border,#e0e0e0);border-radius:5px;padding:3px 4px;background:var(--surface,#fff);display:flex;flex-direction:column;gap:1.5px;transition:all .3s;min-width:44px;}
+                .clean-gnum{font-size:8px;color:var(--text-dim,#888);text-align:center;font-family:'JetBrains Mono',monospace;}
+                .clean-slot-row{height:7px;display:flex;gap:1.5px;}
+                .csr-k{flex:1;background:#7ab3d4;border-radius:1.5px;}
+                .csr-v{flex:1;background:#d4849a;border-radius:1.5px;}
+                .csr-t{flex:2;background:rgba(245,158,11,.2);border:1px dashed rgba(245,158,11,.7);border-radius:1.5px;display:flex;align-items:center;justify-content:center;font-size:5.5px;color:#f59e0b;transition:all .35s;}
+                .csr-e{flex:2;border:1px solid var(--border,#ddd);border-radius:1.5px;background:var(--bg,#f5f5f5);}
+                #cleanW[data-step="1"] .csr-t{opacity:.18;background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.35);}
+                #cleanW[data-step="2"] .cg-needed,
+                #cleanW[data-step="3"] .cg-needed{border-color:#f59e0b;background:rgba(245,158,11,.05);}
+                #cleanW[data-step="2"] .cg-target,
+                #cleanW[data-step="3"] .cg-target{border-color:#34d399;background:rgba(52,211,153,.05);}
+                #cleanW[data-step="2"] .cg-prunable,
+                #cleanW[data-step="3"] .cg-prunable{border-color:#a78bfa;background:rgba(167,139,250,.05);}
+                .clean-probe{display:none;align-items:center;gap:4px;margin-top:8px;padding:5px 10px;background:var(--bg,#f5f5f5);border:1px solid var(--border,#e0e0e0);border-radius:6px;flex-wrap:wrap;}
+                #cleanW[data-step="2"] .clean-probe,
+                #cleanW[data-step="3"] .clean-probe{display:flex;}
+                .cp-grp{padding:2px 7px;border-radius:4px;font-size:8px;font-weight:700;font-family:'JetBrains Mono',monospace;}
+                .cp-arrow{font-size:9px;color:var(--text-dim,#888);}
+                .cp-needed{background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3);}
+                .cp-target{background:rgba(52,211,153,.15);color:#34d399;border:1px solid rgba(52,211,153,.3);}
+                .clean-legend{display:none;margin-top:6px;align-items:center;gap:8px;flex-wrap:wrap;}
+                #cleanW[data-step="2"] .clean-legend,
+                #cleanW[data-step="3"] .clean-legend{display:flex;}
+                .cl-item{display:flex;align-items:center;gap:3px;font-size:8px;}
+                .cl-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+                .clean-rule{display:none;margin-top:8px;padding:6px 10px;background:var(--bg,#f5f5f5);border:1px solid var(--border,#e0e0e0);border-radius:6px;font-size:9px;line-height:1.8;}
+                #cleanW[data-step="3"] .clean-rule{display:block;}
+                .cr-yes{color:#34d399;font-weight:700;}
+                .cr-no{color:#a78bfa;font-weight:700;}
+                .clean-controls{display:flex;align-items:center;gap:10px;margin-top:10px;}
+                .clean-btn{padding:4px 13px;border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:9.5px;cursor:pointer;border:1px solid var(--border,#e0e0e0);background:var(--surface,#fff);color:var(--text,#1d1d1d);transition:border-color .15s,color .15s;}
+                .clean-btn:hover{border-color:#4a9fd4;color:#4a9fd4;}
+                .clean-btn:disabled{opacity:.35;cursor:default;}
+                .clean-btn-go{border-color:#a78bfa;color:#a78bfa;background:rgba(167,139,250,.06);}
+                .clean-dots{display:flex;gap:5px;}
+                .clean-dot{width:6px;height:6px;border-radius:50%;background:var(--border,#ddd);transition:background .2s;}
+                #cleanW[data-step="0"] .cd[data-i="0"],
+                #cleanW[data-step="1"] .cd[data-i="1"],
+                #cleanW[data-step="2"] .cd[data-i="2"],
+                #cleanW[data-step="3"] .cd[data-i="3"]{background:#a78bfa;}
+                #cleanBN::after{content:"далее →";}
+                #cleanW[data-step="3"] #cleanBN::after{content:"готово ✓";}
+              </style>
+
+              <div style="margin-top:22px;">
+                <p class="tight" style="margin-bottom:10px"><b>Очистка tombstone'ов: два механизма</b></p>
+                <div id="cleanW" data-step="0" style="font-family:'JetBrains Mono',monospace;font-size:11px;">
+                  <div class="grp-top">
+                    <div class="grp-stepbox">
+                      <div class="clean-stepnum"></div>
+                      <div class="clean-st" data-s="0">Tombstone'ы (<b style="color:#f59e0b">†</b>) накапливаются после удалений: занимают слоты и замедляют поиск. Два способа избавиться: <b>рост таблицы</b> или <b>prune на месте</b>.</div>
+                      <div class="clean-st" data-s="1"><b>Механизм 1 — рост таблицы (tombstone removal).</b> При rehash копируем только live-ключи. Tombstone'ы (<b style="color:#34d399">†</b> исчезают) не переносятся — новая таблица чистая. Но дорого: O(n) + новая память.</div>
+                      <div class="clean-st" data-s="2"><b>Механизм 2 — prune in place.</b> Ключ в <b style="color:#34d399">G6</b> попал туда через G0→G1→G3→G6. Эти группы <b style="color:#f59e0b">protected</b>: их tombstone'ы нельзя чистить, иначе поиск оборвётся раньше. <b style="color:#a78bfa">G5</b> — не на чьей-то цепочке, можно.</div>
+                      <div class="clean-st" data-s="3"><b>Когда запускать prune?</b> Алгоритм дорогой — O(n). Смотрим: <code style="background:var(--bg,#f5f5f5);padding:0 4px;border-radius:3px;">num_tombstones >= 10% of max_growth_left</code>. Если нет — ждём следующего роста, tombstone'ы умрут при rehash сами.</div>
+                    </div>
+                  </div>
+
+                  <div class="grp-box" style="padding:8px 12px 10px;">
+                    ${(function(){
+                      var groups=[
+                        {n:'0',s:['f','f','f','t','f','f','t','f'],cls:'cg-needed'},
+                        {n:'1',s:['f','t','f','f','f','t','f','f'],cls:'cg-needed'},
+                        {n:'2',s:['f','f','f','f','e','e','e','e'],cls:''},
+                        {n:'3',s:['f','f','t','f','f','f','f','f'],cls:'cg-needed'},
+                        {n:'4',s:['f','f','f','e','e','e','e','e'],cls:''},
+                        {n:'5',s:['f','t','t','f','f','e','e','e'],cls:'cg-prunable'},
+                        {n:'6',s:['f','f','f','f','f','f','f','e'],cls:'cg-target'},
+                        {n:'7',s:['f','f','e','e','e','e','e','e'],cls:''}
+                      ];
+                      var html='<div class="clean-table">';
+                      groups.forEach(function(g){
+                        var slots=g.s.map(function(s){
+                          if(s==='f') return '<div class="clean-slot-row"><div class="csr-k"></div><div class="csr-v"></div></div>';
+                          if(s==='t') return '<div class="clean-slot-row"><div class="csr-t">†</div></div>';
+                          return '<div class="clean-slot-row"><div class="csr-e"></div></div>';
+                        }).join('');
+                        html+='<div class="clean-group"><div class="clean-gbox '+g.cls+'">'+slots+'</div><div class="clean-gnum">'+g.n+'</div></div>';
+                      });
+                      return html+'</div>';
+                    })()}
+                  </div>
+
+                  <div class="clean-probe">
+                    <span style="font-size:7.5px;color:var(--text-dim,#888);margin-right:2px;">probe chain:</span>
+                    <span class="cp-grp cp-needed">G0</span>
+                    <span class="cp-arrow">→</span>
+                    <span class="cp-grp cp-needed">G1</span>
+                    <span class="cp-arrow">→</span>
+                    <span class="cp-grp cp-needed">G3</span>
+                    <span class="cp-arrow">→</span>
+                    <span class="cp-grp cp-target">G6 ✓</span>
+                    <span style="font-size:7.5px;color:var(--text-dim,#888);margin-left:6px;">i, i+1, i+3, i+6 (треугольное)</span>
+                  </div>
+
+                  <div class="clean-legend">
+                    <div class="cl-item"><div class="cl-dot" style="background:rgba(245,158,11,.2);border:1px solid #f59e0b;"></div><span style="color:#f59e0b;">protected — нельзя чистить</span></div>
+                    <div class="cl-item"><div class="cl-dot" style="background:rgba(52,211,153,.2);border:1px solid #34d399;"></div><span style="color:#34d399;">target — ключ найден здесь</span></div>
+                    <div class="cl-item"><div class="cl-dot" style="background:rgba(167,139,250,.2);border:1px solid #a78bfa;"></div><span style="color:#a78bfa;">prunable — tombstone'ы можно чистить</span></div>
+                  </div>
+
+                  <div class="clean-rule">
+                    <div style="margin-bottom:4px;color:var(--text-dim,#888);font-size:8.5px;">num_tombstones >= 10% of max_growth_left ?</div>
+                    <div><span class="cr-yes">→ да:</span> запускаем prune — чистим tombstone'ы на месте без роста</div>
+                    <div><span class="cr-no">→ нет:</span> не трогаем — при следующем rehash уйдут сами</div>
+                  </div>
+
+                  <div class="clean-controls">
+                    <button class="clean-btn" id="cleanBP" disabled onclick="(function(){var w=document.getElementById('cleanW');var n=Math.max(0,parseInt(w.getAttribute('data-step')||'0')-1);w.setAttribute('data-step',n);document.getElementById('cleanBP').disabled=n<=0;document.getElementById('cleanBN').disabled=false;})()">← назад</button>
+                    <div class="clean-dots">${[0,1,2,3].map(function(i){return '<div class="clean-dot cd" data-i="'+i+'"></div>';}).join('')}</div>
+                    <button class="clean-btn clean-btn-go" id="cleanBN" onclick="(function(){var w=document.getElementById('cleanW');var n=Math.min(3,parseInt(w.getAttribute('data-step')||'0')+1);w.setAttribute('data-step',n);document.getElementById('cleanBP').disabled=false;document.getElementById('cleanBN').disabled=n>=3;})()"></button>
+                  </div>
+                </div>
+              </div>
+              <!-- /TOMBSTONE CLEANUP SECTION -->
+
+              <!-- H2 LOOKUP ALGORITHM SECTION -->
+              <style>
+                .h2w-nav{display:flex;align-items:center;gap:8px;padding:8px 0 10px;}
+                .h2w-btn{background:var(--surface,#fff);border:1px solid var(--border,#ddd);border-radius:5px;padding:3px 12px;font-size:10px;cursor:pointer;color:var(--text-dim,#888);font-family:'JetBrains Mono',monospace;}
+                .h2w-btn:hover{background:var(--bg,#f5f5f5);}
+                .h2w-btn:disabled{opacity:.35;cursor:default;}
+                .h2w-btn.h2w-primary{border-color:#7F77DD;color:#534AB7;}
+                .h2w-dots{display:flex;gap:5px;flex:1;justify-content:center;}
+                .h2w-dot{width:6px;height:6px;border-radius:50%;background:var(--border,#ddd);transition:background .2s;}
+                .h2w-dot.h2w-on{background:#7F77DD;}
+                .h2w-snum{font-size:8px;color:var(--text-dim,#888);font-family:'JetBrains Mono',monospace;}
+                .h2w-step{display:none;}
+                .h2w-step.h2w-on{display:block;}
+                .h2brow{display:flex;gap:3px;align-items:flex-end;margin:5px 0;overflow-x:auto;}
+                .h2brow-lbl{font-size:9px;color:var(--text-dim,#888);min-width:110px;flex-shrink:0;padding-bottom:2px;}
+                .h2byte{display:flex;flex-direction:column;align-items:center;gap:2px;}
+                .h2bv{font-size:8.5px;padding:2px 3px;border-radius:3px;border:1px solid var(--border,#ddd);background:var(--bg,#f5f5f5);color:var(--text,#1d1d1d);letter-spacing:.02em;white-space:nowrap;font-family:'JetBrains Mono',monospace;}
+                .h2bv.h2m{border-color:#1D9E75;background:rgba(29,158,117,.1);color:#0F6E56;}
+                .h2bv.h2e{color:var(--text-dim,#bbb);}
+                .h2bv.h2d{opacity:.3;}
+                .h2bv.h2hi{border-color:#7F77DD;background:rgba(127,119,221,.1);color:#534AB7;}
+                .h2bidx{font-size:7px;color:var(--text-dim,#aaa);}
+                .h2op{font-size:9px;color:var(--text-dim,#888);padding:1px 0 1px 114px;}
+                .h2op-sym{font-size:11px;color:#7F77DD;font-weight:700;}
+                .h2hr{border:0;border-top:1px solid var(--border,#ddd);margin:3px 0 3px 114px;}
+                .h2note{font-size:9.5px;color:var(--text-dim,#777);line-height:1.6;margin-top:7px;}
+                .h2note b{color:var(--text,#1d1d1d);}
+                .h2note .h2ok{color:#0F6E56;font-weight:700;}
+                .h2code{background:var(--surface,#fff);border:1px solid var(--border,#ddd);border-radius:5px;padding:8px 12px;font-size:9.5px;color:var(--text,#1d1d1d);margin:8px 0;line-height:1.8;font-family:'JetBrains Mono',monospace;}
+                .h2cdim{color:var(--text-dim,#aaa);}
+                .h2cpu{color:#534AB7;}
+                .h2cgr{color:#0F6E56;}
+                .h2var-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0;}
+                .h2vcard{background:var(--surface,#fff);border:1px solid var(--border,#ddd);border-radius:8px;padding:10px 12px;}
+                .h2vcard.h2vf{border-color:#7F77DD;}
+                .h2vtag{font-size:8px;padding:1px 7px;border-radius:20px;margin-bottom:6px;display:inline-block;}
+                .h2vtag.h2vs{background:rgba(127,119,221,.12);color:#3C3489;}
+                .h2vtag.h2vb{background:var(--bg,#f5f5f5);border:1px solid var(--border,#ddd);color:var(--text-dim,#888);}
+                .h2vtitle{font-size:10px;font-weight:700;color:var(--text,#1d1d1d);margin-bottom:3px;}
+                .h2vdesc{font-size:9px;color:var(--text-dim,#888);line-height:1.6;}
+                .h2vstep-note{font-size:9px;color:var(--text-dim,#888);margin-top:8px;border-top:1px solid var(--border,#ddd);padding-top:6px;line-height:1.5;}
+                .h2ext-row{display:flex;align-items:center;gap:7px;margin:5px 0;font-size:9.5px;}
+                .h2ext-eq{color:var(--text-dim,#bbb);}
+                .h2ext-val{color:#534AB7;font-family:'JetBrains Mono',monospace;}
+                .h2ext-res{color:#0F6E56;font-family:'JetBrains Mono',monospace;font-weight:700;}
+                .h2ext-lbl{color:var(--text-dim,#888);}
+                .h2iter{background:var(--bg,#f5f5f5);border:1px solid var(--border,#ddd);border-radius:5px;padding:7px 10px;margin-top:8px;font-size:9.5px;line-height:1.8;color:var(--text-dim,#777);}
+                .h2iter b{color:var(--text,#1d1d1d);}
+              </style>
+              <div style="margin-bottom:14px;">
+                <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim,#888);margin-bottom:10px;">Поиск h2 внутри группы — ctrlGroupMatchH2</div>
+                <div class="h2w-nav">
+                  <button class="h2w-btn" id="h2Prev" onclick="(function(){var w=document.getElementById('h2mW');var s=parseInt(w.getAttribute('data-step')||'0');s=Math.max(0,s-1);w.setAttribute('data-step',s);document.getElementById('h2Prev').disabled=s<=0;document.getElementById('h2Next').disabled=false;document.getElementById('h2Next').textContent=s>=4?'готово ✓':'далее →';document.getElementById('h2Snum').textContent=s+' / 4';document.querySelectorAll('.h2w-dot').forEach(function(d,i){d.className='h2w-dot'+(i===s?' h2w-on':'');});document.querySelectorAll('.h2w-step').forEach(function(d,i){d.className='h2w-step'+(i===s?' h2w-on':'');});})()">← назад</button>
+                  <div class="h2w-dots" id="h2Dots">
+                    <div class="h2w-dot h2w-on"></div>
+                    <div class="h2w-dot"></div>
+                    <div class="h2w-dot"></div>
+                    <div class="h2w-dot"></div>
+                    <div class="h2w-dot"></div>
+                  </div>
+                  <span class="h2w-snum" id="h2Snum">0 / 4</span>
+                  <button class="h2w-btn h2w-primary" id="h2Next" onclick="(function(){var w=document.getElementById('h2mW');var s=parseInt(w.getAttribute('data-step')||'0');s=Math.min(4,s+1);w.setAttribute('data-step',s);document.getElementById('h2Prev').disabled=false;document.getElementById('h2Next').disabled=s>=4;document.getElementById('h2Next').textContent=s>=4?'готово ✓':'далее →';document.getElementById('h2Snum').textContent=s+' / 4';document.querySelectorAll('.h2w-dot').forEach(function(d,i){d.className='h2w-dot'+(i===s?' h2w-on':'');});document.querySelectorAll('.h2w-step').forEach(function(d,i){d.className='h2w-step'+(i===s?' h2w-on':'');});})()">далее →</button>
+                </div>
+                <div id="h2mW" data-step="0" style="background:var(--surface,#fff);border:1px solid var(--border,#ddd);border-radius:8px;padding:12px 14px;min-height:180px;">
+
+                  <div class="h2w-step h2w-on">
+                    <div class="h2var-grid">
+                      <div class="h2vcard h2vf">
+                        <span class="h2vtag h2vs">Вариант 1 — SIMD</span>
+                        <div class="h2vtitle">Одна инструкция, 8 байт</div>
+                        <div class="h2code"><span class="h2cdim">// AVX2 (x86)</span>
+_mm256_cmpeq_epi8(vctrls, vq)
+<span class="h2cdim">// ARM NEON</span>
+vceqq_u8(vctrls, vq)</div>
+                        <div class="h2vdesc">CPU сравнивает все 8 CW-байт одновременно за ~1 такт. x86 AVX2, ARM NEON.</div>
+                      </div>
+                      <div class="h2vcard">
+                        <span class="h2vtag h2vb">Вариант 2 — bit tricks</span>
+                        <div class="h2vtitle">Чистая битовая арифметика</div>
+                        <div class="h2code"><span class="h2cpu">v</span> := uint64(g) ^
+  (bitsetLSB * uint64(h))
+<span class="h2cgr">return</span> bitset(
+  ((v - bitsetLSB) &amp;^ v)
+  &amp; bitsetMSB)</div>
+                        <div class="h2vdesc">Generic fallback — работает на любом 64-битном CPU без SIMD. ~5 операций.</div>
+                      </div>
+                    </div>
+                    <div class="h2vstep-note">Go 1.24 выбирает вариант при компиляции. Шаги 1–4 — разбор варианта 2 пошагово.</div>
+                  </div>
+
+                  <div class="h2w-step">
+                    <div class="h2note" style="margin-bottom:8px;">Группа: 4 занятых слота + 4 пустых. Ищем h2 = <b>1111111</b> (0x7F).</div>
+                    <div class="h2brow">
+                      <div class="h2brow-lbl">g (CW-байты):</div>
+                      <div class="h2byte"><div class="h2bv h2m">01111111</div><div class="h2bidx">CW[0]</div></div>
+                      <div class="h2byte"><div class="h2bv">01100110</div><div class="h2bidx">CW[1]</div></div>
+                      <div class="h2byte"><div class="h2bv">00101101</div><div class="h2bidx">CW[2]</div></div>
+                      <div class="h2byte"><div class="h2bv">00011110</div><div class="h2bidx">CW[3]</div></div>
+                      <div class="h2byte"><div class="h2bv h2e">10000000</div><div class="h2bidx">CW[4]</div></div>
+                      <div class="h2byte"><div class="h2bv h2e">10000000</div><div class="h2bidx">CW[5]</div></div>
+                      <div class="h2byte"><div class="h2bv h2e">10000000</div><div class="h2bidx">CW[6]</div></div>
+                      <div class="h2byte"><div class="h2bv h2e">10000000</div><div class="h2bidx">CW[7]</div></div>
+                    </div>
+                    <div class="h2note"><b>CW[0] = 01111111</b> — флаг=0 (занято), h2=1111111. Потенциальный матч.<br>CW[4..7] = 10000000 — пустые слоты.<br>Ищем: <span style="font-family:'JetBrains Mono',monospace;color:#534AB7;">01111111</span></div>
+                  </div>
+
+                  <div class="h2w-step">
+                    <div class="h2note" style="margin-bottom:6px;"><b>v = g ^ (bitsetLSB × h)</b> — broadcast h2 во все 8 байт, XOR с g. Нулевой байт = совпадение.</div>
+                    <div class="h2brow">
+                      <div class="h2brow-lbl">g:</div>
+                      <div class="h2byte"><div class="h2bv h2m">01111111</div></div>
+                      <div class="h2byte"><div class="h2bv">01100110</div></div>
+                      <div class="h2byte"><div class="h2bv">00101101</div></div>
+                      <div class="h2byte"><div class="h2bv">00011110</div></div>
+                      <div class="h2byte"><div class="h2bv h2e">10000000</div></div>
+                      <div class="h2byte"><div class="h2bv h2e">10000000</div></div>
+                      <div class="h2byte"><div class="h2bv h2e">10000000</div></div>
+                      <div class="h2byte"><div class="h2bv h2e">10000000</div></div>
+                    </div>
+                    <div class="h2op"><span class="h2op-sym">^</span> broadcast (bitsetLSB×h):</div>
+                    <div class="h2brow">
+                      <div class="h2brow-lbl"></div>
+                      <div class="h2byte"><div class="h2bv h2hi">01111111</div></div>
+                      <div class="h2byte"><div class="h2bv h2hi">01111111</div></div>
+                      <div class="h2byte"><div class="h2bv h2hi">01111111</div></div>
+                      <div class="h2byte"><div class="h2bv h2hi">01111111</div></div>
+                      <div class="h2byte"><div class="h2bv h2hi">01111111</div></div>
+                      <div class="h2byte"><div class="h2bv h2hi">01111111</div></div>
+                      <div class="h2byte"><div class="h2bv h2hi">01111111</div></div>
+                      <div class="h2byte"><div class="h2bv h2hi">01111111</div></div>
+                    </div>
+                    <div class="h2hr"></div>
+                    <div class="h2brow">
+                      <div class="h2brow-lbl">v:</div>
+                      <div class="h2byte"><div class="h2bv h2m">00000000</div></div>
+                      <div class="h2byte"><div class="h2bv">00011001</div></div>
+                      <div class="h2byte"><div class="h2bv">01010010</div></div>
+                      <div class="h2byte"><div class="h2bv">01100001</div></div>
+                      <div class="h2byte"><div class="h2bv h2d">11111111</div></div>
+                      <div class="h2byte"><div class="h2bv h2d">11111111</div></div>
+                      <div class="h2byte"><div class="h2bv h2d">11111111</div></div>
+                      <div class="h2byte"><div class="h2bv h2d">11111111</div></div>
+                    </div>
+                    <div class="h2note"><span class="h2ok">00000000</span> — CW[0] совпал с h2. Остальные ненулевые → нет матча.</div>
+                  </div>
+
+                  <div class="h2w-step">
+                    <div class="h2note" style="margin-bottom:6px;"><b>(v − bitsetLSB) &amp;^ v &amp; bitsetMSB</b> — нулевые байты превращаются в 10000000.</div>
+                    <div class="h2brow">
+                      <div class="h2brow-lbl">v:</div>
+                      <div class="h2byte"><div class="h2bv h2m">00000000</div></div>
+                      <div class="h2byte"><div class="h2bv">00011001</div></div>
+                      <div class="h2byte"><div class="h2bv">01010010</div></div>
+                      <div class="h2byte"><div class="h2bv">01100001</div></div>
+                      <div class="h2byte"><div class="h2bv h2d">11111111</div></div>
+                      <div class="h2byte"><div class="h2bv h2d">11111111</div></div>
+                      <div class="h2byte"><div class="h2bv h2d">11111111</div></div>
+                      <div class="h2byte"><div class="h2bv h2d">11111111</div></div>
+                    </div>
+                    <div class="h2op"><span class="h2op-sym">−</span> bitsetLSB, <span class="h2op-sym">&amp;^</span> v, <span class="h2op-sym">&amp;</span> bitsetMSB:</div>
+                    <div class="h2hr"></div>
+                    <div class="h2brow">
+                      <div class="h2brow-lbl">bitset:</div>
+                      <div class="h2byte"><div class="h2bv h2m">10000000</div></div>
+                      <div class="h2byte"><div class="h2bv h2d">00000000</div></div>
+                      <div class="h2byte"><div class="h2bv h2d">00000000</div></div>
+                      <div class="h2byte"><div class="h2bv h2d">00000000</div></div>
+                      <div class="h2byte"><div class="h2bv h2d">00000000</div></div>
+                      <div class="h2byte"><div class="h2bv h2d">00000000</div></div>
+                      <div class="h2byte"><div class="h2bv h2d">00000000</div></div>
+                      <div class="h2byte"><div class="h2bv h2d">00000000</div></div>
+                    </div>
+                    <div class="h2note"><span class="h2ok">10000000</span> в байте CW[0] — матч на слоте 0. Пустые байты (0xFF) фильтруются &amp;^v. Один бит на каждый совпавший слот.</div>
+                  </div>
+
+                  <div class="h2w-step">
+                    <div class="h2note" style="margin-bottom:8px;"><b>Извлекаем индекс слота, итерируем.</b></div>
+                    <div class="h2brow">
+                      <div class="h2brow-lbl">bitset:</div>
+                      <div class="h2byte"><div class="h2bv h2m">10000000</div></div>
+                      <div class="h2byte"><div class="h2bv h2d">00000000</div></div>
+                      <div class="h2byte"><div class="h2bv h2d">00000000</div></div>
+                      <div class="h2byte"><div class="h2bv h2d">00000000</div></div>
+                      <div class="h2byte"><div class="h2bv h2d">00000000</div></div>
+                      <div class="h2byte"><div class="h2bv h2d">00000000</div></div>
+                      <div class="h2byte"><div class="h2bv h2d">00000000</div></div>
+                      <div class="h2byte"><div class="h2bv h2d">00000000</div></div>
+                    </div>
+                    <div class="h2ext-row" style="margin-top:8px;">
+                      <span class="h2ext-lbl">TrailingZeros64(bitset)</span>
+                      <span class="h2ext-eq">=</span>
+                      <span class="h2ext-val">7</span>
+                    </div>
+                    <div class="h2ext-row">
+                      <span class="h2ext-lbl">slot = 7 >> 3</span>
+                      <span class="h2ext-eq">=</span>
+                      <span class="h2ext-res">0</span>
+                      <span class="h2ext-lbl">→ сравниваем ключ слота 0</span>
+                    </div>
+                    <div class="h2iter">
+                      <b>Если ключ совпал</b> → нашли значение.<br>
+                      <b>Итерация:</b> <span style="font-family:'JetBrains Mono',monospace;">match &amp;= match - 1</span> — сбрасываем младший бит → следующий матч.<br>
+                      <b>Ложные срабатывания</b> редки (только при h2 = 2ⁿ), корректности не нарушают — key comparison отсеивает.
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+              <!-- /H2 LOOKUP ALGORITHM SECTION -->
+
+                            <div class="impl-sources">Источники: src/internal/runtime/maps/map.go · src/internal/runtime/maps/table.go · go.dev/doc/go1.24 · abseil.io/about/design/swisstables</div>
             </div>
           </details>
 
