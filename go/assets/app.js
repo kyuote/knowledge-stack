@@ -3783,7 +3783,28 @@ type Good struct {
 } // итого: 16 байт</code></pre>
           </div>
 
-          <p class="tight">Поля нужно <b>сортировать от большего к меньшему</b> чтобы минимизировать padding и размер структуры.</p>
+          <p class="tight">Поля нужно <b>сортировать от большего к меньшему</b> чтобы минимизировать padding и размер структуры. Но не торопитесь — <b>читаемость важнее</b>: группируй поля по смыслу там, где структура не горячая. Оптимизировать порядок стоит только там, где структура создаётся миллионами или живёт в tight loop.</p>
+
+          <!-- ALIGNMENT WIDGET -->
+          <style>
+            .al-tog{font-family:'JetBrains Mono',monospace;font-size:11px;padding:5px 12px;border-radius:7px;border:1px solid transparent;cursor:pointer;background:transparent;color:var(--text-dim,#888);transition:all .15s;}
+            .al-tog.al-tog-on{background:var(--bg,#111);color:var(--text,#eee);border-color:var(--border,#333);}
+          </style>
+          <div style="margin:14px 0 0;border:1px solid var(--border,#2f2f2f);border-radius:10px;overflow:hidden;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border,#2f2f2f);background:var(--bg,#111);">
+              <span style="font-size:11px;font-weight:700;color:var(--text,#eee)">Padding в памяти: плохой vs оптимальный порядок</span>
+              <div style="display:flex;gap:4px;background:var(--surface,#1c1c1c);border:1px solid var(--border,#2f2f2f);border-radius:8px;padding:3px;">
+                <button class="al-tog al-tog-on" id="alTogBad" onclick="window._alignSetMode('bad')">❌ плохой</button>
+                <button class="al-tog" id="alTogGood" onclick="window._alignSetMode('good')">✓ оптимальный</button>
+              </div>
+            </div>
+            <div style="padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div id="alCode"></div>
+              <div id="alGrid"></div>
+            </div>
+            <div id="alNote" style="margin:0 12px 12px;padding:8px 10px;background:var(--bg,#111);border-left:3px solid var(--accent,#7F77DD);border-radius:0 6px 6px 0;font-size:11.5px;line-height:1.6;color:var(--text-dim,#888)"></div>
+          </div>
+          <!-- /ALIGNMENT WIDGET -->
 
           <div class="callout interview">
             <div class="mark">собес</div>
@@ -3795,6 +3816,100 @@ type Good struct {
       },
 
     };
+
+    // ── Alignment widget (struct impl panel) ─────────────────────────────
+    window._alignInit = function() {
+      window._alignSetMode('bad');
+    };
+    window._alignSetMode = function(mode) {
+      var togBad = document.getElementById('alTogBad');
+      var togGood = document.getElementById('alTogGood');
+      if (!togBad) return;
+      togBad.className = 'al-tog' + (mode === 'bad' ? ' al-tog-on' : '');
+      togGood.className = 'al-tog' + (mode === 'good' ? ' al-tog-on' : '');
+      var FIELDS = {
+        bad: [
+          {name:'a', type:'bool',  size:1, color:'#9B8FFF', padAfter:7},
+          {name:'b', type:'int64', size:8, color:'#4D9BE6', padAfter:0},
+          {name:'c', type:'int32', size:4, color:'#3DD68C', padAfter:0},
+          {name:'d', type:'int16', size:2, color:'#F0B429', padAfter:0},
+          {name:'e', type:'bool',  size:1, color:'#E879A0', padAfter:1}
+        ],
+        good: [
+          {name:'b', type:'int64', size:8, color:'#4D9BE6', padAfter:0},
+          {name:'c', type:'int32', size:4, color:'#3DD68C', padAfter:0},
+          {name:'d', type:'int16', size:2, color:'#F0B429', padAfter:0},
+          {name:'a', type:'bool',  size:1, color:'#9B8FFF', padAfter:0},
+          {name:'e', type:'bool',  size:1, color:'#E879A0', padAfter:0}
+        ]
+      };
+      var fields = FIELDS[mode];
+      // build bytes array
+      var bytes = [];
+      fields.forEach(function(f) {
+        for (var i = 0; i < f.size; i++) bytes.push({label:f.name, color:f.color, type:f.type, pad:false});
+        for (var i = 0; i < f.padAfter; i++) bytes.push({label:'pad', color:null, type:'pad', pad:true});
+      });
+      var total = bytes.length;
+      var padCount = bytes.filter(function(b){return b.pad;}).length;
+      // render code
+      var code = '<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;line-height:2;color:var(--text-dim,#888)">type <b style="color:var(--text,#eee)">' + (mode==='bad'?'Bad':'Good') + '</b> struct {</div>';
+      fields.forEach(function(f) {
+        code += '<div style="display:flex;align-items:center;gap:6px;font-family:\'JetBrains Mono\',monospace;font-size:11px;line-height:1.8">'
+          + '<span style="width:8px;height:8px;border-radius:50%;background:'+f.color+';display:inline-block;flex-shrink:0"></span>'
+          + '<span style="color:var(--text,#eee)">' + f.name.padEnd(4,' ') + '</span>'
+          + '<span style="color:var(--text-dim,#888);margin-left:4px">' + f.type + '</span>'
+          + (f.padAfter > 0 ? '<span style="color:#F0B429;font-size:9px;margin-left:4px">+' + f.padAfter + ' pad</span>' : '')
+          + '</div>';
+      });
+      code += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:var(--text-dim,#888)">}</div>';
+      code += '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding:8px 10px;background:var(--bg,#111);border-radius:7px">'
+        + '<div><div style="font-size:9px;color:var(--text-dim,#888)">итого</div><div style="font-size:18px;font-weight:700;color:var(--text,#eee);font-family:\'JetBrains Mono\',monospace">' + total + ' байт</div></div>'
+        + (padCount > 0
+            ? '<div style="font-size:10px;padding:3px 8px;border-radius:5px;background:rgba(240,180,41,.15);color:#F0B429">' + padCount + ' байт впустую</div>'
+            : '<div style="font-size:10px;padding:3px 8px;border-radius:5px;background:rgba(61,214,140,.15);color:#3DD68C">без потерь ✓</div>')
+        + '</div>';
+      document.getElementById('alCode').innerHTML = code;
+      // render grid (8 bytes per row)
+      var COLS = 8;
+      var rows = Math.ceil(total / COLS);
+      var grid = '';
+      for (var r = 0; r < rows; r++) {
+        grid += '<div style="display:flex;gap:2px;margin-bottom:4px;align-items:center">'
+          + '<div style="font-family:\'JetBrains Mono\',monospace;font-size:8px;color:var(--text-dim,#888);width:24px;flex-shrink:0;text-align:right;padding-right:4px">' + (r*8).toString(16).padStart(2,'0') + '</div>';
+        for (var c = 0; c < COLS; c++) {
+          var idx = r * COLS + c;
+          if (idx >= total) { grid += '<div style="flex:1"></div>'; continue; }
+          var b = bytes[idx];
+          if (b.pad) {
+            grid += '<div style="flex:1;height:30px;border-radius:4px;background:rgba(42,50,80,.6);border:1px dashed rgba(90,100,140,.4);display:flex;align-items:center;justify-content:center;font-family:\'JetBrains Mono\',monospace;font-size:8px;color:rgba(90,100,140,.8)">~</div>';
+          } else {
+            grid += '<div style="flex:1;height:30px;border-radius:4px;background:' + b.color + '22;border:1px solid ' + b.color + '55;display:flex;align-items:center;justify-content:center;font-family:\'JetBrains Mono\',monospace;font-size:8px;color:' + b.color + '">' + b.label[0] + '</div>';
+          }
+        }
+        grid += '</div>';
+      }
+      // legend
+      var seen = {};
+      grid += '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px">';
+      bytes.forEach(function(b) {
+        if (seen[b.label]) return; seen[b.label] = true;
+        if (b.pad) {
+          grid += '<div style="display:flex;align-items:center;gap:4px;font-family:\'JetBrains Mono\',monospace;font-size:9.5px;color:var(--text-dim,#888)"><div style="width:8px;height:8px;border-radius:2px;background:rgba(42,50,80,.6);border:1px dashed rgba(90,100,140,.4)"></div>padding</div>';
+        } else {
+          grid += '<div style="display:flex;align-items:center;gap:4px;font-family:\'JetBrains Mono\',monospace;font-size:9.5px;color:var(--text-dim,#888)"><div style="width:8px;height:8px;border-radius:2px;background:' + b.color + '33;border:1px solid ' + b.color + '66"></div>' + b.label + ' (' + b.type + ')</div>';
+        }
+      });
+      grid += '</div>';
+      document.getElementById('alGrid').innerHTML = grid;
+      // info note
+      var notes = {
+        bad: '<b>24 байта</b> вместо 16. <code style="font-size:10px;background:rgba(127,119,221,.1);padding:1px 4px;border-radius:3px">a bool</code> занимает 1 байт, но следующий <code style="font-size:10px;background:rgba(127,119,221,.1);padding:1px 4px;border-radius:3px">int64</code> требует адрес кратный 8 → компилятор добавляет <b style="color:#F0B429">7 байт padding</b>.',
+        good: 'Поля расставлены от большего к меньшему. Padding не нужен совсем. <b style="color:#3DD68C">Экономия 8 байт (33%).</b> Правило: сортируй поля struct по убыванию размера.'
+      };
+      document.getElementById('alNote').innerHTML = notes[mode];
+    };
+    // ── end alignment widget ──────────────────────────────────────────────
 
     var TIP_DATA = {
       sliceType: `<b>Slice *Type — пример</b><br><br>Когда пишешь <code>s := a[:]</code>, компилятор не строит новый тип <code>[]int32</code> с нуля — он берёт его прямо из поля <code>Slice</code> структуры <code>ArrayType</code>:<br><br><pre style="font-size:11px;line-height:1.6;margin:6px 0">a := [3]int32{1, 2, 3}  // тип: [3]int32
@@ -3862,6 +3977,7 @@ type Type struct {
         panel.classList.add('is-open');
         document.body.style.overflow = 'hidden';
         if (window.hljs) { body.querySelectorAll('pre code').forEach(function(el){ hljs.highlightElement(el); }); }
+        if (key === 'struct' && window._alignInit) setTimeout(window._alignInit, 0);
         closeBtn.focus();
       };
       var closeImpl = function(){
