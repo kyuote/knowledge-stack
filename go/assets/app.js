@@ -2671,6 +2671,9 @@ delete(m, "k")    // → mapdelete(t *maptype, h *hmap, k unsafe.Pointer)</code>
 
               <!-- theme-aware styles for hash routing + probing sections -->
               <style>
+                .impl-sec{margin:16px 0;border:1px solid var(--border,#e0e0e0);border-radius:10px;overflow:hidden;}
+                .impl-sec-hdr{padding:8px 14px;border-bottom:1px solid var(--border,#e0e0e0);font-size:11px;font-weight:700;color:var(--text,#1d1d1d);background:var(--bg,#f5f5f5);}
+                .impl-sec-body{padding:14px;}
                 .mhs-wrap{font-family:'JetBrains Mono',monospace;font-size:11px;min-width:700px;}
                 .mhs-hdr{color:var(--text,#1d1d1d);font-size:11px;margin-bottom:10px;}
                 .mhs-hdr-val{color:var(--text-dim,#666);}
@@ -2710,9 +2713,9 @@ delete(m, "k")    // → mapdelete(t *maptype, h *hmap, k unsafe.Pointer)</code>
                 .prob-slot-occ{background:var(--bg,#f0f0f0)!important;color:var(--text-dim,#bbb)!important;}
               </style>
 
-              <!-- Схема: маршрутизация хэша → Table → Group → h2 -->
-              <div style="margin-top:18px;">
-                <p class="tight" style="margin-bottom:10px"><b>Как хэш маршрутизируется: Table → Group → control byte</b></p>
+              <div class="impl-sec">
+                <div class="impl-sec-hdr">Как хэш маршрутизируется: Table → Group → control byte</div>
+                <div class="impl-sec-body">
                 <div style="overflow-x:auto;">
                   <div class="mhs-wrap">
 
@@ -2799,10 +2802,7 @@ delete(m, "k")    // → mapdelete(t *maptype, h *hmap, k unsafe.Pointer)</code>
                     </div>
                   </div>
                 </div>
-              </div>
-
-              <!-- PROBING SECTION -->
-              <div class="prob-outer">
+              <div class="prob-outer" style="margin-top:14px;margin-bottom:0;border-radius:8px;">
                 <div class="prob-title">пробирование при коллизии</div>
 
                 <!-- Base formula -->
@@ -2985,6 +2985,8 @@ delete(m, "k")    // → mapdelete(t *maptype, h *hmap, k unsafe.Pointer)</code>
                 </div>
               </div>
               <!-- /PROBING SECTION -->
+                </div><!-- /impl-sec-body: hash routing + probing -->
+              </div><!-- /impl-sec -->
 
               <!-- GROUP STRUCTURE LOOKUP SECTION -->
               <style>
@@ -3085,8 +3087,9 @@ delete(m, "k")    // → mapdelete(t *maptype, h *hmap, k unsafe.Pointer)</code>
                 #grpW[data-step="3"] #grpBN::after{content:"готово ✓";}
               </style>
 
-              <div style="margin-top:18px;">
-                <p class="tight" style="margin-bottom:10px"><b>Структура Group: control bytes и поиск/обновление по ключу</b></p>
+              <div class="impl-sec">
+                <div class="impl-sec-hdr">Структура Group: control bytes и поиск/обновление по ключу</div>
+                <div class="impl-sec-body">
                 <div id="grpW" data-step="0" style="font-family:'JetBrains Mono',monospace;font-size:11px;">
 
                   <div class="grp-top">
@@ -3168,12 +3171,14 @@ delete(m, "k")    // → mapdelete(t *maptype, h *hmap, k unsafe.Pointer)</code>
                   </div>
                 </div>
               </div>
+                </div><!-- /impl-sec-body -->
+              </div><!-- /impl-sec: group structure -->
               <!-- /GROUP STRUCTURE LOOKUP SECTION -->
 
               <!-- SLOT SIZE / POINTER / DELETE SECTION -->
               <style>
-                .slt-wrap{margin:14px 0;background:var(--bg,#f5f5f5);border:1px solid var(--border,#e0e0e0);border-radius:9px;overflow:hidden;}
-                .slt-hdr{padding:6px 14px;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim,#888);border-bottom:1px solid var(--border,#e0e0e0);}
+                .slt-wrap{margin:0;background:transparent;border:none;border-radius:0;overflow:visible;}
+                .slt-hdr{display:none;}
                 .slt-body{padding:11px 14px;display:flex;flex-direction:column;gap:9px;}
                 .slt-row{display:flex;gap:10px;align-items:flex-start;}
                 .slt-badge{font-size:8.5px;font-weight:700;padding:2px 8px;border-radius:4px;white-space:nowrap;margin-top:2px;flex-shrink:0;}
@@ -3193,6 +3198,9 @@ delete(m, "k")    // → mapdelete(t *maptype, h *hmap, k unsafe.Pointer)</code>
                 .sdr-why{color:var(--text-dim,#888);font-size:8.5px;}
                 .slt-del-tip{margin-top:6px;font-size:9px;color:var(--text-dim,#888);border-left:2px solid var(--border,#ddd);padding-left:8px;line-height:1.6;}
               </style>
+              <div class="impl-sec">
+                <div class="impl-sec-hdr">Слоты · 128 байт · inline vs указатель · delete()</div>
+                <div class="impl-sec-body">
               <div class="slt-wrap">
                 <div class="slt-hdr">слоты · 128 байт · inline vs указатель</div>
                 <div class="slt-body">
@@ -3224,6 +3232,8 @@ delete(m, "k")    // → mapdelete(t *maptype, h *hmap, k unsafe.Pointer)</code>
                   <div class="slt-del-tip">ключ зануляется только если содержит указатели; CW-байт слота → tombstone <span class="slt-ic" style="font-size:8px;">0xFE</span> — сам ключ трогать необязательно</div>
                 </div>
               </div>
+                </div><!-- /impl-sec-body -->
+              </div><!-- /impl-sec: slots -->
               <!-- /SLOT SIZE / POINTER / DELETE SECTION -->
 
               <!-- TOMBSTONE SECTION -->
@@ -3286,8 +3296,9 @@ delete(m, "k")    // → mapdelete(t *maptype, h *hmap, k unsafe.Pointer)</code>
                 #tombW[data-step="3"] #tombBN::after{content:"понял ✓";}
               </style>
 
-              <div style="margin-top:22px;">
-                <p class="tight" style="margin-bottom:10px"><b>Tombstone при удалении: зачем и когда</b></p>
+              <div class="impl-sec">
+                <div class="impl-sec-hdr">Tombstone при удалении: зачем и когда</div>
+                <div class="impl-sec-body">
                 <div id="tombW" data-step="0" style="font-family:'JetBrains Mono',monospace;font-size:11px;">
                   <div class="grp-top">
                     <div class="grp-stepbox">
@@ -3368,7 +3379,9 @@ delete(m, "k")    // → mapdelete(t *maptype, h *hmap, k unsafe.Pointer)</code>
                     <button class="tomb-btn tomb-btn-go" id="tombBN" onclick="(function(){var w=document.getElementById('tombW');var n=Math.min(3,parseInt(w.getAttribute('data-step')||'0')+1);w.setAttribute('data-step',n);document.getElementById('tombBP').disabled=false;document.getElementById('tombBN').disabled=n>=3;})()"></button>
                   </div>
                 </div>
-              </div>
+              </div><!-- /tombW -->
+              </div><!-- /impl-sec-body -->
+              </div><!-- /impl-sec: tombstone -->
               <!-- /TOMBSTONE SECTION -->
 
               <!-- TOMBSTONE CLEANUP SECTION -->
@@ -3430,8 +3443,9 @@ delete(m, "k")    // → mapdelete(t *maptype, h *hmap, k unsafe.Pointer)</code>
                 #cleanW[data-step="3"] #cleanBN::after{content:"готово ✓";}
               </style>
 
-              <div style="margin-top:22px;">
-                <p class="tight" style="margin-bottom:10px"><b>Очистка tombstone'ов: два механизма</b></p>
+              <div class="impl-sec">
+                <div class="impl-sec-hdr">Очистка tombstone'ов: два механизма</div>
+                <div class="impl-sec-body">
                 <div id="cleanW" data-step="0" style="font-family:'JetBrains Mono',monospace;font-size:11px;">
                   <div class="grp-top">
                     <div class="grp-stepbox">
@@ -3498,7 +3512,9 @@ delete(m, "k")    // → mapdelete(t *maptype, h *hmap, k unsafe.Pointer)</code>
                     <button class="clean-btn clean-btn-go" id="cleanBN" onclick="(function(){var w=document.getElementById('cleanW');var n=Math.min(3,parseInt(w.getAttribute('data-step')||'0')+1);w.setAttribute('data-step',n);document.getElementById('cleanBP').disabled=false;document.getElementById('cleanBN').disabled=n>=3;})()"></button>
                   </div>
                 </div>
-              </div>
+              </div><!-- /cleanW -->
+              </div><!-- /impl-sec-body -->
+              </div><!-- /impl-sec: cleanup -->
               <!-- /TOMBSTONE CLEANUP SECTION -->
 
               <!-- H2 LOOKUP ALGORITHM SECTION -->
@@ -3550,8 +3566,15 @@ delete(m, "k")    // → mapdelete(t *maptype, h *hmap, k unsafe.Pointer)</code>
                 .h2iter{background:var(--bg,#f5f5f5);border:1px solid var(--border,#ddd);border-radius:5px;padding:7px 10px;margin-top:8px;font-size:9.5px;line-height:1.8;color:var(--text-dim,#777);}
                 .h2iter b{color:var(--text,#1d1d1d);}
               </style>
-              <div style="margin-bottom:14px;">
-                <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim,#888);margin-bottom:10px;">Поиск h2 внутри группы — ctrlGroupMatchH2</div>
+              <div class="impl-sec">
+                <div class="impl-sec-hdr">Поиск h2 внутри группы — ctrlGroupMatchH2</div>
+                <div class="impl-sec-body">
+                <p class="tight" style="font-size:10.5px;line-height:1.6;color:var(--text,#1d1d1d);margin:0 0 12px;">
+                  Это <b>самая горячая операция</b> в map: при каждом <code style="font-size:10px;">m[key]</code> нужно найти, в каком из 8 слотов группы лежит нужный ключ.
+                  Наивный подход — 8 сравнений подряд. Go делает это <b>за 1 инструкцию</b> на ARM/x86 с SIMD,
+                  или через <b>битовые трюки</b> на остальных архитектурах — сравнивая все 8 control bytes одновременно как один <code style="font-size:10px;">uint64</code>.
+                  Именно здесь Swiss Table выигрывает у классического hashmap.
+                </p>
                 <div class="h2w-nav">
                   <button class="h2w-btn" id="h2Prev" onclick="(function(){var w=document.getElementById('h2mW');var s=parseInt(w.getAttribute('data-step')||'0');s=Math.max(0,s-1);w.setAttribute('data-step',s);document.getElementById('h2Prev').disabled=s<=0;document.getElementById('h2Next').disabled=false;document.getElementById('h2Next').textContent=s>=4?'готово ✓':'далее →';document.getElementById('h2Snum').textContent=s+' / 4';document.querySelectorAll('.h2w-dot').forEach(function(d,i){d.className='h2w-dot'+(i===s?' h2w-on':'');});document.querySelectorAll('.h2w-step').forEach(function(d,i){d.className='h2w-step'+(i===s?' h2w-on':'');});})()">← назад</button>
                   <div class="h2w-dots" id="h2Dots">
@@ -3709,13 +3732,14 @@ vceqq_u8(vctrls, vq)</div>
 
                 </div>
               </div>
+                </div><!-- /impl-sec-body -->
+              </div><!-- /impl-sec: h2 lookup -->
               <!-- /H2 LOOKUP ALGORITHM SECTION -->
 
-                            <div class="impl-sources">Источники: src/internal/runtime/maps/map.go · src/internal/runtime/maps/table.go · go.dev/doc/go1.24 · abseil.io/about/design/swisstables</div>
+              <div class="impl-sources">Источники: src/internal/runtime/maps/map.go · src/internal/runtime/maps/table.go · go.dev/doc/go1.24 · abseil.io/about/design/swisstables</div>
             </div>
           </details>
 
-          <p class="tight" style="margin-top:8px"><b>map нельзя сравнить через ==</b> — только с <code class="inline">nil</code>. <b>Не потокобезопасна</b> — конкурентные чтение+запись вызовут панику; нужен <code class="inline">sync.Map</code> или мьютекс.</p>
         `
       },
 

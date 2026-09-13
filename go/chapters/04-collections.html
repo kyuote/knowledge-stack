@@ -509,6 +509,47 @@ nilMap["y"] = 1    // panic: assignment to entry in nil map</code></pre>
 
           </div>
         </details>
+
+        <details class="deep">
+          <summary>Подробнее: конкурентный доступ, nil, сравнение и предвыделение <span class="tag">must know</span></summary>
+          <div>
+
+            <p class="tight"><b>Конкурентный доступ.</b> Одновременные чтение+запись — <b>data race → паника</b> (Go детектирует через флаг внутри структуры map). Одновременные только чтения — безопасны.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:10px;font-family:'JetBrains Mono',monospace;margin:8px 0 10px;">
+              <div style="flex:1;min-width:160px;border:1px solid #ef4444;border-radius:8px;padding:10px;background:rgba(239,68,68,.05);">
+                <div style="font-weight:700;margin-bottom:5px;color:#ef4444;">❌ паника</div>
+                <div style="line-height:1.7;">goroutine A: m[k] = v<br>goroutine B: m[k] = v<br><span style="opacity:.6;">concurrent map writes</span></div>
+              </div>
+              <div style="flex:1;min-width:160px;border:1px solid #34d399;border-radius:8px;padding:10px;background:rgba(52,211,153,.05);">
+                <div style="font-weight:700;margin-bottom:5px;color:#34d399;">✓ безопасно</div>
+                <div style="line-height:1.7;">sync.RWMutex + map<br>sync.Map (много чтений)<br>один goroutine-owner</div>
+              </div>
+            </div>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">sync.Map — когда уместен</span></div>
+              <pre><code class="language-go">// sync.Map подходит когда:
+// 1) Ключи пишутся один раз, читаются много (кэш, реестр)
+// 2) Горутины работают с разными ключами (нет горячего ключа)
+// Иначе — обычная map + sync.RWMutex эффективнее.
+
+var cache sync.Map
+cache.Store("key", value)
+if v, ok := cache.Load("key"); ok {
+    fmt.Println(v)
+}</code></pre>
+            </div>
+
+            <p class="tight" style="margin-top:12px;"><b>Сравнение, nil, предвыделение — коротко:</b></p>
+            <ul style="font-size:13px;line-height:1.8;margin:4px 0 0;padding-left:20px;">
+              <li><code class="inline">m == nil</code> — единственное допустимое сравнение. <code class="inline">m1 == m2</code> — ошибка компиляции.</li>
+              <li><code class="inline">var m map[string]int</code> — nil map: читать можно (вернёт zero value), писать нельзя → паника.</li>
+              <li><code class="inline">make(map[K]V, hint)</code> — передай примерный размер если знаешь, чтобы избежать лишних rehash при наполнении.</li>
+              <li><code class="inline">delete(m, k)</code> на несуществующий ключ — безопасно, ничего не происходит.</li>
+              <li><code class="inline">v := m[k]</code> на несуществующий ключ — zero value для типа V, паники нет.</li>
+            </ul>
+          </div>
+        </details>
       </section>
 
       <section class="topic" id="structs">
