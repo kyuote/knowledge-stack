@@ -587,6 +587,69 @@ type User struct {
         </div>
 
 
+        <!-- anonymous structs -->
+        <div class="callout" style="margin-top:20px;background:rgba(127,119,221,.06);border-left:3px solid #7F77DD;">
+          <div class="mark" style="background:#7F77DD22;color:#7F77DD;">анонимные struct</div>
+          <p><b>Когда полезны анонимные структуры:</b> когда тип нужен один раз и давать ему имя не имеет смысла. Компилятор выводит тип автоматически. Два анонимных struct с одинаковым набором полей (имя + тип + тег) совместимы по присваиванию — Go сравнивает их структурно, а не по имени.</p>
+        </div>
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">anon_struct.go</span></div>
+          <pre><code class="language-go">// 1. Одноразовый тип — не засоряет пространство имён
+point := struct{ X, Y int }{X: 3, Y: 7}
+
+// 2. Table-driven тест — поля прямо в месте объявления
+tests := []struct {
+    input    string
+    expected int
+}{
+    {"hello", 5},
+    {"", 0},
+}
+
+// 3. Анонимное декодирование JSON — не надо создавать отдельный тип
+var resp struct {
+    ID   int    `json:"id"`
+    Name string `json:"name"`
+}
+json.Unmarshal(data, &amp;resp)</code></pre>
+        </div>
+
+        <!-- value semantics -->
+        <div class="callout warn" style="margin-top:14px;">
+          <div class="mark">камень</div>
+          <p><b>Struct — тип-значение: при присваивании и передаче в функцию создаётся полная копия.</b> Это защищает от нежелательных побочных эффектов, но может быть дорого для больших структур. Указатель берут, когда: структура большая (десятки/сотни байт), нужно мутировать оригинал, или тип реализует интерфейс через pointer receiver.</p>
+        </div>
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">copy.go</span></div>
+          <pre><code class="language-go">a := Point{1, 2}
+b := a      // копия — b и a независимы
+b.X = 99
+fmt.Println(a.X) // 1 — a не изменился
+
+func move(p Point) { p.X += 10 }    // копия — оригинал не меняется
+func movePtr(p *Point) { p.X += 10 } // указатель — оригинал меняется</code></pre>
+        </div>
+
+        <!-- struct as map key -->
+        <div class="callout" style="margin-top:14px;">
+          <div class="mark">совет</div>
+          <p><b>Struct как ключ map.</b> Если все поля сравнимы (<code class="inline">==</code> определён) — структуру можно использовать как ключ map напрямую. Удобно для составных ключей без конкатенации строк.</p>
+        </div>
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">map_key.go</span></div>
+          <pre><code class="language-go">type Point struct{ X, Y int }
+
+grid := map[Point]string{
+    {0, 0}: "origin",
+    {1, 0}: "right",
+}
+fmt.Println(grid[Point{1, 0}]) // "right"
+
+// НЕ сработает — слайс не сравним:
+// type Bad struct{ Tags []string }
+// m := map[Bad]int{} // compile error</code></pre>
+        </div>
+
         <details class="deep">
           <summary>Подробнее: чей метод побеждает при переопределении в embedding <span class="tag">medium</span></summary>
           <div class="deep-body">

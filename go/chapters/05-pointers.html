@@ -8,7 +8,7 @@
       </div>
 
       <section class="topic" id="addr">
-        <h2><span class="idx">5.1</span>& и *</h2>
+        <h2><span class="idx">5.1</span>& и * <button type="button" class="impl-btn" onclick="openImpl('pointer')" style="margin-left:10px;vertical-align:middle">под капотом →</button></h2>
         <p class="tight"><code class="inline">&</code> берёт адрес переменной, <code class="inline">*</code> — разыменовывает указатель:</p>
 
         <div class="codeblock">
@@ -67,16 +67,38 @@ doublePtr(&x)      // x стало 20</code></pre>
             <div class="codeblock">
               <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">shallow.go</span></div>
               <pre><code class="language-go">type Order struct {
-    Items []string
+    ID    int      // обычное поле — копируется полностью
+    Items []string // слайс — копируется только заголовок (ptr+len+cap)
 }
 
-a := Order{Items: []string{"хлеб"}}
-b := a               // копия структуры, но Items — тот же заголовок
-b.Items[0] = "молоко"
-fmt.Println(a.Items[0]) // "молоко" — a тоже изменилась!</code></pre>
+a := Order{ID: 1, Items: []string{"хлеб"}}
+b := a               // копия структуры
+
+b.ID = 99            // меняет только b — a.ID остаётся 1 ✓
+b.Items[0] = "молоко" // меняет общий массив — a.Items[0] тоже "молоко" ✗
+fmt.Println(a.ID)        // 1    — обычное поле скопировалось честно
+fmt.Println(a.Items[0])  // "молоко" — слайс разделяет данные!</code></pre>
             </div>
 
-            <p class="tight"><code class="inline">append</code>, если требует реаллокации, разрывает эту связь — с этого момента копии расходятся. Если нужны по-настоящему независимые копии — либо хранить указатели (<code class="inline">[]*T</code>, <code class="inline">map[K]*V</code>), либо делать глубокое копирование вручную.</p>
+            <p class="tight"><code class="inline">append</code> разрывает эту связь — но только если не хватает ёмкости (<code class="inline">cap</code>) и нужна реаллокация:</p>
+
+            <div class="codeblock">
+              <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">append_break.go</span></div>
+              <pre><code class="language-go">// cap есть — append пишет в ТОТ ЖЕ массив, обе копии видят изменение
+a := Order{Items: make([]string, 1, 10)} // len=1, cap=10
+a.Items[0] = "хлеб"
+b := a
+b.Items = append(b.Items, "молоко") // места хватило — старый массив
+fmt.Println(a.Items[1])             // "молоко" — a видит! (сюрприз)
+
+// cap исчерпан — append выделяет новый массив, связь рвётся
+a2 := Order{Items: []string{"хлеб"}} // len=1, cap=1 — места нет
+b2 := a2
+b2.Items = append(b2.Items, "молоко") // реаллокация → b2.Items новый массив
+fmt.Println(len(a2.Items))            // 1 — a2 про "молоко" не знает</code></pre>
+            </div>
+
+            <p class="tight">Если нужны по-настоящему независимые копии — только глубокое копирование вручную (<code class="inline">copy()</code> для слайса). <code class="inline">[]*T</code> — это не решение, а другая стратегия: явное управляемое шаринг объектов через указатели.</p>
           </div>
         </details>
       </section>
@@ -86,8 +108,9 @@ fmt.Println(a.Items[0]) // "молоко" — a тоже изменилась!</
 
         <div class="codeblock">
           <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">new.go</span></div>
-          <pre><code class="language-go">p1 := new(int)       // *int, указывает на zero value — 0
-p2 := &Point{1, 2}    // *Point, сразу с нужными полями — так пишут почти всегда</code></pre>
+          <pre><code class="language-go">p1 := new(int)        // *int → 0, базовый тип
+p2 := new(Point)      // *Point → {0, 0}, поля — zero value
+p3 := &Point{1, 2}    // *Point → {1, 2}, сразу с нужными полями — так пишут почти всегда</code></pre>
         </div>
 
         <div class="callout interview">
@@ -183,4 +206,57 @@ p.X = 1 // panic: runtime error: invalid memory address or nil pointer dereferen
             <p class="tight"><code class="inline">unsafe.Pointer</code> — способ обойти систему типов и явно приводить указатели между несовместимыми типами; точечно используется во внутренностях стандартной библиотеки (например в <code class="inline">strings.Builder</code>/конвертации <code class="inline">string</code>↔<code class="inline">[]byte</code> без копирования). В обычном прикладном коде это считается кодом-запахом — почти всегда есть типобезопасная альтернатива, а любая ошибка в ручной арифметике с <code class="inline">unsafe.Pointer</code> — потенциальный <code class="inline">SIGSEGV</code>, который компилятор уже не может предотвратить.</p>
           </div>
         </details>
+      </section>
+
+      <section class="topic" id="ptriface">
+        <h2><span class="idx">5.5</span>Антипаттерны</h2>
+
+        <div class="callout warn">
+          <div class="mark">камень</div>
+          <p><b>Никогда не берите указатель на интерфейс (<code class="inline">*io.Reader</code>).</b> Интерфейс уже сам по себе содержит указатель на данные — добавляя ещё один уровень косвенности, вы ломаете методы и получаете путаный код. Почти всегда это ошибка в рассуждении «мне нужен указатель, чтобы изменить значение».</p>
+        </div>
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">iface_ptr.go</span></div>
+          <pre><code class="language-go">// ❌ НЕПРАВИЛЬНО — почти никогда не нужно
+func process(r *io.Reader) {
+    (*r).Read(buf) // лишнее разыменование
+}
+
+// ✓ ПРАВИЛЬНО — интерфейс передаётся по значению, внутри уже есть указатель
+func process(r io.Reader) {
+    r.Read(buf)
+}
+
+// Единственный легитимный случай *io.Reader — когда нужно
+// заменить саму переменную интерфейса (редко):
+func resetReader(r *io.Reader, new io.Reader) {
+    *r = new
+}</code></pre>
+        </div>
+
+        <div class="callout warn" style="margin-top:14px;">
+          <div class="mark">камень</div>
+          <p><b>Двойной указатель (<code class="inline">**T</code>) — почти всегда лишний.</b> Встречается как «out-параметр» для изменения указателя снаружи, но в Go для этого обычно лучше просто вернуть новый указатель.</p>
+        </div>
+        <div class="codeblock">
+          <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">double_ptr.go</span></div>
+          <pre><code class="language-go">// ❌ C-стиль out-параметр через **T
+func initNode(n **Node) {
+    *n = &Node{Val: 42}
+}
+var n *Node
+initNode(&n)
+
+// ✓ Go-стиль — просто возвращаем значение
+func newNode() *Node {
+    return &Node{Val: 42}
+}
+n := newNode()
+
+// Легитимный случай **T — linked list или дерево,
+// где нужно изменить корень (head) снаружи:
+func pushFront(head **Node, val int) {
+    *head = &Node{Val: val, Next: *head}
+}</code></pre>
+        </div>
       </section>

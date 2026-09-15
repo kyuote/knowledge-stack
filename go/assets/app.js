@@ -3837,6 +3837,105 @@ type Good struct {
         `
       },
 
+      pointer: {
+        title: 'Указатель — под капотом',
+        html: `
+          <p class="tight">Указатель в Go — это <b>просто машинное слово с адресом</b>: 8 байт на 64-битной платформе, 4 байта на 32-битной, независимо от типа и размера цели. Тип указателя (<code class="inline">*int</code>, <code class="inline">*MyStruct</code>) — информация <em>для компилятора</em>, в runtime она нигде отдельно не лежит рядом с самим указателем.</p>
+
+          <div class="impl-sec">
+            <div class="impl-sec-hdr">Представление в памяти</div>
+            <div class="impl-sec-body">
+              <figure style="margin:0">
+                <svg viewBox="0 0 560 130" style="width:100%;max-width:560px" role="img" aria-label="Указатель — одно машинное слово, содержит адрес цели">
+                  <defs>
+                    <marker id="arrP" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                      <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+                    </marker>
+                  </defs>
+                  <!-- stack label -->
+                  <text x="12" y="18" font-size="10" fill="currentColor" opacity="0.55" font-family="JetBrains Mono">стек</text>
+                  <!-- pointer cell -->
+                  <rect x="10" y="26" width="160" height="36" rx="7" fill="none" stroke="var(--accent,#7F77DD)" stroke-width="1.5"/>
+                  <text x="90" y="38" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.55" font-family="JetBrains Mono">p  (*Point)</text>
+                  <text x="90" y="54" text-anchor="middle" font-size="12" fill="var(--accent,#7F77DD)" font-family="JetBrains Mono">0xc000018050</text>
+                  <text x="90" y="82" text-anchor="middle" font-size="9.5" fill="currentColor" opacity="0.5">8 байт (uintptr)</text>
+                  <!-- arrow -->
+                  <line x1="170" y1="44" x2="290" y2="44" stroke="var(--accent,#7F77DD)" stroke-width="1.5" marker-end="url(#arrP)"/>
+                  <!-- heap label -->
+                  <text x="302" y="18" font-size="10" fill="currentColor" opacity="0.55" font-family="JetBrains Mono">куча</text>
+                  <!-- target cell -->
+                  <rect x="298" y="26" width="230" height="36" rx="7" fill="none" stroke="currentColor" opacity="0.5"/>
+                  <text x="413" y="38" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.55" font-family="JetBrains Mono">Point  @ 0xc000018050</text>
+                  <text x="413" y="54" text-anchor="middle" font-size="12" fill="currentColor" font-family="JetBrains Mono">X=1  Y=2</text>
+                  <text x="413" y="82" text-anchor="middle" font-size="9.5" fill="currentColor" opacity="0.5">реальные данные (16 байт)</text>
+                </svg>
+              </figure>
+              <p class="tight" style="margin-top:8px">Интерфейс Go хранит <em>два</em> указателя: на дескриптор типа и на данные. Поэтому <code class="inline">*io.Reader</code> — указатель на два указателя — практически никогда не нужен.</p>
+            </div>
+          </div>
+
+          <div class="impl-sec">
+            <div class="impl-sec-hdr">Как GC находит указатели: bitmap + stackmap</div>
+            <div class="impl-sec-body">
+              <p class="tight">Сборщик мусора должен знать, какие слова в памяти — указатели, а какие — просто числа (иначе он может пропустить живой объект или неверно обновить адрес при перемещении). Go решает это двумя механизмами:</p>
+              <ul style="margin:8px 0 0 18px;line-height:1.7">
+                <li><b>Heap bitmap</b> — для каждого машинного слова в куче хранится 1 бит: «это указатель» / «это не указатель». Выделяется компилятором и известен до запуска.</li>
+                <li><b>Stack map (live pointer map)</b> — на каждой возможной точке прерывания (call site) компилятор генерирует таблицу: какие слова на стеке содержат живые указатели прямо сейчас. Без неё GC не может безопасно сканировать стек.</li>
+              </ul>
+              <p class="tight" style="margin-top:8px">Именно поэтому <code class="inline">unsafe.Pointer</code> опасен: GC его не отслеживает как указатель до явного преобразования.</p>
+            </div>
+          </div>
+
+          <div class="impl-sec">
+            <div class="impl-sec-hdr">Write barrier — почему каждое присваивание указателя не бесплатно</div>
+            <div class="impl-sec-body">
+              <p class="tight">Go использует <b>трёхцветную маркировку</b> (tricolor mark-sweep). Пока GC маркирует объекты, программа продолжает работать — возникает гонка: вдруг программа запишет в «серый» объект новый указатель на «белый», которого GC ещё не видел?</p>
+              <p class="tight" style="margin-top:8px">Решение — <b>write barrier</b>: каждое присваивание указателя в куче (<code class="inline">p.next = q</code>) компилируется не в одну инструкцию, а в вызов специального хука, который сообщает GC: «этот объект теперь ссылается на тот». В Go используется <em>hybrid write barrier</em> (с Go 1.14): комбинация Dijkstra + Yuasa, позволяющая завершить маркировку без STW на горутинах.</p>
+              <div class="codeblock" style="margin-top:10px">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">write_barrier_pseudo.go</span></div>
+                <pre><code class="language-go">// То, что вы пишете:
+node.Next = newNode
+
+// То, во что компилятор превращает это при включённом GC:
+// writebarrierptr(&node.Next, newNode)
+// — атомарно обновляет указатель и уведомляет GC о новой ссылке</code></pre>
+              </div>
+              <p class="tight" style="margin-top:8px">Write barrier активен только во время фазы маркировки. Вне GC-цикла это обычная запись без накладных расходов.</p>
+            </div>
+          </div>
+
+          <div class="impl-sec">
+            <div class="impl-sec-hdr">Escape analysis: стек или куча</div>
+            <div class="impl-sec-body">
+              <p class="tight">Компилятор анализирует «убегает» ли переменная из своей функции. Правила:</p>
+              <ul style="margin:8px 0 0 18px;line-height:1.7">
+                <li>Переменная возвращается по указателю из функции → heap</li>
+                <li>Указатель сохраняется в глобальную переменную → heap</li>
+                <li>Переменная передаётся в горутину или канал → heap</li>
+                <li>Передаётся в интерфейс (если размер &gt; машинного слова) → heap</li>
+                <li>Всё остальное — стек (аллокация бесплатная, освобождение автоматическое при выходе из функции)</li>
+              </ul>
+              <div class="codeblock" style="margin-top:10px">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">terminal</span></div>
+                <pre><code class="language-go">// Посмотреть решения компилятора:
+$ go build -gcflags="-m" ./...
+
+// Вывод примерно такой:
+// ./main.go:12:2: moved to heap: p
+// ./main.go:18:6: x does not escape</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="callout interview" style="margin-top:14px">
+            <div class="mark">собес</div>
+            <p><b>Что такое write barrier и зачем он нужен?</b> Это хук компилятора на каждое присваивание указателя в куче. Нужен, чтобы GC (работающий конкурентно с программой) не потерял ссылку на живой объект во время фазы маркировки. Без write barrier конкурентная маркировка была бы небезопасной.</p>
+          </div>
+
+          <div class="impl-sources">Источники: go.dev/ref/spec#Pointer_types · github.com/golang/go (src/runtime/mgc.go, src/runtime/mbarrier.go) · go.dev/blog/ismmkeynote · research.swtch.com/gcviz · go.dev/doc/go1.14 (hybrid write barrier)</div>
+        `
+      },
+
     };
 
     // ── Alignment widget (struct impl panel) ─────────────────────────────
