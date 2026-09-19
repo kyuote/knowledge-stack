@@ -4,7 +4,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Karla:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/java.min.js"></script>
-<link rel="stylesheet" href="../go/assets/style.css">
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
+<link rel="stylesheet" href="../go/assets/style.css?v=3">
 
 <div class="shell">
   <aside class="sidebar">
@@ -99,11 +100,11 @@
 
     <div class="toc-label" style="margin-top:24px">Материалы</div>
     <div class="chapters">
-      <button class="ch" data-chapter="m1" data-file="materials/java-core.html">📄 Java Core</button>
-      <button class="ch" data-chapter="m2" data-file="materials/jvm.html">📄 JVM</button>
-      <button class="ch" data-chapter="m3" data-file="materials/collections.html">📄 Collections</button>
-      <button class="ch" data-chapter="m4" data-file="materials/io.html">📄 Java IO / NIO</button>
-      <button class="ch" data-chapter="m5" data-file="materials/java8.html">📄 Java 8</button>
+      <button class="ch mat-btn" data-chapter="m1" data-docx="java-file/java-core.docx">📄 Java Core</button>
+      <button class="ch mat-btn" data-chapter="m2" data-docx="java-file/JVM-DOC.docx" data-images="java-file/photo_2026-06-30_21-12-18.jpg,java-file/photo_2026-06-30_21-36-00.jpg">📄 JVM</button>
+      <button class="ch mat-btn" data-chapter="m3" data-docx="java-file/JavaCollectionsFramework.docx">📄 Collections</button>
+      <button class="ch mat-btn" data-chapter="m4" data-docx="java-file/JavaIO.docx">📄 Java IO / NIO</button>
+      <button class="ch mat-btn" data-chapter="m5" data-docx="java-file/java8 (1).docx">📄 Java 8</button>
     </div>
   </aside>
 
@@ -114,4 +115,8 @@
   </main>
 </div>
 
-<script src="assets/app.js"></script>
+<div class="lb-overlay" id="lb-overlay">
+  <span class="lb-close" id="lb-close">✕</span>
+  <img id="lb-img" src="" alt="">
+</div>
+<script src="assets/app.js?v=5"></script>

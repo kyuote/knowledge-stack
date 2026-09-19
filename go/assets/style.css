@@ -545,3 +545,63 @@
   .strlen-brace::before{left:0;}
   .strlen-brace::after{right:0;}
   .strlen-label{font-family:"JetBrains Mono"; font-size:10.5px; color:var(--accent-strong); margin:4px 0 2px;}
+
+/* mammoth docx viewer */
+.docx-mammoth {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 8px 0 60px;
+  font-family: "Karla", sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text);
+}
+.docx-mammoth h1 { font-family: "Sora", sans-serif; font-size: 1.7rem; font-weight: 700; margin: 2rem 0 .5rem; color: var(--text); }
+.docx-mammoth h2 { font-family: "Sora", sans-serif; font-size: 1.25rem; font-weight: 600; margin: 1.6rem 0 .4rem; color: var(--text); }
+.docx-mammoth h3 { font-family: "Sora", sans-serif; font-size: 1.05rem; font-weight: 600; margin: 1.2rem 0 .3rem; color: var(--accent); }
+.docx-mammoth p { margin: 0 0 .75rem; }
+.docx-mammoth strong, .docx-mammoth b { font-weight: 700; }
+.docx-mammoth ul, .docx-mammoth ol { padding-left: 1.5rem; margin: .4rem 0 .8rem; }
+.docx-mammoth li { margin-bottom: .3rem; }
+.docx-mammoth table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 14px; }
+.docx-mammoth td, .docx-mammoth th { border: 1px solid var(--border); padding: 7px 12px; text-align: left; }
+.docx-mammoth th { background: var(--surface-2); font-weight: 600; }
+.docx-mammoth code { font-family: "JetBrains Mono", monospace; font-size: 13px; background: var(--surface-2); padding: 2px 6px; border-radius: 4px; }
+.docx-mammoth pre { margin: 1rem 0; border-radius: 10px; overflow: hidden; border: 1px solid var(--surface-2-border); background: var(--code-bg); }
+.docx-mammoth pre code { display: block; padding: 14px 18px; background: transparent !important; font-size: 13px; line-height: 1.65; color: var(--code-text); overflow-x: auto; }
+.docx-mammoth img { max-width: 100%; height: auto; display: block; margin: .75rem auto; border-radius: 6px; }
+
+/* lightbox */
+.lb-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0,0,0,.88);
+  cursor: zoom-out;
+  align-items: center;
+  justify-content: center;
+}
+.lb-overlay.is-open { display: flex; }
+.lb-overlay img {
+  max-width: 92vw;
+  max-height: 92vh;
+  border-radius: 6px;
+  box-shadow: 0 8px 48px rgba(0,0,0,.6);
+  cursor: default;
+  transition: transform .15s ease;
+  transform-origin: center center;
+  user-select: none;
+}
+.lb-close {
+  position: fixed;
+  top: 18px;
+  right: 22px;
+  font-size: 28px;
+  color: #fff;
+  cursor: pointer;
+  line-height: 1;
+  opacity: .8;
+}
+.lb-close:hover { opacity: 1; }
+#chapter-root img, .docx-mammoth img { cursor: zoom-in; }
