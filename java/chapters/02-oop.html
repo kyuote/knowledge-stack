@@ -1,33 +1,238 @@
 <div class="kicker"><span class="line"></span>Глава 02</div>
 <h1 class="title">ООП: классы и интерфейсы</h1>
-<p class="lede">Классы и объекты, наследование, абстрактные классы, интерфейсы с default-методами, sealed классы, record.</p>
+<p class="lede">Классы, наследование, абстракция, интерфейсы, sealed, record — основа Java-собеса. Нужно понимать не синтаксис, а когда что выбирать.</p>
+
+<div class="depth-toggle">
+  <button type="button" class="depth-btn" data-action="expand">▾ развернуть все «подробнее»</button>
+  <button type="button" class="depth-btn" data-action="collapse">▴ свернуть всё</button>
+</div>
 
 <section class="topic" id="classes">
   <h2><span class="idx">2.1</span>Классы и объекты</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p>Класс — шаблон. Объект — экземпляр класса в куче. Конструктор вызывается при <code class="inline">new</code>. Если конструктор не объявлен — компилятор добавляет no-arg конструктор автоматически.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Person.java</span></div>
+    <pre><code class="language-java">public class Person {
+    // поля
+    private final String name;  // final = нельзя переназначить
+    private int age;
+
+    // конструктор
+    public Person(String name, int age) {
+        this.name = name;       // this — ссылка на текущий объект
+        this.age = age;
+    }
+
+    // getters / setters
+    public String getName() { return name; }
+    public int    getAge()  { return age; }
+    public void   setAge(int age) { this.age = age; }
+
+    // переопределяем Object.toString()
+    @Override
+    public String toString() {
+        return "Person{name=" + name + ", age=" + age + "}";
+    }
+
+    // equals и hashCode — переопределяй вместе
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Person p)) return false;
+        return age == p.age &amp;&amp; name.equals(p.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, age);
+    }
+}</code></pre>
+  </div>
+
+  <div class="callout warn">
+    Если переопределяешь <code class="inline">equals</code> — обязательно переопределяй <code class="inline">hashCode</code>. Иначе объекты не будут работать корректно в HashMap/HashSet.
+  </div>
 </section>
 
 <section class="topic" id="inheritance">
   <h2><span class="idx">2.2</span>Наследование</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p>Java поддерживает только <b>одиночное наследование</b> классов. <code class="inline">extends</code> — унаследовать класс. <code class="inline">super</code> — вызвать конструктор или метод родителя. Все классы неявно наследуют <code class="inline">Object</code>.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Animal.java</span></div>
+    <pre><code class="language-java">class Animal {
+    protected String name;
+
+    public Animal(String name) { this.name = name; }
+
+    public String speak() { return "..."; }
+}
+
+class Dog extends Animal {
+    private String breed;
+
+    public Dog(String name, String breed) {
+        super(name);    // вызов конструктора родителя — обязателен первым
+        this.breed = breed;
+    }
+
+    @Override           // аннотация — защита от опечаток в сигнатуре
+    public String speak() { return "Woof!"; }
+
+    // super.speak() — вызов метода родителя
+    public String both() { return super.speak() + " + " + speak(); }
+}
+
+// Полиморфизм: переменная типа Animal может хранить Dog
+Animal a = new Dog("Rex", "Husky");
+System.out.println(a.speak()); // "Woof!" — вызывается метод реального объекта
+
+// Запрет наследования
+final class Immutable { }  // final класс — нельзя унаследовать
+</code></pre>
+  </div>
 </section>
 
 <section class="topic" id="abstract">
   <h2><span class="idx">2.3</span>Абстрактные классы</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p>Абстрактный класс нельзя инстанциировать напрямую. Может содержать как абстрактные методы (без реализации), так и обычные. Используй, когда есть общий код и общее состояние.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Shape.java</span></div>
+    <pre><code class="language-java">abstract class Shape {
+    protected String color;
+
+    public Shape(String color) { this.color = color; }
+
+    // абстрактный метод — наследник ОБЯЗАН реализовать
+    public abstract double area();
+
+    // обычный метод — наследник может переопределить, но не обязан
+    public String describe() {
+        return color + " shape, area=" + area();
+    }
+}
+
+class Circle extends Shape {
+    private double radius;
+
+    public Circle(String color, double radius) {
+        super(color);
+        this.radius = radius;
+    }
+
+    @Override
+    public double area() { return Math.PI * radius * radius; }
+}</code></pre>
+  </div>
+
+  <details class="deep">
+    <summary>Абстрактный класс vs Интерфейс — когда что? <span class="tag">собес</span></summary>
+    <div class="deep-body">
+      <table>
+        <tr><th></th><th>Абстрактный класс</th><th>Интерфейс</th></tr>
+        <tr><td>Состояние</td><td>✓ поля</td><td>только static final</td></tr>
+        <tr><td>Конструктор</td><td>✓</td><td>✗</td></tr>
+        <tr><td>Наследование</td><td>одно</td><td>множественное</td></tr>
+        <tr><td>Модификаторы методов</td><td>любые</td><td>public (по умолчанию)</td></tr>
+        <tr><td>Когда</td><td>общий код + состояние</td><td>контракт без состояния</td></tr>
+      </table>
+    </div>
+  </details>
 </section>
 
 <section class="topic" id="interfaces">
   <h2><span class="idx">2.4</span>Интерфейсы и default-методы</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p>Интерфейс — чистый контракт. Класс может реализовывать несколько интерфейсов. С Java 8 появились <code class="inline">default</code>-методы (с реализацией) и <code class="inline">static</code>-методы в интерфейсах.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Flyable.java</span></div>
+    <pre><code class="language-java">interface Flyable {
+    // константа — неявно public static final
+    int MAX_ALTITUDE = 10_000;
+
+    // абстрактный метод — неявно public abstract
+    void fly();
+
+    // default-метод — реализация по умолчанию (Java 8+)
+    default String describe() {
+        return "I can fly up to " + MAX_ALTITUDE + "m";
+    }
+
+    // static-метод — вызывается через имя интерфейса
+    static Flyable noOp() { return () -> {}; }
+}
+
+interface Swimmable {
+    void swim();
+}
+
+// Класс реализует несколько интерфейсов
+class Duck extends Animal implements Flyable, Swimmable {
+    public Duck() { super("Duck"); }
+
+    @Override public void fly()  { System.out.println("Flap flap"); }
+    @Override public void swim() { System.out.println("Splash"); }
+    // describe() — берётся из Flyable.default, можно переопределить
+}</code></pre>
+  </div>
 </section>
 
 <section class="topic" id="sealed">
-  <h2><span class="idx">2.5</span>sealed классы</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <h2><span class="idx">2.5</span>sealed классы (Java 17)</h2>
+  <p>Sealed класс ограничивает список разрешённых наследников. Даёт компилятору полную информацию об иерархии — удобно с <code class="inline">pattern matching</code> в <code class="inline">switch</code>.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Expr.java</span></div>
+    <pre><code class="language-java">// sealed — только перечисленные классы могут наследовать
+sealed interface Expr permits Num, Add, Mul {}
+
+record Num(int value)        implements Expr {}
+record Add(Expr l, Expr r)   implements Expr {}
+record Mul(Expr l, Expr r)   implements Expr {}
+
+// Компилятор знает все варианты → exhaustive switch без default
+int eval(Expr e) {
+    return switch (e) {
+        case Num(int v)      -> v;
+        case Add(var l, var r) -> eval(l) + eval(r);
+        case Mul(var l, var r) -> eval(l) * eval(r);
+    };
+}</code></pre>
+  </div>
 </section>
 
 <section class="topic" id="records">
-  <h2><span class="idx">2.6</span>record</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <h2><span class="idx">2.6</span>record (Java 16)</h2>
+  <p><code class="inline">record</code> — иммутабельный носитель данных. Компилятор автоматически генерирует: конструктор, геттеры, <code class="inline">equals</code>, <code class="inline">hashCode</code>, <code class="inline">toString</code>. Заменяет boilerplate-классы данных.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Point.java</span></div>
+    <pre><code class="language-java">// Декларация
+record Point(int x, int y) {}
+
+// Эквивалентно классу с:
+// - final полями x и y
+// - public Point(int x, int y) { this.x = x; this.y = y; }
+// - геттерами x() и y()  (не getX!)
+// - equals, hashCode, toString
+
+Point p = new Point(3, 4);
+System.out.println(p.x());      // 3
+System.out.println(p);          // Point[x=3, y=4]
+
+// Можно добавлять методы и валидацию в compact constructor
+record Range(int min, int max) {
+    Range {  // compact constructor — поля уже присвоены, только validate
+        if (min > max) throw new IllegalArgumentException();
+    }
+
+    int length() { return max - min; }
+}</code></pre>
+  </div>
+
+  <div class="callout ok">
+    Используй <code class="inline">record</code> для DTO, Value Object, ключей в Map. Нельзя наследовать record и нельзя сделать его mutable.
+  </div>
 </section>

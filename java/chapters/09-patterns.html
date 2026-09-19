@@ -1,18 +1,271 @@
 <div class="kicker"><span class="line"></span>Глава 09</div>
 <h1 class="title">Паттерны проектирования</h1>
-<p class="lede">Порождающие, структурные, поведенческие паттерны на примерах Java.</p>
+<p class="lede">Порождающие, структурные, поведенческие. На собесе важно знать GoF-паттерны на примерах из JDK и уметь объяснить когда применять, а когда нет.</p>
+
+<div class="depth-toggle">
+  <button type="button" class="depth-btn" data-action="expand">▾ развернуть все «подробнее»</button>
+  <button type="button" class="depth-btn" data-action="collapse">▴ свернуть всё</button>
+</div>
 
 <section class="topic" id="creational">
   <h2><span class="idx">9.1</span>Порождающие: Singleton, Factory, Builder</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Singleton.java</span></div>
+    <pre><code class="language-java">// Singleton — один экземпляр на JVM
+// Лучший способ: enum (потокобезопасен, защищён от рефлексии и десериализации)
+enum AppConfig {
+    INSTANCE;
+    private final String host = System.getenv("HOST");
+    public String getHost() { return host; }
+}
+AppConfig.INSTANCE.getHost();
+
+// Double-checked locking (если enum не подходит)
+class DBPool {
+    private static volatile DBPool instance; // volatile обязателен!
+
+    private DBPool() {}
+
+    public static DBPool getInstance() {
+        if (instance == null) {
+            synchronized (DBPool.class) {
+                if (instance == null) {  // повторная проверка под локом
+                    instance = new DBPool();
+                }
+            }
+        }
+        return instance;
+    }
+}</code></pre>
+  </div>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Factory.java</span></div>
+    <pre><code class="language-java">// Factory Method — делегирует создание подклассам
+interface Logger {
+    void log(String message);
+}
+class ConsoleLogger implements Logger {
+    public void log(String m) { System.out.println("[CONSOLE] " + m); }
+}
+class FileLogger implements Logger {
+    public void log(String m) { /* запись в файл */ }
+}
+
+class LoggerFactory {
+    public static Logger create(String type) {
+        return switch (type) {
+            case "console" -> new ConsoleLogger();
+            case "file"    -> new FileLogger();
+            default -> throw new IllegalArgumentException(type);
+        };
+    }
+}
+
+// В JDK: Calendar.getInstance(), NumberFormat.getInstance(),
+//         Connection = DriverManager.getConnection()</code></pre>
+  </div>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Builder.java</span></div>
+    <pre><code class="language-java">// Builder — пошаговое создание сложных объектов
+class HttpRequest {
+    private final String url;
+    private final String method;
+    private final Map&lt;String, String&gt; headers;
+    private final String body;
+
+    private HttpRequest(Builder b) {
+        this.url = b.url; this.method = b.method;
+        this.headers = b.headers; this.body = b.body;
+    }
+
+    public static class Builder {
+        private final String url;
+        private String method = "GET";
+        private Map&lt;String, String&gt; headers = new HashMap&lt;&gt;();
+        private String body;
+
+        public Builder(String url) { this.url = url; }
+        public Builder method(String m) { this.method = m; return this; }
+        public Builder header(String k, String v) { headers.put(k, v); return this; }
+        public Builder body(String b) { this.body = b; return this; }
+        public HttpRequest build() { return new HttpRequest(this); }
+    }
+}
+
+// Использование
+HttpRequest req = new HttpRequest.Builder("https://api.example.com/users")
+    .method("POST")
+    .header("Content-Type", "application/json")
+    .body("{\"name\":\"Alice\"}")
+    .build();
+
+// В JDK: StringBuilder, Stream.Builder, ProcessBuilder</code></pre>
+  </div>
 </section>
 
 <section class="topic" id="structural">
   <h2><span class="idx">9.2</span>Структурные: Adapter, Decorator, Proxy</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Adapter.java</span></div>
+    <pre><code class="language-java">// Adapter — преобразует интерфейс к нужному виду
+interface JsonParser { Map&lt;String, Object&gt; parse(String json); }
+interface XmlParser  { Document parse(String xml); }
+
+// Адаптер оборачивает XmlParser и предоставляет интерфейс JsonParser
+class XmlToJsonAdapter implements JsonParser {
+    private final XmlParser xmlParser;
+    XmlToJsonAdapter(XmlParser p) { this.xmlParser = p; }
+
+    @Override
+    public Map&lt;String, Object&gt; parse(String json) {
+        Document doc = xmlParser.parse(convertJsonToXml(json));
+        return convertDocToMap(doc);
+    }
+}
+
+// В JDK: Arrays.asList(), Collections.list(), InputStreamReader(InputStream)</code></pre>
+  </div>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Decorator.java</span></div>
+    <pre><code class="language-java">// Decorator — добавляет поведение без изменения оригинала
+interface Coffee { double getCost(); String getDescription(); }
+
+class SimpleCoffee implements Coffee {
+    public double getCost() { return 1.0; }
+    public String getDescription() { return "Coffee"; }
+}
+
+abstract class CoffeeDecorator implements Coffee {
+    protected Coffee coffee;
+    CoffeeDecorator(Coffee c) { this.coffee = c; }
+}
+
+class MilkDecorator extends CoffeeDecorator {
+    MilkDecorator(Coffee c) { super(c); }
+    public double getCost() { return coffee.getCost() + 0.5; }
+    public String getDescription() { return coffee.getDescription() + ", Milk"; }
+}
+
+Coffee c = new MilkDecorator(new MilkDecorator(new SimpleCoffee()));
+// Coffee, Milk, Milk — стоимость 2.0
+
+// В JDK: BufferedInputStream(FileInputStream), Collections.unmodifiableList()</code></pre>
+  </div>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Proxy.java</span></div>
+    <pre><code class="language-java">// Proxy — контролирует доступ к объекту (логирование, кэширование, security)
+interface Service { String getData(String key); }
+class RealService implements Service {
+    public String getData(String key) { return "data:" + key; }
+}
+
+// Статический прокси
+class LoggingProxy implements Service {
+    private final Service service;
+    LoggingProxy(Service s) { this.service = s; }
+
+    public String getData(String key) {
+        System.out.println("Calling getData(" + key + ")");
+        String result = service.getData(key);
+        System.out.println("Result: " + result);
+        return result;
+    }
+}
+
+// Динамический прокси (JDK Proxy)
+Service proxy = (Service) Proxy.newProxyInstance(
+    Service.class.getClassLoader(),
+    new Class[]{Service.class},
+    (p, method, args) -> {
+        System.out.println("Before: " + method.getName());
+        Object result = method.invoke(new RealService(), args);
+        System.out.println("After: " + method.getName());
+        return result;
+    }
+);
+
+// В Spring: AOP-прокси для @Transactional, @Cacheable, @Async</code></pre>
+  </div>
 </section>
 
 <section class="topic" id="behavioral">
   <h2><span class="idx">9.3</span>Поведенческие: Strategy, Observer, Command</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Strategy.java</span></div>
+    <pre><code class="language-java">// Strategy — семейство алгоритмов, взаимозаменяемых в runtime
+@FunctionalInterface
+interface SortStrategy&lt;T&gt; { void sort(List&lt;T&gt; list); }
+
+class Sorter&lt;T&gt; {
+    private SortStrategy&lt;T&gt; strategy;
+    Sorter(SortStrategy&lt;T&gt; s) { this.strategy = s; }
+    void setStrategy(SortStrategy&lt;T&gt; s) { this.strategy = s; }
+    void sort(List&lt;T&gt; list) { strategy.sort(list); }
+}
+
+// Лямбды отлично работают как стратегии
+Sorter&lt;Integer&gt; sorter = new Sorter&lt;&gt;(Collections::sort);
+sorter.setStrategy(list -> list.sort(Comparator.reverseOrder()));
+
+// В JDK: Comparator, Executor, Runnable сами являются стратегиями</code></pre>
+  </div>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Observer.java</span></div>
+    <pre><code class="language-java">// Observer — подписка на события
+interface EventListener&lt;T&gt; { void onEvent(T event); }
+
+class EventBus&lt;T&gt; {
+    private final List&lt;EventListener&lt;T&gt;&gt; listeners = new CopyOnWriteArrayList&lt;&gt;();
+
+    void subscribe(EventListener&lt;T&gt; l) { listeners.add(l); }
+    void unsubscribe(EventListener&lt;T&gt; l) { listeners.remove(l); }
+    void publish(T event) { listeners.forEach(l -> l.onEvent(event)); }
+}
+
+EventBus&lt;String&gt; bus = new EventBus&lt;&gt;();
+bus.subscribe(e -> System.out.println("Received: " + e));
+bus.publish("Hello"); // Received: Hello
+
+// В JDK: PropertyChangeListener, java.util.Observable (deprecated),
+//         Reactive Streams (Flow API, Java 9+)</code></pre>
+  </div>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Command.java</span></div>
+    <pre><code class="language-java">// Command — инкапсулирует запрос как объект (undo, очередь задач)
+interface Command { void execute(); void undo(); }
+
+class TextEditor {
+    private StringBuilder text = new StringBuilder();
+    private Deque&lt;Command&gt; history = new ArrayDeque&lt;&gt;();
+
+    void executeCommand(Command cmd) {
+        cmd.execute();
+        history.push(cmd);
+    }
+
+    void undo() {
+        if (!history.isEmpty()) history.pop().undo();
+    }
+
+    class InsertCommand implements Command {
+        private final String text;
+        InsertCommand(String t) { this.text = t; }
+        public void execute() { TextEditor.this.text.append(text); }
+        public void undo()    { TextEditor.this.text.delete(
+            TextEditor.this.text.length() - text.length(),
+            TextEditor.this.text.length()); }
+    }
+}
+
+// В JDK: Runnable как команда, javax.swing.Action</code></pre>
+  </div>
 </section>

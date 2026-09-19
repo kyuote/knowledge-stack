@@ -1,28 +1,194 @@
 <div class="kicker"><span class="line"></span>Глава 06</div>
 <h1 class="title">Stream API и лямбды</h1>
-<p class="lede">Лямбды, функциональные интерфейсы, Stream pipeline, Optional, Collectors.</p>
+<p class="lede">Лямбды, функциональные интерфейсы, Stream pipeline, Optional, Collectors. Появились в Java 8 и стали стандартным стилем написания кода.</p>
+
+<div class="depth-toggle">
+  <button type="button" class="depth-btn" data-action="expand">▾ развернуть все «подробнее»</button>
+  <button type="button" class="depth-btn" data-action="collapse">▴ свернуть всё</button>
+</div>
 
 <section class="topic" id="lambda">
   <h2><span class="idx">6.1</span>Лямбды и функциональные интерфейсы</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p>Лямбда — анонимная функция. Работает там, где ожидается <b>функциональный интерфейс</b> (FI) — интерфейс с ровно одним абстрактным методом (<code class="inline">@FunctionalInterface</code>).</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Lambda.java</span></div>
+    <pre><code class="language-java">// Основные функциональные интерфейсы из java.util.function
+Predicate&lt;String&gt;  p = s -> s.length() &gt; 3;  // T -> boolean
+Function&lt;String, Integer&gt; f = String::length;  // T -> R
+Supplier&lt;String&gt;   s = () -> "hello";          // () -> T
+Consumer&lt;String&gt;   c = System.out::println;    // T -> void
+BiFunction&lt;Integer,Integer,Integer&gt; add = (a,b) -> a + b;
+UnaryOperator&lt;Integer&gt; dbl = x -> x * 2;      // T -> T
+
+// Применение
+p.test("hi");      // false
+f.apply("hello");  // 5
+s.get();           // "hello"
+c.accept("world"); // выводит "world"
+
+// Композиция
+Predicate&lt;String&gt; notEmpty = s1 -> !s1.isEmpty();
+Predicate&lt;String&gt; longAndNotEmpty = p.and(notEmpty);
+Function&lt;String, String&gt; trim = String::trim;
+Function&lt;String, Integer&gt; len = String::length;
+Function&lt;String, Integer&gt; trimLen = trim.andThen(len); // compose слева направо</code></pre>
+  </div>
 </section>
 
 <section class="topic" id="streams">
   <h2><span class="idx">6.2</span>Stream: промежуточные и терминальные</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p>Stream — конвейер ленивых операций над последовательностью элементов. <b>Промежуточные</b> операции — ленивые, возвращают Stream. <b>Терминальные</b> — запускают конвейер, возвращают результат.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Streams.java</span></div>
+    <pre><code class="language-java">List&lt;String&gt; names = List.of("Alice", "Bob", "Charlie", "Dave", "Anna");
+
+// Промежуточные: filter, map, flatMap, sorted, distinct, limit, skip, peek
+List&lt;String&gt; result = names.stream()
+    .filter(n -> n.startsWith("A"))   // Alice, Anna
+    .map(String::toUpperCase)          // ALICE, ANNA
+    .sorted()                          // ALICE, ANNA
+    .toList();                         // Java 16+
+
+// flatMap — разворачивает Stream&lt;Stream&lt;T&gt;&gt; в Stream&lt;T&gt;
+List&lt;List&lt;Integer&gt;&gt; nested = List.of(List.of(1,2), List.of(3,4));
+List&lt;Integer&gt; flat = nested.stream()
+    .flatMap(Collection::stream)  // [1, 2, 3, 4]
+    .toList();
+
+// Числовые стримы (избегают autoboxing)
+int sum = IntStream.rangeClosed(1, 100).sum(); // 5050
+OptionalDouble avg = IntStream.of(1,2,3,4,5).average();
+
+// Параллельный стрим (осторожно — только для CPU-задач без side effects)
+long count = names.parallelStream()
+    .filter(n -> n.length() &gt; 3)
+    .count();</code></pre>
+  </div>
+
+  <details class="deep">
+    <summary>Терминальные операции <span class="tag">api</span></summary>
+    <div class="deep-body">
+      <div class="codeblock" style="margin:0">
+        <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Terminal.java</span></div>
+        <pre><code class="language-java">stream.forEach(System.out::println);  // обход
+stream.count();                        // количество
+stream.findFirst();                    // Optional&lt;T&gt;
+stream.findAny();                      // Optional&lt;T&gt; (быстрее в parallel)
+stream.anyMatch(p);                    // boolean
+stream.allMatch(p);                    // boolean
+stream.noneMatch(p);                   // boolean
+stream.min(Comparator.naturalOrder()); // Optional&lt;T&gt;
+stream.max(Comparator.naturalOrder()); // Optional&lt;T&gt;
+stream.toList();                       // List&lt;T&gt; (Java 16+)
+stream.toArray();                      // Object[]
+
+// reduce
+int product = IntStream.of(1,2,3,4).reduce(1, (a,b) -> a * b); // 24</code></pre>
+      </div>
+    </div>
+  </details>
 </section>
 
 <section class="topic" id="optional">
   <h2><span class="idx">6.3</span>Optional</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p><code class="inline">Optional&lt;T&gt;</code> — контейнер, который может содержать значение или быть пустым. Заменяет <code class="inline">null</code> в возвращаемых значениях методов — явно сигнализирует, что значение может отсутствовать.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">OptionalDemo.java</span></div>
+    <pre><code class="language-java">// Создание
+Optional&lt;String&gt; opt = Optional.of("hello");    // NPE если null
+Optional&lt;String&gt; safe = Optional.ofNullable(maybeNull);
+Optional&lt;String&gt; empty = Optional.empty();
+
+// Получение значения
+opt.get();                        // "hello", NoSuchElementException если пуст
+opt.orElse("default");            // значение или "default"
+opt.orElseGet(() -> compute());   // ленивый fallback
+opt.orElseThrow();                // NoSuchElementException если пуст
+opt.orElseThrow(() -> new RuntimeException("not found"));
+
+// Проверка и маппинг
+opt.isPresent();                  // true
+opt.isEmpty();                    // false (Java 11+)
+opt.ifPresent(System.out::println); // вызовет println
+
+opt.map(String::length)           // Optional&lt;Integer&gt;(5)
+   .filter(n -> n &gt; 3)           // Optional&lt;Integer&gt;(5)
+   .orElse(0);                    // 5
+
+// flatMap — когда маппинг возвращает Optional
+Optional&lt;String&gt; trimmed = opt.flatMap(s -> s.isBlank() ? Optional.empty() : Optional.of(s.trim()));</code></pre>
+  </div>
+
+  <div class="callout warn">
+    <code class="inline">Optional</code> — для возвращаемых значений методов, не для полей класса и не для параметров методов.
+  </div>
 </section>
 
 <section class="topic" id="methodref">
   <h2><span class="idx">6.4</span>Method references</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">MethodRef.java</span></div>
+    <pre><code class="language-java">// 4 вида ссылок на методы:
+
+// 1. Статический метод: Class::staticMethod
+Function&lt;String, Integer&gt; parse = Integer::parseInt;
+// Эквивалент: s -> Integer.parseInt(s)
+
+// 2. Метод экземпляра на конкретном объекте: obj::method
+String prefix = "Hello";
+Predicate&lt;String&gt; startsWith = prefix::startsWith;
+// Эквивалент: s -> prefix.startsWith(s)
+
+// 3. Метод экземпляра на произвольном объекте: Class::method
+Function&lt;String, String&gt; upper = String::toUpperCase;
+// Эквивалент: s -> s.toUpperCase()
+
+// 4. Конструктор: Class::new
+Supplier&lt;ArrayList&lt;String&gt;&gt; listFactory = ArrayList::new;
+// Эквивалент: () -> new ArrayList&lt;String&gt;()
+
+// Применение
+List.of("a","b","c").forEach(System.out::println); // тип 2
+List.of("a","b","c").stream().map(String::toUpperCase).toList(); // тип 3</code></pre>
+  </div>
 </section>
 
 <section class="topic" id="collectors">
   <h2><span class="idx">6.5</span>Collectors</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Collectors.java</span></div>
+    <pre><code class="language-java">import static java.util.stream.Collectors.*;
+
+List&lt;String&gt; words = List.of("apple", "banana", "cherry", "avocado");
+
+// Сбор в коллекции
+words.stream().collect(toList());    // List (изменяемый)
+words.stream().collect(toSet());
+words.stream().collect(toUnmodifiableList());
+
+// joining — склеивание строк
+words.stream().collect(joining(", ", "[", "]")); // "[apple, banana, ...]"
+
+// groupingBy — группировка
+Map&lt;Character, List&lt;String&gt;&gt; byFirst =
+    words.stream().collect(groupingBy(w -> w.charAt(0)));
+// {a=[apple, avocado], b=[banana], c=[cherry]}
+
+// counting внутри groupingBy
+Map&lt;Character, Long&gt; countByFirst =
+    words.stream().collect(groupingBy(w -> w.charAt(0), counting()));
+
+// partitioningBy — разделение на два
+Map&lt;Boolean, List&lt;String&gt;&gt; parts =
+    words.stream().collect(partitioningBy(w -> w.length() &gt; 5));
+
+// toMap
+Map&lt;String, Integer&gt; lengths =
+    words.stream().collect(toMap(w -> w, String::length));</code></pre>
+  </div>
 </section>

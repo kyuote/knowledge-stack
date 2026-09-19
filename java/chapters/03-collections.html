@@ -1,28 +1,166 @@
 <div class="kicker"><span class="line"></span>Глава 03</div>
 <h1 class="title">Коллекции</h1>
-<p class="lede">List, Map, Set, Queue — реализации, сложность операций, когда что выбирать.</p>
+<p class="lede">Collections Framework — основа Java. На собесе спрашивают реализации, сложность операций и разницу между ними. Надо знать как таблицу умножения.</p>
+
+<div class="depth-toggle">
+  <button type="button" class="depth-btn" data-action="expand">▾ развернуть все «подробнее»</button>
+  <button type="button" class="depth-btn" data-action="collapse">▴ свернуть всё</button>
+</div>
 
 <section class="topic" id="list">
   <h2><span class="idx">3.1</span>List: ArrayList vs LinkedList</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p><code class="inline">ArrayList</code> — динамический массив. <code class="inline">LinkedList</code> — двусвязный список. На практике <b>ArrayList быстрее почти всегда</b> — лучше кэш-локальность.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">ListDemo.java</span></div>
+    <pre><code class="language-java">List&lt;String&gt; list = new ArrayList&lt;&gt;();
+list.add("a");
+list.add("b");
+list.add(0, "z");   // вставка в начало — O(n), сдвигает остальные
+list.get(1);        // O(1) — прямой доступ по индексу
+list.remove(0);     // O(n) — сдвиг
+list.size();        // 2
+list.contains("b"); // O(n)
+
+// Неизменяемый список (Java 9+)
+List&lt;String&gt; immutable = List.of("a", "b", "c");
+
+// Сортировка
+Collections.sort(list);
+list.sort(Comparator.naturalOrder());
+list.sort(Comparator.reverseOrder());
+list.sort(Comparator.comparing(String::length));</code></pre>
+  </div>
+
+  <details class="deep">
+    <summary>ArrayList: внутреннее устройство <span class="tag">детали</span></summary>
+    <div class="deep-body">
+      <p class="tight">Внутри — обычный <code class="inline">Object[]</code>. При добавлении элемента сверх capacity создаётся новый массив размером <code class="inline">capacity * 1.5</code> и данные копируются. Начальный capacity = 10.</p>
+      <p class="tight" style="margin-top:8px">Если заранее известен размер — передай его в конструктор: <code class="inline">new ArrayList&lt;&gt;(1000)</code> — избежишь лишних копирований.</p>
+    </div>
+  </details>
 </section>
 
 <section class="topic" id="map">
   <h2><span class="idx">3.2</span>Map: HashMap, LinkedHashMap, TreeMap</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">MapDemo.java</span></div>
+    <pre><code class="language-java">// HashMap — хэш-таблица, порядок не гарантирован, O(1) get/put
+Map&lt;String, Integer&gt; map = new HashMap&lt;&gt;();
+map.put("a", 1);
+map.put("b", 2);
+map.get("a");           // 1
+map.getOrDefault("z", 0);  // 0
+map.containsKey("b");   // true
+map.putIfAbsent("a", 99);  // не перезапишет, т.к. "a" уже есть
+
+// Итерация
+for (var entry : map.entrySet()) {
+    System.out.println(entry.getKey() + "=" + entry.getValue());
+}
+
+// LinkedHashMap — сохраняет порядок вставки, O(1) get/put
+Map&lt;String, Integer&gt; linked = new LinkedHashMap&lt;&gt;();
+
+// TreeMap — сортировка по ключу (Comparable или Comparator), O(log n)
+Map&lt;String, Integer&gt; tree = new TreeMap&lt;&gt;();
+tree.firstKey();    // наименьший ключ
+tree.lastKey();     // наибольший ключ
+
+// Неизменяемый map (Java 9+)
+Map&lt;String, Integer&gt; im = Map.of("a", 1, "b", 2);</code></pre>
+  </div>
+
+  <details class="deep">
+    <summary>HashMap: внутреннее устройство <span class="tag">детали</span></summary>
+    <div class="deep-body">
+      <p class="tight" style="margin-bottom:8px">HashMap — массив «бакетов» (buckets). Ключ хэшируется → <code class="inline">hash % capacity</code> → индекс бакета. Коллизии разрешаются цепочкой (linked list). При длине цепочки &gt; 8 — превращается в красно-чёрное дерево (Java 8+), O(log n) в худшем случае.</p>
+      <p class="tight" style="margin-bottom:8px">Load factor = 0.75 по умолчанию. При заполнении &gt; 75% — resize: capacity × 2, rehash всех элементов. Если знаешь размер заранее: <code class="inline">new HashMap&lt;&gt;(expectedSize * 4 / 3 + 1)</code>.</p>
+      <div class="callout warn" style="margin:0">Ключи в HashMap должны переопределять <code class="inline">equals</code> и <code class="inline">hashCode</code>. Если hashCode меняется после вставки — элемент потеряется.</div>
+    </div>
+  </details>
 </section>
 
 <section class="topic" id="set">
   <h2><span class="idx">3.3</span>Set: HashSet, TreeSet</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p>Set не допускает дубликатов. <code class="inline">HashSet</code> — HashMap под капотом (ключи — элементы, значения — константа). <code class="inline">TreeSet</code> — TreeMap под капотом, элементы отсортированы.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">SetDemo.java</span></div>
+    <pre><code class="language-java">Set&lt;String&gt; set = new HashSet&lt;&gt;();
+set.add("a");
+set.add("b");
+set.add("a");    // дубликат — не добавится
+set.size();      // 2
+set.contains("a"); // O(1)
+
+// LinkedHashSet — порядок вставки сохраняется
+Set&lt;String&gt; linked = new LinkedHashSet&lt;&gt;();
+
+// TreeSet — сортировка, O(log n)
+Set&lt;Integer&gt; tree = new TreeSet&lt;&gt;();
+tree.add(3); tree.add(1); tree.add(2);
+System.out.println(tree);  // [1, 2, 3]
+tree.first();  // 1
+tree.last();   // 3
+tree.headSet(2); // [1] — всё меньше 2
+
+// Операции над множествами
+Set&lt;Integer&gt; a = new HashSet&lt;&gt;(Set.of(1,2,3));
+Set&lt;Integer&gt; b = new HashSet&lt;&gt;(Set.of(2,3,4));
+a.retainAll(b); // пересечение: {2, 3}
+a.addAll(b);    // объединение
+a.removeAll(b); // разность</code></pre>
+  </div>
 </section>
 
 <section class="topic" id="queue">
   <h2><span class="idx">3.4</span>Queue и Deque</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p><code class="inline">Queue</code> — FIFO. <code class="inline">Deque</code> (double-ended queue) — и стек, и очередь. <code class="inline">ArrayDeque</code> — быстрее <code class="inline">Stack</code> и <code class="inline">LinkedList</code> для задач стека/очереди.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">QueueDemo.java</span></div>
+    <pre><code class="language-java">// Queue (FIFO)
+Queue&lt;Integer&gt; q = new ArrayDeque&lt;&gt;();
+q.offer(1); q.offer(2); q.offer(3); // добавить в хвост
+q.peek();   // 1 — посмотреть голову без удаления
+q.poll();   // 1 — извлечь голову
+
+// Deque как стек (LIFO)
+Deque&lt;Integer&gt; stack = new ArrayDeque&lt;&gt;();
+stack.push(1); stack.push(2); stack.push(3);
+stack.peek();  // 3 — вершина
+stack.pop();   // 3 — снять с вершины
+
+// PriorityQueue — очередь с приоритетом (min-heap)
+PriorityQueue&lt;Integer&gt; pq = new PriorityQueue&lt;&gt;();
+pq.offer(5); pq.offer(1); pq.offer(3);
+pq.poll();  // 1 — всегда минимальный
+// max-heap:
+PriorityQueue&lt;Integer&gt; maxPQ = new PriorityQueue&lt;&gt;(Comparator.reverseOrder());</code></pre>
+  </div>
 </section>
 
 <section class="topic" id="complexity">
   <h2><span class="idx">3.5</span>Сложность операций</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th>Структура</th><th>get/contains</th><th>add</th><th>remove</th><th>Порядок</th></tr>
+      <tr><td>ArrayList</td><td><span style="color:#4caf50">O(1)</span></td><td>O(1) аморт.</td><td><span style="color:#e6a020">O(n)</span></td><td>вставки</td></tr>
+      <tr><td>LinkedList</td><td><span style="color:#e6a020">O(n)</span></td><td>O(1) у края</td><td>O(1) у края</td><td>вставки</td></tr>
+      <tr><td>HashMap</td><td><span style="color:#4caf50">O(1)</span></td><td><span style="color:#4caf50">O(1)</span></td><td><span style="color:#4caf50">O(1)</span></td><td>нет</td></tr>
+      <tr><td>LinkedHashMap</td><td><span style="color:#4caf50">O(1)</span></td><td><span style="color:#4caf50">O(1)</span></td><td><span style="color:#4caf50">O(1)</span></td><td>вставки</td></tr>
+      <tr><td>TreeMap</td><td><span style="color:#e6a020">O(log n)</span></td><td><span style="color:#e6a020">O(log n)</span></td><td><span style="color:#e6a020">O(log n)</span></td><td>ключей</td></tr>
+      <tr><td>HashSet</td><td><span style="color:#4caf50">O(1)</span></td><td><span style="color:#4caf50">O(1)</span></td><td><span style="color:#4caf50">O(1)</span></td><td>нет</td></tr>
+      <tr><td>TreeSet</td><td><span style="color:#e6a020">O(log n)</span></td><td><span style="color:#e6a020">O(log n)</span></td><td><span style="color:#e6a020">O(log n)</span></td><td>элементов</td></tr>
+      <tr><td>ArrayDeque</td><td>O(n)</td><td><span style="color:#4caf50">O(1)</span></td><td><span style="color:#4caf50">O(1)</span></td><td>вставки</td></tr>
+      <tr><td>PriorityQueue</td><td>O(n)</td><td><span style="color:#e6a020">O(log n)</span></td><td><span style="color:#e6a020">O(log n)</span></td><td>приоритет</td></tr>
+    </table>
+  </div>
+
+  <div class="callout ok" style="margin-top:16px">
+    <b>Выбор на практике:</b> нужен список → <code class="inline">ArrayList</code>. Нужна уникальность → <code class="inline">HashSet</code>. Нужен словарь → <code class="inline">HashMap</code>. Нужна сортировка → <code class="inline">TreeMap/TreeSet</code>. Нужен стек/очередь → <code class="inline">ArrayDeque</code>.
+  </div>
 </section>

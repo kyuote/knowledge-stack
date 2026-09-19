@@ -1,28 +1,195 @@
 <div class="kicker"><span class="line"></span>Глава 01</div>
 <h1 class="title">Базовый синтаксис</h1>
-<p class="lede">Примитивы и autoboxing, работа со строками, var и вывод типов, операторы управления потоком, массивы.</p>
+<p class="lede">Примитивы и autoboxing, строки, var, управляющие конструкции, массивы — фундамент, который спрашивают в первые 10 минут собеса.</p>
+
+<div class="depth-toggle">
+  <button type="button" class="depth-btn" data-action="expand">▾ развернуть все «подробнее»</button>
+  <button type="button" class="depth-btn" data-action="collapse">▴ свернуть всё</button>
+</div>
 
 <section class="topic" id="primitives">
   <h2><span class="idx">1.1</span>Примитивы и autoboxing</h2>
-  <p class="wip-note" style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p>Java — строго типизированный язык. Есть 8 примитивных типов — они хранятся на стеке и передаются по значению. У каждого есть обёрточный класс (wrapper) в <code class="inline">java.lang</code>.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Primitives.java</span></div>
+    <pre><code class="language-java">// Примитивы и их обёртки
+byte   b = 127;          // 8 бит,  Byte
+short  s = 32_767;       // 16 бит, Short
+int    i = 2_147_483_647;// 32 бит, Integer
+long   l = 9_223_372L;   // 64 бит, Long  (суффикс L)
+float  f = 3.14f;        // 32 бит, Float (суффикс f)
+double d = 3.14159265;   // 64 бит, Double
+char   c = 'A';          // 16 бит Unicode, Character
+boolean flag = true;     // Boolean
+
+// Autoboxing: компилятор сам оборачивает/разворачивает
+Integer x = 42;          // autoboxing:   int → Integer
+int     y = x;           // unboxing:     Integer → int</code></pre>
+  </div>
+
+  <details class="deep">
+    <summary>Ловушки autoboxing <span class="tag">важно</span></summary>
+    <div class="deep-body">
+      <div class="codeblock" style="margin:0">
+        <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Traps.java</span></div>
+        <pre><code class="language-java">// 1. == сравнивает ссылки, а не значения
+Integer a = 1000, b = 1000;
+System.out.println(a == b);      // false! (разные объекты)
+System.out.println(a.equals(b)); // true
+
+// Integer кэширует значения от -128 до 127
+Integer c = 100, d = 100;
+System.out.println(c == d);      // true (кэш!)
+
+// 2. NullPointerException при unboxing null
+Integer n = null;
+int val = n;  // NullPointerException
+
+// 3. Производительность: в тайт-лупе лучше int[], а не Integer[]</code></pre>
+      </div>
+    </div>
+  </details>
 </section>
 
 <section class="topic" id="strings">
   <h2><span class="idx">1.2</span>String и StringBuilder</h2>
-  <p class="wip-note" style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p><code class="inline">String</code> — <b>иммутабельный</b> объект. Каждая операция конкатенации создаёт новый объект в куче. Для изменяемых строк — <code class="inline">StringBuilder</code> (не thread-safe) или <code class="inline">StringBuffer</code> (thread-safe, медленнее).</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Strings.java</span></div>
+    <pre><code class="language-java">String s = "hello";
+s.toUpperCase();         // НЕ меняет s — возвращает новый объект
+String upper = s.toUpperCase(); // правильно
+
+// Конкатенация в цикле — O(n²)
+String bad = "";
+for (int i = 0; i &lt; 1000; i++) bad += i; // создаёт 1000 объектов!
+
+// StringBuilder — O(n)
+StringBuilder sb = new StringBuilder();
+for (int i = 0; i &lt; 1000; i++) sb.append(i);
+String good = sb.toString();
+
+// Сравнение строк
+String a = "hi", b = new String("hi");
+System.out.println(a == b);        // false (разные ссылки)
+System.out.println(a.equals(b));   // true  (всегда используй equals)
+
+// String pool: литералы интернируются автоматически
+String x = "hi", y = "hi";
+System.out.println(x == y);        // true (один объект из пула)</code></pre>
+  </div>
+
+  <details class="deep">
+    <summary>Полезные методы String <span class="tag">api</span></summary>
+    <div class="deep-body">
+      <div class="codeblock" style="margin:0">
+        <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">StringAPI.java</span></div>
+        <pre><code class="language-java">String s = "  Hello, World!  ";
+s.trim()                    // "Hello, World!" (убирает пробелы)
+s.strip()                   // то же, но Unicode-корректно (Java 11)
+s.toLowerCase()             // "  hello, world!  "
+s.contains("World")         // true
+s.startsWith("  Hello")     // true
+s.replace("World", "Java")  // "  Hello, Java!  "
+s.split(", ")               // ["  Hello", "World!  "]
+s.charAt(2)                 // 'H'
+s.substring(2, 7)           // "Hello"
+s.indexOf("o")              // 4
+String.valueOf(42)          // "42"
+"42".isBlank()              // false (Java 11)
+"  ".isBlank()              // true
+String.format("%s=%d", "x", 5) // "x=5"
+"hello".repeat(3)           // "hellohellohello" (Java 11)</code></pre>
+      </div>
+    </div>
+  </details>
 </section>
 
 <section class="topic" id="vars">
   <h2><span class="idx">1.3</span>var и вывод типов</h2>
-  <p class="wip-note" style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p>С Java 10 можно использовать <code class="inline">var</code> для локальных переменных — компилятор выведет тип сам. <b>Это не динамическая типизация</b> — тип фиксируется на этапе компиляции.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">VarDemo.java</span></div>
+    <pre><code class="language-java">// var работает только для локальных переменных с инициализатором
+var list = new ArrayList&lt;String&gt;(); // тип: ArrayList&lt;String&gt;
+var map  = new HashMap&lt;String, Integer&gt;();
+var s    = "hello";   // тип: String
+
+// Нельзя использовать:
+// var x;           // без инициализатора — ошибка
+// var x = null;    // неоднозначно — ошибка
+// class Field { var x = 1; } // поля класса — ошибка
+
+// Удобно с длинными дженерик-типами
+var entries = new HashMap&lt;String, List&lt;Integer&gt;&gt;().entrySet();</code></pre>
+  </div>
 </section>
 
 <section class="topic" id="ops">
-  <h2><span class="idx">1.4</span>Операторы и управление</h2>
-  <p class="wip-note" style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <h2><span class="idx">1.4</span>Операторы и управляющие конструкции</h2>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Control.java</span></div>
+    <pre><code class="language-java">// switch-выражение (Java 14+) — возвращает значение
+int day = 3;
+String name = switch (day) {
+    case 1 -> "Пн";
+    case 2 -> "Вт";
+    case 3 -> "Ср";
+    default -> "другой";
+};
+
+// switch с yield (для многострочных веток)
+int result = switch (day) {
+    case 1, 7 -> 0;    // несколько кейсов через запятую
+    default -> {
+        System.out.println("будни");
+        yield day * 2;  // yield вместо return
+    }
+};
+
+// for-each
+int[] arr = {1, 2, 3};
+for (int x : arr) System.out.println(x);
+
+// Тернарный оператор
+int abs = (x &lt; 0) ? -x : x;
+
+// instanceof с pattern matching (Java 16+)
+Object obj = "hello";
+if (obj instanceof String str) {
+    System.out.println(str.length()); // str уже String, без каста
+}</code></pre>
+  </div>
 </section>
 
 <section class="topic" id="arrays">
   <h2><span class="idx">1.5</span>Массивы</h2>
-  <p class="wip-note" style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p>Массивы в Java — объекты с фиксированной длиной. Размер нельзя изменить после создания. Для динамических коллекций — <code class="inline">ArrayList</code>.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Arrays.java</span></div>
+    <pre><code class="language-java">// Создание
+int[] a = new int[5];           // [0, 0, 0, 0, 0]
+int[] b = {1, 2, 3, 4, 5};
+String[] s = new String[3];     // [null, null, null]
+int[][] matrix = new int[3][4]; // 2D-массив
+
+// Работа с java.util.Arrays
+import java.util.Arrays;
+Arrays.sort(b);                          // сортировка in-place
+Arrays.binarySearch(b, 3);              // поиск (только в sorted)
+Arrays.fill(a, 7);                       // [7, 7, 7, 7, 7]
+int[] copy = Arrays.copyOf(b, 3);       // [1, 2, 3]
+int[] range = Arrays.copyOfRange(b,1,4);// [2, 3, 4]
+System.out.println(Arrays.toString(b)); // "[1, 2, 3, 4, 5]"
+Arrays.equals(a, b);                    // поэлементное сравнение</code></pre>
+  </div>
+
+  <div class="callout warn">
+    Для сравнения массивов всегда используй <code class="inline">Arrays.equals(a, b)</code>, не <code class="inline">a.equals(b)</code> и не <code class="inline">a == b</code> — оба сравнивают ссылки.
+  </div>
 </section>

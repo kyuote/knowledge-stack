@@ -1,28 +1,170 @@
 <div class="kicker"><span class="line"></span>Глава 05</div>
 <h1 class="title">Исключения</h1>
-<p class="lede">Иерархия Throwable, checked vs unchecked, try-with-resources, кастомные исключения.</p>
+<p class="lede">Иерархия Throwable, checked vs unchecked, try-with-resources. Знание иерархии и правила «не глотать исключения» — обязательны.</p>
+
+<div class="depth-toggle">
+  <button type="button" class="depth-btn" data-action="expand">▾ развернуть все «подробнее»</button>
+  <button type="button" class="depth-btn" data-action="collapse">▴ свернуть всё</button>
+</div>
 
 <section class="topic" id="hierarchy">
   <h2><span class="idx">5.1</span>Иерархия Throwable</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">hierarchy.txt</span></div>
+    <pre><code class="language-java">Throwable
+├── Error                    // системные ошибки — не перехватывай
+│   ├── OutOfMemoryError
+│   ├── StackOverflowError
+│   └── AssertionError
+└── Exception
+    ├── IOException          // checked — компилятор требует обработки
+    ├── SQLException         // checked
+    ├── ParseException       // checked
+    └── RuntimeException     // unchecked — не требует обработки
+        ├── NullPointerException
+        ├── IllegalArgumentException
+        ├── IllegalStateException
+        ├── IndexOutOfBoundsException
+        ├── ClassCastException
+        └── UnsupportedOperationException</code></pre>
+  </div>
 </section>
 
 <section class="topic" id="checked">
   <h2><span class="idx">5.2</span>Checked vs Unchecked</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p><b>Checked</b> — наследники <code class="inline">Exception</code> (кроме RuntimeException). Компилятор требует либо <code class="inline">try-catch</code>, либо объявления в <code class="inline">throws</code>. Означает: ситуация предсказуема, вызывающий код должен её обработать.</p>
+  <p><b>Unchecked</b> (RuntimeException) — ошибки программирования. Не нужно объявлять. На практике большинство современных библиотек предпочитают unchecked.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">CheckedDemo.java</span></div>
+    <pre><code class="language-java">// Checked — должен быть обработан или объявлен
+void readFile(String path) throws IOException {  // объявляем
+    FileReader fr = new FileReader(path);        // бросает IOException
+}
+
+void safe() {
+    try {
+        readFile("data.txt");
+    } catch (IOException e) {
+        System.err.println("Ошибка: " + e.getMessage());
+    }
+}
+
+// Unchecked — объявлять не обязательно
+void process(String s) {
+    if (s == null) throw new IllegalArgumentException("s must not be null");
+    // NullPointerException если s.length() был бы null — тоже unchecked
+}</code></pre>
+  </div>
 </section>
 
 <section class="topic" id="trycatch">
   <h2><span class="idx">5.3</span>try-catch-finally</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">TryCatch.java</span></div>
+    <pre><code class="language-java">try {
+    int result = 10 / 0;
+} catch (ArithmeticException e) {
+    System.out.println("Поймали: " + e.getMessage()); // "/ by zero"
+} catch (RuntimeException e) {
+    // более широкий catch — порядок от частного к общему!
+} finally {
+    // выполняется всегда: и при исключении, и без него
+    // используй для освобождения ресурсов (если не try-with-resources)
+}
+
+// Multi-catch (Java 7+)
+try {
+    // ...
+} catch (IOException | SQLException e) {
+    log(e);  // одна обработка для нескольких типов
+}
+
+// Переброс исключения
+try {
+    riskyMethod();
+} catch (Exception e) {
+    throw new RuntimeException("Контекст: " + e.getMessage(), e); // цепочка!
+}</code></pre>
+  </div>
+
+  <div class="callout warn">
+    Никогда не делай пустой <code class="inline">catch (Exception e) {}</code> — это «глотание» исключения. Минимум — логируй: <code class="inline">log.error("msg", e)</code>.
+  </div>
 </section>
 
 <section class="topic" id="trywith">
   <h2><span class="idx">5.4</span>try-with-resources</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p>Автоматически закрывает ресурсы, реализующие <code class="inline">AutoCloseable</code>. <code class="inline">close()</code> вызывается даже при исключении — аналог <code class="inline">defer</code> в Go.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">TryWith.java</span></div>
+    <pre><code class="language-java">// Старый способ (до Java 7) — легко забыть закрыть
+BufferedReader br = null;
+try {
+    br = new BufferedReader(new FileReader("file.txt"));
+    System.out.println(br.readLine());
+} finally {
+    if (br != null) br.close(); // IOException здесь может перекрыть первое!
+}
+
+// try-with-resources — ресурс закроется автоматически
+try (BufferedReader br = new BufferedReader(new FileReader("file.txt"))) {
+    System.out.println(br.readLine());
+}  // br.close() вызовется здесь в любом случае
+
+// Несколько ресурсов — закрываются в обратном порядке
+try (Connection conn = ds.getConnection();
+     Statement  stmt = conn.createStatement()) {
+    stmt.execute("SELECT 1");
+}
+
+// Свой AutoCloseable
+class Timer implements AutoCloseable {
+    long start = System.nanoTime();
+    @Override
+    public void close() {
+        System.out.println("Elapsed: " + (System.nanoTime() - start) + "ns");
+    }
+}
+try (var t = new Timer()) {
+    // ... код
+}  // выведет время автоматически</code></pre>
+  </div>
 </section>
 
 <section class="topic" id="custom">
   <h2><span class="idx">5.5</span>Кастомные исключения</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Custom.java</span></div>
+    <pre><code class="language-java">// Unchecked (чаще всего нужен именно этот вариант)
+public class UserNotFoundException extends RuntimeException {
+    private final long userId;
+
+    public UserNotFoundException(long userId) {
+        super("User not found: " + userId);
+        this.userId = userId;
+    }
+
+    // Конструктор с cause — для цепочки исключений
+    public UserNotFoundException(long userId, Throwable cause) {
+        super("User not found: " + userId, cause);
+        this.userId = userId;
+    }
+
+    public long getUserId() { return userId; }
+}
+
+// Checked (когда вызывающий обязан обработать)
+public class InsufficientFundsException extends Exception {
+    private final double amount;
+    public InsufficientFundsException(double amount) {
+        super("Insufficient funds: need " + amount);
+        this.amount = amount;
+    }
+}</code></pre>
+  </div>
 </section>

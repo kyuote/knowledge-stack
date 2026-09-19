@@ -1,23 +1,122 @@
 <div class="kicker"><span class="line"></span>Глава 04</div>
 <h1 class="title">Дженерики</h1>
-<p class="lede">Параметры типа, wildcards, type erasure и их влияние на runtime.</p>
+<p class="lede">Параметры типа, wildcards, type erasure — то что позволяет писать типобезопасный код без дублирования. Wildcards — самая частая точка путаницы на собесе.</p>
+
+<div class="depth-toggle">
+  <button type="button" class="depth-btn" data-action="expand">▾ развернуть все «подробнее»</button>
+  <button type="button" class="depth-btn" data-action="collapse">▴ свернуть всё</button>
+</div>
 
 <section class="topic" id="basics">
   <h2><span class="idx">4.1</span>Параметры типа</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p>Дженерики позволяют писать код, работающий с разными типами, при этом сохраняя типобезопасность на этапе компиляции.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Box.java</span></div>
+    <pre><code class="language-java">// Обобщённый класс
+class Box&lt;T&gt; {
+    private T value;
+    public Box(T value) { this.value = value; }
+    public T get() { return value; }
+}
+
+Box&lt;String&gt;  strBox = new Box&lt;&gt;("hello");  // diamond operator &lt;&gt;
+Box&lt;Integer&gt; intBox = new Box&lt;&gt;(42);
+
+// Обобщённый метод
+class Utils {
+    public static &lt;T&gt; List&lt;T&gt; repeat(T item, int times) {
+        List&lt;T&gt; list = new ArrayList&lt;&gt;();
+        for (int i = 0; i &lt; times; i++) list.add(item);
+        return list;
+    }
+}
+
+// Несколько параметров типа
+class Pair&lt;A, B&gt; {
+    final A first;
+    final B second;
+    Pair(A first, B second) { this.first = first; this.second = second; }
+}</code></pre>
+  </div>
 </section>
 
 <section class="topic" id="wildcards">
   <h2><span class="idx">4.2</span>Wildcards: ? extends / ? super</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p>Мнемоника: <b>PECS</b> — <em>Producer Extends, Consumer Super</em>. Если объект <em>производит</em> данные (читаем из него) — <code class="inline">? extends</code>. Если <em>потребляет</em> (пишем в него) — <code class="inline">? super</code>.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Wildcards.java</span></div>
+    <pre><code class="language-java">// ? extends T — можно ЧИТАТЬ как T, нельзя ПИСАТЬ (Producer)
+List&lt;? extends Number&gt; nums = List.of(1, 2.5, 3L);
+Number n = nums.get(0);  // OK — всё является Number
+// nums.add(1);          // ошибка компиляции — не знаем точный тип
+
+// ? super T — можно ПИСАТЬ T и его подтипы, читать только Object (Consumer)
+List&lt;? super Integer&gt; sink = new ArrayList&lt;Number&gt;();
+sink.add(42);            // OK — Integer подходит
+sink.add(100);           // OK
+// Integer x = sink.get(0); // ошибка — возвращает Object
+
+// Пример PECS: копирование из src в dst
+static &lt;T&gt; void copy(List&lt;? extends T&gt; src,   // читаем
+                      List&lt;? super T&gt; dst) {    // пишем
+    for (T item : src) dst.add(item);
+}
+
+// Неограниченный wildcard — только читаем, не знаем тип
+void printAll(List&lt;?&gt; list) {
+    for (Object o : list) System.out.println(o);
+}</code></pre>
+  </div>
 </section>
 
 <section class="topic" id="erasure">
   <h2><span class="idx">4.3</span>Type erasure</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p>Дженерики в Java реализованы через <b>стирание типов</b>: вся информация о типовых параметрах удаляется компилятором. В runtime <code class="inline">List&lt;String&gt;</code> и <code class="inline">List&lt;Integer&gt;</code> — одно и то же: <code class="inline">List</code>.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Erasure.java</span></div>
+    <pre><code class="language-java">// Последствия type erasure:
+
+// 1. Нельзя создать массив обобщённого типа
+// T[] arr = new T[10]; // ошибка компиляции
+
+// 2. instanceof не работает с параметрами типа
+List&lt;String&gt; list = new ArrayList&lt;&gt;();
+System.out.println(list instanceof List&lt;String&gt;); // true (OK в Java 16+)
+// до Java 16:
+System.out.println(list instanceof List);  // true — только так
+
+// 3. Перегрузка по обобщённому типу невозможна
+// void process(List&lt;String&gt; l) {}
+// void process(List&lt;Integer&gt; l) {} // ошибка — одинаковые сигнатуры после erasure
+
+// 4. Unchecked cast при получении из raw type
+List raw = new ArrayList();
+raw.add("hello");
+String s = (String) raw.get(0); // работает, но небезопасно</code></pre>
+  </div>
 </section>
 
 <section class="topic" id="bounds">
   <h2><span class="idx">4.4</span>Bounded type parameters</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Bounds.java</span></div>
+    <pre><code class="language-java">// Верхняя граница — T должен быть Comparable
+public static &lt;T extends Comparable&lt;T&gt;&gt; T max(T a, T b) {
+    return a.compareTo(b) &gt;= 0 ? a : b;
+}
+max(3, 7);       // 7
+max("apple", "banana"); // "banana"
+
+// Несколько ограничений (класс первым, потом интерфейсы)
+class Container&lt;T extends Serializable &amp; Comparable&lt;T&gt;&gt; { }
+
+// Рекурсивный дженерик (Comparable pattern)
+class SortedList&lt;T extends Comparable&lt;? super T&gt;&gt; {
+    // работает с Integer, String и их подтипами
+}</code></pre>
+  </div>
 </section>

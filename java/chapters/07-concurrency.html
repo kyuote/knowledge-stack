@@ -1,33 +1,234 @@
 <div class="kicker"><span class="line"></span>Глава 07</div>
 <h1 class="title">Конкурентность</h1>
-<p class="lede">Thread, synchronized, volatile, Lock, ExecutorService, CompletableFuture.</p>
+<p class="lede">Thread, synchronized, volatile, Lock, ExecutorService, CompletableFuture — самая сложная тема Java-собеса. Нужно понимать модель памяти и проблемы гонок данных.</p>
+
+<div class="depth-toggle">
+  <button type="button" class="depth-btn" data-action="expand">▾ развернуть все «подробнее»</button>
+  <button type="button" class="depth-btn" data-action="collapse">▴ свернуть всё</button>
+</div>
 
 <section class="topic" id="threads">
   <h2><span class="idx">7.1</span>Thread и Runnable</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Threads.java</span></div>
+    <pre><code class="language-java">// Способ 1: Runnable + Thread
+Runnable task = () -> System.out.println("Hello from " + Thread.currentThread().getName());
+Thread t = new Thread(task, "worker-1");
+t.start();   // запускает поток
+t.join();    // ждём завершения (блокирует текущий поток)
+
+// Способ 2: наследование Thread (не рекомендуется)
+class MyThread extends Thread {
+    @Override public void run() { System.out.println("running"); }
+}
+
+// Способ 3: Callable — возвращает результат и может бросить исключение
+Callable&lt;Integer&gt; compute = () -> {
+    Thread.sleep(100);
+    return 42;
+};
+
+// Жизненный цикл потока: NEW -> RUNNABLE -> BLOCKED/WAITING/TIMED_WAITING -> TERMINATED
+Thread.State state = t.getState();
+
+// Полезные методы
+Thread.currentThread().getName();
+Thread.sleep(100);          // InterruptedException!
+Thread.currentThread().interrupt(); // установить флаг прерывания
+Thread.currentThread().isInterrupted();</code></pre>
+  </div>
 </section>
 
 <section class="topic" id="sync">
   <h2><span class="idx">7.2</span>synchronized и volatile</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p><code class="inline">synchronized</code> — монопольный доступ к блоку кода, обеспечивает <b>взаимное исключение</b> и <b>видимость</b> изменений. <code class="inline">volatile</code> — гарантирует только видимость (не атомарность).</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Sync.java</span></div>
+    <pre><code class="language-java">class Counter {
+    private int count = 0;
+
+    // synchronized метод — лок на this
+    public synchronized void increment() { count++; }
+    public synchronized int get() { return count; }
+
+    // synchronized блок — лок на произвольный объект (гранулярнее)
+    private final Object lock = new Object();
+    public void add(int n) {
+        synchronized (lock) { count += n; }
+    }
+}
+
+// volatile — гарантирует чтение из основной памяти (не из кэша потока)
+// Без volatile другой поток может не увидеть изменения
+class StopFlag {
+    private volatile boolean running = true;
+
+    void stop() { running = false; }
+
+    void run() {
+        while (running) {  // без volatile может крутиться вечно
+            // work...
+        }
+    }
+}
+
+// volatile НЕ делает count++ атомарным! Нужен AtomicInteger
+AtomicInteger atomicCount = new AtomicInteger(0);
+atomicCount.incrementAndGet(); // атомарный инкремент
+atomicCount.compareAndSet(expected, newValue); // CAS</code></pre>
+  </div>
+
+  <div class="callout warn">
+    <code class="inline">count++</code> — три операции: read, increment, write. Даже с <code class="inline">volatile</code> это не атомарно. Используй <code class="inline">AtomicInteger</code> или <code class="inline">synchronized</code>.
+  </div>
 </section>
 
 <section class="topic" id="locks">
   <h2><span class="idx">7.3</span>Lock и ReentrantLock</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p><code class="inline">ReentrantLock</code> гибче <code class="inline">synchronized</code>: поддерживает tryLock с таймаутом, fairness, несколько условий. Всегда освобождай в <code class="inline">finally</code>.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Locks.java</span></div>
+    <pre><code class="language-java">ReentrantLock lock = new ReentrantLock();
+
+void process() {
+    lock.lock();
+    try {
+        // критическая секция
+    } finally {
+        lock.unlock(); // ВСЕГДА в finally
+    }
+}
+
+// tryLock — не блокирует
+boolean acquired = lock.tryLock(1, TimeUnit.SECONDS);
+if (acquired) {
+    try { /* ... */ } finally { lock.unlock(); }
+}
+
+// ReadWriteLock — несколько читателей, один писатель
+ReadWriteLock rwLock = new ReentrantReadWriteLock();
+rwLock.readLock().lock();  // несколько потоков могут держать одновременно
+rwLock.writeLock().lock(); // монопольный доступ
+
+// Condition — аналог wait/notify, но гибче
+Condition notFull  = lock.newCondition();
+Condition notEmpty = lock.newCondition();
+notFull.await();   // ждать (освобождает lock)
+notEmpty.signal(); // разбудить один поток</code></pre>
+  </div>
 </section>
 
 <section class="topic" id="executor">
   <h2><span class="idx">7.4</span>ExecutorService и пулы</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p>Вместо ручного создания потоков — пулы через <code class="inline">Executors</code>. Потоки переиспользуются, управляется очередью задач.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">Executor.java</span></div>
+    <pre><code class="language-java">// Фиксированный пул
+ExecutorService pool = Executors.newFixedThreadPool(4);
+
+// Кэширующий пул — создаёт потоки по мере надобности
+ExecutorService cached = Executors.newCachedThreadPool();
+
+// Одиночный поток — задачи выполняются последовательно
+ExecutorService single = Executors.newSingleThreadExecutor();
+
+// ScheduledExecutorService — отложенные/периодические задачи
+ScheduledExecutorService sched = Executors.newScheduledThreadPool(2);
+sched.schedule(task, 5, TimeUnit.SECONDS);           // через 5 сек
+sched.scheduleAtFixedRate(task, 0, 1, TimeUnit.SECONDS); // каждую секунду
+
+// Отправка задач
+pool.execute(runnable);            // submit без результата
+Future&lt;Integer&gt; f = pool.submit(callable); // submit с результатом
+f.get();                           // блокирует до готовности
+
+// Завершение
+pool.shutdown();                   // ждёт завершения текущих задач
+pool.shutdownNow();                // прерывает потоки
+pool.awaitTermination(5, TimeUnit.SECONDS); // ждём не дольше 5 сек</code></pre>
+  </div>
+
+  <details class="deep">
+    <summary>ThreadPoolExecutor — настройка под капотом <span class="tag">детали</span></summary>
+    <div class="deep-body">
+      <div class="codeblock" style="margin:0">
+        <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">ThreadPool.java</span></div>
+        <pre><code class="language-java">// Настройка пула вручную
+new ThreadPoolExecutor(
+    2,                           // corePoolSize
+    8,                           // maximumPoolSize
+    60, TimeUnit.SECONDS,        // keepAliveTime для idle потоков
+    new LinkedBlockingQueue&lt;&gt;(100), // очередь задач
+    new ThreadFactory() { ... }, // как создавать потоки
+    new ThreadPoolExecutor.CallerRunsPolicy() // политика отказа
+);</code></pre>
+      </div>
+    </div>
+  </details>
 </section>
 
 <section class="topic" id="future">
   <h2><span class="idx">7.5</span>Future и CompletableFuture</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p><code class="inline">CompletableFuture</code> (Java 8) — асинхронные цепочки без блокировки. Аналог промисов в JS.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">CFuture.java</span></div>
+    <pre><code class="language-java">// Асинхронное выполнение
+CompletableFuture&lt;String&gt; cf = CompletableFuture
+    .supplyAsync(() -> fetchFromDB())       // в ForkJoinPool.commonPool
+    .thenApply(result -> result.toUpperCase()) // трансформация
+    .thenApply(s -> "[" + s + "]")
+    .exceptionally(e -> "ERROR: " + e.getMessage()); // обработка ошибки
+
+String value = cf.get(); // блокирует
+
+// Цепочки
+CompletableFuture.supplyAsync(() -> getUserId())
+    .thenCompose(id -> CompletableFuture.supplyAsync(() -> fetchUser(id))) // flatMap
+    .thenAccept(user -> System.out.println(user));
+
+// Комбинирование
+CompletableFuture&lt;String&gt; a = CompletableFuture.supplyAsync(() -> "Hello");
+CompletableFuture&lt;String&gt; b = CompletableFuture.supplyAsync(() -> "World");
+CompletableFuture.allOf(a, b).thenRun(() -> System.out.println("Both done"));
+CompletableFuture.anyOf(a, b).thenAccept(r -> System.out.println("First: " + r));</code></pre>
+  </div>
 </section>
 
 <section class="topic" id="concurrent">
   <h2><span class="idx">7.6</span>java.util.concurrent коллекции</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">ConcurrentCollections.java</span></div>
+    <pre><code class="language-java">// ConcurrentHashMap — thread-safe HashMap, без глобального лока
+// Блокирует только сегмент (bucket), высокая конкуррентность
+ConcurrentHashMap&lt;String, Integer&gt; map = new ConcurrentHashMap&lt;&gt;();
+map.putIfAbsent("key", 1);
+map.computeIfAbsent("key", k -> expensiveCompute(k));
+
+// CopyOnWriteArrayList — снимок при записи, быстрое чтение
+// Для редких записей, частых чтений (event listeners)
+CopyOnWriteArrayList&lt;String&gt; list = new CopyOnWriteArrayList&lt;&gt;();
+
+// BlockingQueue — producer-consumer
+BlockingQueue&lt;Task&gt; queue = new LinkedBlockingQueue&lt;&gt;(100);
+queue.put(task);    // блокирует если полна
+queue.take();       // блокирует если пуста
+queue.offer(task, 100, TimeUnit.MILLISECONDS); // с таймаутом
+
+// Атомарные переменные
+AtomicInteger   counter = new AtomicInteger(0);
+AtomicLong      seqNum  = new AtomicLong(0);
+AtomicBoolean   flag    = new AtomicBoolean(false);
+AtomicReference&lt;T&gt; ref = new AtomicReference&lt;&gt;();
+
+// CountDownLatch, CyclicBarrier
+CountDownLatch latch = new CountDownLatch(3);
+latch.countDown(); // каждый поток уменьшает счётчик
+latch.await();     // ждёт пока не 0</code></pre>
+  </div>
 </section>

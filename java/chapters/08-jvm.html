@@ -1,28 +1,145 @@
 <div class="kicker"><span class="line"></span>Глава 08</div>
 <h1 class="title">JVM и память</h1>
-<p class="lede">Heap, Stack, Metaspace, сборщики мусора, ClassLoader, JIT-компиляция.</p>
+<p class="lede">Heap, Stack, Metaspace, сборщики мусора, ClassLoader, JIT — понимание этих механизмов объясняет поведение Java в продакшене.</p>
+
+<div class="depth-toggle">
+  <button type="button" class="depth-btn" data-action="expand">▾ развернуть все «подробнее»</button>
+  <button type="button" class="depth-btn" data-action="collapse">▴ свернуть всё</button>
+</div>
 
 <section class="topic" id="memory">
   <h2><span class="idx">8.1</span>Heap, Stack, Metaspace</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">memory.txt</span></div>
+    <pre><code class="language-java">JVM Memory
+├── Heap                     // объекты + массивы, управляется GC
+│   ├── Young Generation
+│   │   ├── Eden             // новые объекты
+│   │   ├── Survivor S0
+│   │   └── Survivor S1
+│   └── Old Generation       // долгоживущие объекты
+├── Metaspace                // метаданные классов (вместо PermGen с Java 8)
+│   └── Class metadata, method bytecode, static variables
+├── Stack (per thread)       // фреймы вызовов, локальные переменные, ссылки
+│   └── Frame per method call
+├── PC Register (per thread) // счётчик команд
+└── Native Method Stack      // для JNI</code></pre>
+  </div>
+
+  <p>Объекты живут в <b>Heap</b>. Локальные переменные и ссылки — в <b>Stack</b> (каждый поток имеет свой). Сами объекты, на которые ссылаются, — в Heap. <code class="inline">StackOverflowError</code> — переполнение стека (глубокая рекурсия). <code class="inline">OutOfMemoryError: Java heap space</code> — переполнение кучи.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">JVMFlags.java</span></div>
+    <pre><code class="language-java">// Ключевые JVM флаги
+-Xms512m          // начальный размер heap
+-Xmx2g            // максимальный размер heap
+-Xss256k          // размер стека потока
+-XX:MetaspaceSize=128m
+-XX:MaxMetaspaceSize=512m
+-XX:+UseG1GC      // выбор GC
+-XX:+PrintGCDetails // логирование GC</code></pre>
+  </div>
 </section>
 
 <section class="topic" id="gc">
   <h2><span class="idx">8.2</span>Сборщики мусора</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p>GC автоматически освобождает память недостижимых объектов. <b>Minor GC</b> — очистка Young Gen (быстро). <b>Major/Full GC</b> — очистка Old Gen (долго, stop-the-world паузы).</p>
+
+  <div class="tablewrap">
+    <table>
+      <tr><th>GC</th><th>Когда использовать</th><th>Паузы</th></tr>
+      <tr><td>Serial GC</td><td>однопоточные приложения, маленький heap</td><td>длинные STW</td></tr>
+      <tr><td>Parallel GC</td><td>пакетная обработка, throughput важнее latency</td><td>длинные STW</td></tr>
+      <tr><td>G1 GC</td><td>по умолчанию Java 9+, большой heap (&gt;4GB)</td><td>предсказуемые, короткие</td></tr>
+      <tr><td>ZGC</td><td>ultra-low latency, heap до терабайт</td><td>&lt;1ms</td></tr>
+      <tr><td>Shenandoah</td><td>low latency, OpenJDK</td><td>&lt;10ms</td></tr>
+    </table>
+  </div>
+
+  <details class="deep">
+    <summary>Алгоритм работы G1 GC <span class="tag">детали</span></summary>
+    <div class="deep-body">
+      <p class="tight" style="margin-bottom:8px">G1 делит heap на <b>регионы</b> (~1-32MB). Отслеживает «мусорность» каждого региона. Во время Minor GC — копирует живые объекты из молодых регионов. Periodically — concurrent marking (параллельно с приложением). Mixed GC — собирает старые регионы с наибольшим количеством мусора (Garbage First).</p>
+      <p class="tight">Целевое время паузы задаётся через <code class="inline">-XX:MaxGCPauseMillis=200</code> (по умолчанию 200мс).</p>
+    </div>
+  </details>
 </section>
 
 <section class="topic" id="classloader">
   <h2><span class="idx">8.3</span>ClassLoader</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p>ClassLoader загружает байткод классов в JVM. Работает по принципу <b>делегирования родителю</b> (Parent Delegation Model): сначала просит родителя загрузить класс, только если родитель не смог — загружает сам.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">ClassLoader.java</span></div>
+    <pre><code class="language-java">// Иерархия ClassLoader
+Bootstrap ClassLoader      // загружает rt.jar / java.base (нативный код C++)
+└── Platform ClassLoader   // java.se.* (Java 9+, ранее Extension CL)
+    └── Application ClassLoader // classpath приложения
+
+// Получить classloader
+ClassLoader cl = MyClass.class.getClassLoader();
+
+// Кастомный ClassLoader — для горячей перезагрузки, изоляции
+class HotReloadCL extends ClassLoader {
+    @Override
+    protected Class&lt;?&gt; findClass(String name) throws ClassNotFoundException {
+        byte[] bytecode = readBytecodeFromDisk(name);
+        return defineClass(name, bytecode, 0, bytecode.length);
+    }
+}
+
+// Загрузка ресурсов
+URL resource = MyClass.class.getResource("/config.properties");
+InputStream is = MyClass.class.getResourceAsStream("/data.json");</code></pre>
+  </div>
 </section>
 
 <section class="topic" id="jit">
   <h2><span class="idx">8.4</span>JIT-компиляция</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p>JVM сначала интерпретирует байткод, затем «горячий» код (часто выполняемый) компилируется JIT-компилятором в нативный машинный код. Порог для компиляции — по умолчанию 10 000 вызовов метода.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">JIT.java</span></div>
+    <pre><code class="language-java">// JIT делает оптимизации:
+// - inlining: вставляет тело метода на месте вызова
+// - escape analysis: объекты, не выходящие из метода, — на стек (не heap!)
+// - loop unrolling: разворачивает короткие циклы
+// - dead code elimination: убирает недостижимый код
+
+// Из-за JVM warm-up:
+// - приложение работает быстрее через 1-2 минуты после запуска
+// - бенчмарки надо прогревать (используй JMH — Java Microbenchmark Harness)
+
+// Принудительная компиляция (для отладки)
+-XX:+PrintCompilation   // показывает что компилируется
+-XX:CompileThreshold=100 // понизить порог для тестов</code></pre>
+  </div>
 </section>
 
 <section class="topic" id="ref">
   <h2><span class="idx">8.5</span>Ссылки: WeakReference, SoftReference</h2>
-  <p style="color:var(--text-dim);font-style:italic">— в разработке —</p>
+  <p>Обычные ссылки — <b>strong references</b>: GC не соберёт объект пока есть strong ref. Слабые ссылки позволяют объекту быть собранным GC.</p>
+
+  <div class="codeblock">
+    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">References.java</span></div>
+    <pre><code class="language-java">// WeakReference — собирается при следующем GC
+// Использование: кэши, где ключ = объект (WeakHashMap)
+WeakReference&lt;byte[]&gt; weakRef = new WeakReference&lt;&gt;(new byte[1024]);
+byte[] data = weakRef.get(); // null если уже собрано GC
+if (data != null) { /* используем */ }
+
+// SoftReference — собирается только при нехватке памяти
+// Использование: кэши изображений, результатов вычислений
+SoftReference&lt;BufferedImage&gt; imageCache = new SoftReference&lt;&gt;(loadImage());
+BufferedImage img = imageCache.get();
+if (img == null) img = loadImage(); // перезагружаем если GC собрал
+
+// PhantomReference — уведомление после финализации (очистка ресурсов)
+// Сейчас вместо этого лучше Cleaner (Java 9+)
+
+// WeakHashMap — ключи могут быть собраны GC
+WeakHashMap&lt;Key, Value&gt; cache = new WeakHashMap&lt;&gt;();
+// Когда key больше нигде не используется — запись удаляется автоматически</code></pre>
+  </div>
 </section>
