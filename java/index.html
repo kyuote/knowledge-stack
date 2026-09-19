@@ -1,0 +1,108 @@
+<title>Заметки джависта</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Karla:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/java.min.js"></script>
+<link rel="stylesheet" href="../go/assets/style.css">
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark" style="background:var(--java,#d99e00);color:#fff">J</div>
+      <div class="brand-name">Заметки джависта</div>
+    </div>
+    <div class="brand-tag">конспект Java — для себя и для собеса</div>
+
+    <div class="toc-label">Главы</div>
+    <div class="chapters">
+      <button class="ch is-active" data-chapter="1" data-file="chapters/01-syntax.html"><span class="ch-num">01</span> Базовый синтаксис</button>
+      <ol class="subnav" data-for="1">
+        <li><a href="#primitives">Примитивы и autoboxing</a></li>
+        <li><a href="#strings">String и StringBuilder</a></li>
+        <li><a href="#vars">var и вывод типов</a></li>
+        <li><a href="#ops">Операторы и управление</a></li>
+        <li><a href="#arrays">Массивы</a></li>
+      </ol>
+
+      <button class="ch" data-chapter="2" data-file="chapters/02-oop.html"><span class="ch-num">02</span> ООП: классы и интерфейсы</button>
+      <ol class="subnav" data-for="2" hidden>
+        <li><a href="#classes">Классы и объекты</a></li>
+        <li><a href="#inheritance">Наследование</a></li>
+        <li><a href="#abstract">Абстрактные классы</a></li>
+        <li><a href="#interfaces">Интерфейсы и default-методы</a></li>
+        <li><a href="#sealed">sealed классы</a></li>
+        <li><a href="#records">record</a></li>
+      </ol>
+
+      <button class="ch" data-chapter="3" data-file="chapters/03-collections.html"><span class="ch-num">03</span> Коллекции</button>
+      <ol class="subnav" data-for="3" hidden>
+        <li><a href="#list">List: ArrayList vs LinkedList</a></li>
+        <li><a href="#map">Map: HashMap, LinkedHashMap, TreeMap</a></li>
+        <li><a href="#set">Set: HashSet, TreeSet</a></li>
+        <li><a href="#queue">Queue и Deque</a></li>
+        <li><a href="#complexity">Сложность операций</a></li>
+      </ol>
+
+      <button class="ch" data-chapter="4" data-file="chapters/04-generics.html"><span class="ch-num">04</span> Дженерики</button>
+      <ol class="subnav" data-for="4" hidden>
+        <li><a href="#basics">Параметры типа</a></li>
+        <li><a href="#wildcards">Wildcards: ? extends / ? super</a></li>
+        <li><a href="#erasure">Type erasure</a></li>
+        <li><a href="#bounds">Bounded type parameters</a></li>
+      </ol>
+
+      <button class="ch" data-chapter="5" data-file="chapters/05-exceptions.html"><span class="ch-num">05</span> Исключения</button>
+      <ol class="subnav" data-for="5" hidden>
+        <li><a href="#hierarchy">Иерархия Throwable</a></li>
+        <li><a href="#checked">Checked vs Unchecked</a></li>
+        <li><a href="#trycatch">try-catch-finally</a></li>
+        <li><a href="#trywith">try-with-resources</a></li>
+        <li><a href="#custom">Кастомные исключения</a></li>
+      </ol>
+
+      <button class="ch" data-chapter="6" data-file="chapters/06-functional.html"><span class="ch-num">06</span> Stream API и лямбды</button>
+      <ol class="subnav" data-for="6" hidden>
+        <li><a href="#lambda">Лямбды и функциональные интерфейсы</a></li>
+        <li><a href="#streams">Stream: промежуточные и терминальные</a></li>
+        <li><a href="#optional">Optional</a></li>
+        <li><a href="#methodref">Method references</a></li>
+        <li><a href="#collectors">Collectors</a></li>
+      </ol>
+
+      <button class="ch" data-chapter="7" data-file="chapters/07-concurrency.html"><span class="ch-num">07</span> Конкурентность</button>
+      <ol class="subnav" data-for="7" hidden>
+        <li><a href="#threads">Thread и Runnable</a></li>
+        <li><a href="#sync">synchronized и volatile</a></li>
+        <li><a href="#locks">Lock и ReentrantLock</a></li>
+        <li><a href="#executor">ExecutorService и пулы</a></li>
+        <li><a href="#future">Future и CompletableFuture</a></li>
+        <li><a href="#concurrent">java.util.concurrent коллекции</a></li>
+      </ol>
+
+      <button class="ch" data-chapter="8" data-file="chapters/08-jvm.html"><span class="ch-num">08</span> JVM и память</button>
+      <ol class="subnav" data-for="8" hidden>
+        <li><a href="#memory">Heap, Stack, Metaspace</a></li>
+        <li><a href="#gc">Сборщики мусора</a></li>
+        <li><a href="#classloader">ClassLoader</a></li>
+        <li><a href="#jit">JIT-компиляция</a></li>
+        <li><a href="#ref">Ссылки: WeakReference, SoftReference</a></li>
+      </ol>
+
+      <button class="ch" data-chapter="9" data-file="chapters/09-patterns.html"><span class="ch-num">09</span> Паттерны проектирования</button>
+      <ol class="subnav" data-for="9" hidden>
+        <li><a href="#creational">Порождающие: Singleton, Factory, Builder</a></li>
+        <li><a href="#structural">Структурные: Adapter, Decorator, Proxy</a></li>
+        <li><a href="#behavioral">Поведенческие: Strategy, Observer, Command</a></li>
+      </ol>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page">
+      <div id="chapter-root" class="chapter" data-chapter="1"></div>
+    </div>
+  </main>
+</div>
+
+<script src="assets/app.js"></script>
