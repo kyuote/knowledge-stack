@@ -7,6 +7,12 @@
         <button type="button" class="depth-btn" data-action="collapse">▴ свернуть всё</button>
       </div>
 
+      <div style="margin:18px 0 28px;">
+        <button type="button" onclick="openImpl('concurrency-primer')" style="display:inline-flex;align-items:center;gap:9px;padding:10px 18px;background:var(--accent-soft);border:1.5px solid var(--accent,#7F77DD);border-radius:12px;cursor:pointer;font-family:'Karla',sans-serif;font-size:14px;font-weight:600;color:var(--accent-strong,#7F77DD);transition:box-shadow .15s;">
+          <span style="font-size:18px">📓</span> Базовое погружение в конкурентность
+        </button>
+      </div>
+
       <section class="topic" id="goroutines">
         <h2><span class="idx">8.1</span>Горутины</h2>
 
@@ -115,6 +121,77 @@ v, ok := <-ch // ok == false — канал закрыт и пуст</code></pre
             <text x="450" y="183" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="currentColor">&lt;-ch (main, не спешит)</text>
           </svg>
           <figcaption>Небуферизованный канал синхронизирует отправителя и получателя напрямую («рандеву»). Буферизованный позволяет отправить до <code class="inline">cap</code> значений, не дожидаясь получателя.</figcaption>
+        </figure>
+
+        <figure style="margin-top:18px">
+          <svg viewBox="0 0 640 220" role="img" aria-label="Буферизованный канал: P кладёт в буфер, C забирает независимо">
+            <defs>
+              <marker id="arrBuf" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="#4D9BE6"/>
+              </marker>
+              <marker id="arrBufC" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="#E6A020"/>
+              </marker>
+            </defs>
+
+            <!-- ==== LEFT: горутина P ==== -->
+            <!-- blue walls -->
+            <line x1="60" y1="10" x2="60" y2="195" stroke="#4D9BE6" stroke-width="3"/>
+            <line x1="60" y1="195" x2="175" y2="195" stroke="#4D9BE6" stroke-width="3"/>
+            <line x1="175" y1="10" x2="175" y2="80" stroke="#4D9BE6" stroke-width="3"/>
+            <line x1="175" y1="120" x2="175" y2="195" stroke="#4D9BE6" stroke-width="3"/>
+            <!-- label -->
+            <text x="117" y="26" text-anchor="middle" font-size="10" fill="#4D9BE6" opacity="0.7" font-family="JetBrains Mono">горутина</text>
+            <!-- P circle -->
+            <circle cx="117" cy="110" r="30" fill="none" stroke="#4D9BE6" stroke-width="2"/>
+            <text x="117" y="117" text-anchor="middle" font-family="JetBrains Mono" font-weight="700" font-size="22" fill="#4D9BE6">P</text>
+            <!-- cap -->
+            <ellipse cx="117" cy="81" rx="19" ry="5" fill="#4D9BE6" opacity="0.9"/>
+            <rect x="104" y="73" width="26" height="11" rx="5" fill="#4D9BE6" opacity="0.9"/>
+            <!-- send label bottom -->
+            <text x="117" y="178" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#4D9BE6">ch &lt;- v</text>
+
+            <!-- дашед стрелка: P → buffer (слот свободен) -->
+            <line x1="175" y1="100" x2="276" y2="100" stroke="#4D9BE6" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arrBuf)"/>
+            <text x="224" y="92" text-anchor="middle" font-size="9.5" fill="#4D9BE6" opacity="0.75">слот свободен</text>
+
+            <!-- ==== MIDDLE: buffer slots ==== -->
+            <text x="320" y="18" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.5" font-family="JetBrains Mono">make(chan int, 3)</text>
+            <!-- vertical channel pipe -->
+            <line x1="304" y1="30" x2="304" y2="185" stroke="currentColor" stroke-width="2.5" opacity="0.3"/>
+            <line x1="336" y1="30" x2="336" y2="185" stroke="currentColor" stroke-width="2.5" opacity="0.3"/>
+            <!-- slot 1 — filled -->
+            <rect x="281" y="38" width="78" height="40" rx="5" fill="#4D9BE618" stroke="#4D9BE6" stroke-width="1.5"/>
+            <text x="320" y="63" text-anchor="middle" font-family="JetBrains Mono" font-size="13" fill="#4D9BE6">42</text>
+            <!-- slot 2 — filled -->
+            <rect x="281" y="84" width="78" height="40" rx="5" fill="#4D9BE618" stroke="#4D9BE6" stroke-width="1.5"/>
+            <text x="320" y="109" text-anchor="middle" font-family="JetBrains Mono" font-size="13" fill="#4D9BE6">7</text>
+            <!-- slot 3 — empty -->
+            <rect x="281" y="130" width="78" height="40" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 3" opacity="0.3"/>
+            <text x="320" y="155" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="currentColor" opacity="0.25">пусто</text>
+
+            <!-- стрелка: buffer → C -->
+            <line x1="362" y1="100" x2="458" y2="100" stroke="#E6A020" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arrBufC)"/>
+            <text x="410" y="92" text-anchor="middle" font-size="9.5" fill="#E6A020" opacity="0.75">есть данные</text>
+
+            <!-- ==== RIGHT: горутина C ==== -->
+            <!-- orange walls -->
+            <line x1="462" y1="10" x2="462" y2="80" stroke="#E6A020" stroke-width="3"/>
+            <line x1="462" y1="120" x2="462" y2="195" stroke="#E6A020" stroke-width="3"/>
+            <line x1="462" y1="195" x2="578" y2="195" stroke="#E6A020" stroke-width="3"/>
+            <line x1="578" y1="10" x2="578" y2="195" stroke="#E6A020" stroke-width="3"/>
+            <!-- label -->
+            <text x="520" y="26" text-anchor="middle" font-size="10" fill="#E6A020" opacity="0.7" font-family="JetBrains Mono">горутина</text>
+            <!-- C circle -->
+            <circle cx="520" cy="110" r="30" fill="none" stroke="#E6A020" stroke-width="2"/>
+            <text x="520" y="117" text-anchor="middle" font-family="JetBrains Mono" font-weight="700" font-size="22" fill="#E6A020">C</text>
+            <!-- cap -->
+            <ellipse cx="520" cy="81" rx="19" ry="5" fill="#E6A020" opacity="0.9"/>
+            <rect x="507" y="73" width="26" height="11" rx="5" fill="#E6A020" opacity="0.9"/>
+            <!-- recv label bottom -->
+            <text x="520" y="178" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#E6A020">v := &lt;-ch</text>
+          </svg>
+          <figcaption>P кладёт в буфер не дожидаясь C (пока есть свободный слот). C забирает не дожидаясь P (пока буфер не пуст). Они работают независимо — блокировка только на границах: P ждёт если буфер полон, C ждёт если буфер пуст.</figcaption>
         </figure>
 
         <div class="callout warn">

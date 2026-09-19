@@ -3837,6 +3837,1592 @@ type Good struct {
         `
       },
 
+      'concurrency-primer': {
+        title: '📓 Базовое погружение в конкурентность',
+        pages: [
+          { html: `
+          <p class="tight" style="margin-bottom:6px">Горутина — это функция, запущенная <b>конкурентно</b> с остальным кодом. Достаточно написать <code class="inline">go foo()</code> — рантайм запустит её в фоне, не блокируя основной поток. Три темы, которые нужно разобрать:</p>
+          <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
+            <span style="font-family:'JetBrains Mono';font-size:11px;padding:3px 10px;border-radius:100px;background:rgba(77,155,230,.12);color:#4D9BE6;border:1px solid rgba(77,155,230,.3)">sync — синхронизация</span>
+            <span style="font-family:'JetBrains Mono';font-size:11px;padding:3px 10px;border-radius:100px;background:rgba(224,92,92,.12);color:#e05c5c;border:1px solid rgba(224,92,92,.3)">race — гонки данных</span>
+            <span style="font-family:'JetBrains Mono';font-size:11px;padding:3px 10px;border-radius:100px;background:rgba(240,180,41,.12);color:#F0B429;border:1px solid rgba(240,180,41,.3)">leak — утечки горутин</span>
+          </div>
+
+          <div class="impl-sec">
+            <div class="impl-sec-hdr">Модель Fork / Join</div>
+            <div class="impl-sec-body">
+              <p class="tight"><b>Fork</b> — это момент <code class="inline">go g1()</code>, когда поток выполнения разветвляется на два. <b>Join</b> — точка, где ветки снова сходятся. Без join основная горутина может завершиться раньше, чем запустится дочерняя — тогда она просто обрывается, ничего не сделав. Планировщик сам решает, когда именно запустить горутину, и это не гарантированно «сразу».</p>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:14px 0">
+                <!-- Fork without join -->
+                <div>
+                  <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;font-family:'JetBrains Mono'">без join — горутина не успевает</div>
+                  <svg viewBox="0 0 200 200" style="width:100%;max-width:200px" role="img">
+                    <text x="14" y="18" font-size="10" fill="currentColor" opacity="0.6" font-family="JetBrains Mono">g0(main)</text>
+                    <line x1="30" y1="24" x2="30" y2="130" stroke="currentColor" stroke-width="2" opacity="0.7"/>
+                    <!-- fork point -->
+                    <circle cx="30" cy="70" r="7" fill="#7F77DD"/>
+                    <text x="38" y="68" font-size="9.5" fill="#7F77DD" font-family="JetBrains Mono">go g1()</text>
+                    <!-- g1 branch going right and down -->
+                    <line x1="30" y1="70" x2="130" y2="70" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+                    <text x="132" y="73" font-size="10" fill="currentColor" opacity="0.6" font-family="JetBrains Mono">g1</text>
+                    <line x1="130" y1="70" x2="130" y2="195" stroke="currentColor" stroke-width="1.5" opacity="0.5" stroke-dasharray="4 3"/>
+                    <text x="136" y="120" font-size="9" fill="currentColor" opacity="0.5">println()</text>
+                    <!-- exit line -->
+                    <line x1="0" y1="135" x2="200" y2="135" stroke="#e05c5c" stroke-width="1.5"/>
+                    <text x="34" y="148" font-size="9.5" fill="#e05c5c">Exit — g1 обрывается</text>
+                    <!-- g0 arrow hitting exit -->
+                    <polygon points="26,128 34,128 30,136" fill="#e05c5c"/>
+                  </svg>
+                </div>
+                <!-- Fork with join -->
+                <div>
+                  <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;font-family:'JetBrains Mono'">с join — синхронизация</div>
+                  <svg viewBox="0 0 200 210" style="width:100%;max-width:200px" role="img">
+                    <text x="14" y="18" font-size="10" fill="currentColor" opacity="0.6" font-family="JetBrains Mono">g0(main)</text>
+                    <line x1="30" y1="24" x2="30" y2="200" stroke="currentColor" stroke-width="2" opacity="0.7"/>
+                    <!-- fork -->
+                    <circle cx="30" cy="55" r="7" fill="#7F77DD"/>
+                    <text x="38" y="53" font-size="9.5" fill="#7F77DD" font-family="JetBrains Mono">go g1()</text>
+                    <!-- g1 -->
+                    <line x1="30" y1="55" x2="130" y2="55" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+                    <text x="132" y="58" font-size="10" fill="currentColor" opacity="0.6" font-family="JetBrains Mono">g1</text>
+                    <line x1="130" y1="55" x2="130" y2="120" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+                    <text x="136" y="92" font-size="9" fill="currentColor" opacity="0.5">println()</text>
+                    <!-- join arrow back -->
+                    <line x1="130" y1="120" x2="30" y2="120" stroke="currentColor" stroke-width="1.5" opacity="0.6" marker-end="url(#arrJ)"/>
+                    <defs>
+                      <marker id="arrJ" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                        <path d="M0,0 L10,5 L0,10 z" fill="currentColor" opacity="0.6"/>
+                      </marker>
+                    </defs>
+                    <!-- join point -->
+                    <circle cx="30" cy="120" r="7" fill="#7F77DD"/>
+                    <text x="38" y="118" font-size="9.5" fill="#7F77DD" font-family="JetBrains Mono">wg.Wait()</text>
+                    <text x="36" y="131" font-size="8.5" fill="currentColor" opacity="0.45">← join</text>
+                    <!-- continue -->
+                    <text x="36" y="155" font-size="9" fill="currentColor" opacity="0.5">println()</text>
+                    <polygon points="26,194 34,194 30,202" fill="currentColor" opacity="0.5"/>
+                  </svg>
+                </div>
+              </div>
+
+              <p class="tight" style="margin-top:12px"><b>WaitGroup</b> из пакета <code class="inline">sync</code> — самый простой способ создать точку join. Внутри это атомарный счётчик: <code class="inline">Add(n)</code> увеличивает его на n, <code class="inline">Done()</code> уменьшает на 1, <code class="inline">Wait()</code> блокирует текущую горутину пока счётчик не станет равен нулю.</p>
+              <div class="codeblock">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">waitgroup.go</span></div>
+                <pre><code class="language-go">wg := &amp;sync.WaitGroup{}
+wg.Add(1)
+
+go func() {
+    defer wg.Done() // сигнализируем: горутина завершилась
+    fmt.Println("работаю")
+}()
+
+wg.Wait() // точка join — ждём все горутины
+fmt.Println("все готово")</code></pre>
+              </div>
+              <p class="tight" style="margin-top:10px"><code class="inline">wg.Add(N)</code> вызывают <b>до</b> запуска горутин, <code class="inline">wg.Done()</code> — внутри через <code class="inline">defer</code> (чтобы вызвался даже при панике), <code class="inline">wg.Wait()</code> — точка join, где основной поток блокируется до нуля счётчика.</p>
+              <p class="tight" style="margin-top:6px"><b>Важно:</b> WaitGroup всегда передавать по указателю. Копия получит независимый счётчик — <code class="inline">Wait()</code> никогда не разблокируется, дедлок.</p>
+            </div>
+          </div>
+
+          <div class="impl-sec">
+            <div class="impl-sec-hdr">Всегда ли нужна синхронизация?</div>
+            <div class="impl-sec-body">
+              <p class="tight">Нет — и это часто упускают. Если результат горутины не нужен вызывающей стороне и приложение живёт достаточно долго, чтобы горутина успела отработать, join-точка не нужна.</p>
+              <p class="tight" style="margin-top:6px">Типичный пример — <b>запись в кэш после ответа</b>: данных нет в кэше, достали из БД, ответили клиенту. Записывать в кэш синхронно — значит увеличить latency запроса. Лучше — в фоне:</p>
+              <div class="codeblock">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">background.go</span></div>
+                <pre><code class="language-go">func handler(w http.ResponseWriter, r *http.Request) {
+    data := db.Get(r.URL.Path)
+    go cache.Set(r.URL.Path, data) // не ждём — ответ уже уходит клиенту
+    w.Write(data)
+}
+// Веб-сервер живёт долго — горутина рано или поздно выполнится.</code></pre>
+              </div>
+              <p class="tight" style="margin-top:8px">Правило: горутину без join запускают тогда, когда <b>«fire and forget»</b> — запустили и забыли — это осознанное решение, а не случайность.</p>
+            </div>
+          </div>
+
+          <div class="impl-sec">
+            <div class="impl-sec-hdr">Data race — гонка данных</div>
+            <div class="impl-sec-body">
+              <p class="tight"><b>Гонка данных</b> возникает, когда две и более горутин обращаются к одной переменной и хотя бы одна из них пишет — без синхронизации. Главный обман: <code class="inline">m++</code> выглядит как одна операция, но на уровне процессора это три отдельных шага: <b>Read → Add → Write</b>. Планировщик может переключить горутину между любыми двумя из них.</p>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:14px 0">
+                <!-- Ideal -->
+                <div>
+                  <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;font-family:'JetBrains Mono'">идеал (последовательно)</div>
+                  <svg viewBox="0 0 260 200" style="width:100%;max-width:260px" role="img">
+                    <text x="8"  y="16" font-size="9" fill="currentColor" opacity="0.5" font-family="JetBrains Mono">g0</text>
+                    <text x="86" y="16" font-size="9" fill="currentColor" opacity="0.7" font-family="JetBrains Mono">g1</text>
+                    <text x="180" y="16" font-size="9" fill="currentColor" opacity="0.7" font-family="JetBrains Mono">g2</text>
+                    <line x1="16"  y1="20" x2="16"  y2="195" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+                    <line x1="100" y1="20" x2="100" y2="195" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+                    <line x1="194" y1="20" x2="194" y2="195" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+                    <!-- fork -->
+                    <circle cx="16" cy="32" r="5" fill="#7F77DD"/>
+                    <line x1="16" y1="32" x2="100" y2="32" stroke="#7F77DD" stroke-width="1" opacity="0.6"/>
+                    <line x1="16" y1="32" x2="194" y2="32" stroke="#7F77DD" stroke-width="1" opacity="0.6"/>
+                    <!-- g1 ops (green) — under g1 line -->
+                    <rect x="66" y="42" width="80" height="52" rx="4" fill="none" stroke="#3DD68C" stroke-width="1" opacity="0.7"/>
+                    <text x="70" y="56"  font-size="9" fill="#3DD68C" font-family="JetBrains Mono">Read m  0</text>
+                    <text x="70" y="70"  font-size="9" fill="#3DD68C" font-family="JetBrains Mono">Add 1   0+1=1</text>
+                    <text x="70" y="84"  font-size="9" fill="#3DD68C" font-family="JetBrains Mono">Write m 1</text>
+                    <!-- g2 ops (blue) — under g2 line, below g1 to show sequential -->
+                    <rect x="160" y="104" width="80" height="52" rx="4" fill="none" stroke="#4D9BE6" stroke-width="1" opacity="0.7"/>
+                    <text x="164" y="118" font-size="9" fill="#4D9BE6" font-family="JetBrains Mono">Read m  1</text>
+                    <text x="164" y="132" font-size="9" fill="#4D9BE6" font-family="JetBrains Mono">Add 1   1+1=2</text>
+                    <text x="164" y="146" font-size="9" fill="#4D9BE6" font-family="JetBrains Mono">Write m 2</text>
+                    <!-- result -->
+                    <text x="50" y="183" font-size="10" fill="#3DD68C" font-family="JetBrains Mono">Result: m = 2 ✓</text>
+                  </svg>
+                </div>
+                <!-- Actual race -->
+                <div>
+                  <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;font-family:'JetBrains Mono'">реальность (data race)</div>
+                  <svg viewBox="0 0 260 200" style="width:100%;max-width:260px" role="img">
+                    <text x="8"  y="16" font-size="9" fill="currentColor" opacity="0.5" font-family="JetBrains Mono">g0</text>
+                    <text x="86" y="16" font-size="9" fill="currentColor" opacity="0.7" font-family="JetBrains Mono">g1</text>
+                    <text x="180" y="16" font-size="9" fill="currentColor" opacity="0.7" font-family="JetBrains Mono">g2</text>
+                    <line x1="16"  y1="20" x2="16"  y2="195" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+                    <line x1="100" y1="20" x2="100" y2="195" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+                    <line x1="194" y1="20" x2="194" y2="195" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+                    <!-- fork -->
+                    <circle cx="16" cy="32" r="5" fill="#7F77DD"/>
+                    <line x1="16" y1="32" x2="100" y2="32" stroke="#7F77DD" stroke-width="1" opacity="0.6"/>
+                    <line x1="16" y1="32" x2="194" y2="32" stroke="#7F77DD" stroke-width="1" opacity="0.6"/>
+                    <!-- g1 box (red) under g1 line, starts first -->
+                    <rect x="66" y="42" width="80" height="52" rx="4" fill="none" stroke="#e05c5c" stroke-width="1" opacity="0.8"/>
+                    <text x="70" y="56" font-size="9" fill="#e05c5c" font-family="JetBrains Mono">Read m  0</text>
+                    <text x="70" y="70" font-size="9" fill="#e05c5c" font-family="JetBrains Mono">Add 1   0+1=1</text>
+                    <text x="70" y="84" font-size="9" fill="#e05c5c" font-family="JetBrains Mono">Write m 1</text>
+                    <!-- g2 box (red) under g2 line, overlapping in time -->
+                    <rect x="160" y="54" width="80" height="52" rx="4" fill="none" stroke="#e05c5c" stroke-width="1" opacity="0.8"/>
+                    <text x="164" y="68"  font-size="9" fill="#e05c5c" font-family="JetBrains Mono">Read m  0</text>
+                    <text x="164" y="82"  font-size="9" fill="#e05c5c" font-family="JetBrains Mono">Add 1   0+1=1</text>
+                    <text x="164" y="96"  font-size="9" fill="#e05c5c" font-family="JetBrains Mono">Write m 1</text>
+                    <!-- result -->
+                    <text x="40"  y="138" font-size="9" fill="currentColor" opacity="0.5">обе прочли 0 — обе записали 1</text>
+                    <text x="50"  y="158" font-size="10" fill="#e05c5c" font-family="JetBrains Mono">Result: m = 1 ✗</text>
+                  </svg>
+                </div>
+              </div>
+
+              <div class="codeblock">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">race.go</span></div>
+                <pre><code class="language-go">money := 0
+for range 1000 {
+    go func() {
+        money++ // READ + ADD + WRITE — не атомарно!
+    }()
+}
+// даже с wg.Wait() результат будет меньше 1000</code></pre>
+              </div>
+
+              <div class="callout warn" style="margin-top:10px">
+                <div class="mark">камень</div>
+                <p><b>Главное коварство гонки:</b> она недетерминирована. На 3 горутинах код может работать идеально — на 1000 или под нагрузкой в проде — сломается. Добавление <code class="inline">wg.Wait()</code> не помогает: синхронизация потоков не делает <code class="inline">m++</code> атомарной.</p>
+              </div>
+
+              <p class="tight" style="margin-top:10px"><b>Как обнаружить:</b> <code class="inline">go run -race .</code> — race detector встроен в тулчейн Go, дополнительно устанавливать ничего не нужно. Замедляет программу в 5–10 раз, поэтому включают в тестах и CI, а не в продакшн-билде.</p>
+            </div>
+          </div>
+
+          <div class="impl-sec">
+            <div class="impl-sec-hdr">Иерархия примитивов синхронизации</div>
+            <div class="impl-sec-body">
+              <p class="tight" style="margin-bottom:12px">Примитивы выстраиваются от низкоуровневых к высокоуровневым — каждый следующий уровень реализован поверх предыдущего. Выбор зависит от задачи: <b>atomic</b> — одна переменная без связей, <b>Mutex</b> — группа полей как транзакция, <b>channel</b> — передача данных между горутинами.</p>
+
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;border-left:3px solid #F0B429;">
+                  <div style="font-family:'JetBrains Mono';font-size:12px;color:#F0B429;white-space:nowrap;min-width:90px">atomic</div>
+                  <div style="font-size:13px">Один примитив — одна операция (<code class="inline">AddInt64</code>, <code class="inline">Load</code>, <code class="inline">Store</code>). Не знает о связанности нескольких полей. Максимальная скорость.</div>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;border-left:3px solid #4D9BE6;">
+                  <div style="font-family:'JetBrains Mono';font-size:12px;color:#4D9BE6;white-space:nowrap;min-width:90px">Mutex</div>
+                  <div style="font-size:13px">Блокирует секцию кода целиком. Одна горутина в критической секции, остальные ждут. Подходит когда нужна транзакционность нескольких полей.</div>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;border-left:3px solid #9B8FFF;">
+                  <div style="font-family:'JetBrains Mono';font-size:12px;color:#9B8FFF;white-space:nowrap;min-width:90px">RWMutex</div>
+                  <div style="font-size:13px">Много читателей одновременно, один писатель. Используй когда чтений намного больше чем записей — <code class="inline">RLock()</code> / <code class="inline">RUnlock()</code> для чтения.</div>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;border-left:3px solid #3DD68C;">
+                  <div style="font-family:'JetBrains Mono';font-size:12px;color:#3DD68C;white-space:nowrap;min-width:90px">channel</div>
+                  <div style="font-size:13px">Передача данных между горутинами. Синхронизация через коммуникацию, а не через блокировки. «Не общайтесь через общую память — общайтесь через каналы».</div>
+                </div>
+              </div>
+
+              <div class="codeblock" style="margin-top:12px">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">mutex_vs_atomic.go</span></div>
+                <pre><code class="language-go">// atomic — одно поле, быстро
+var money atomic.Int64
+money.Add(1)
+
+// mutex — транзакция над несколькими полями
+var mu sync.Mutex
+mu.Lock()
+money++; donations++ // атомарно как пара
+mu.Unlock()
+
+// rwmutex — много читателей
+var rw sync.RWMutex
+rw.RLock(); val := money; rw.RUnlock()   // чтение — не блокирует других читателей
+rw.Lock(); money = newVal; rw.Unlock()   // запись — эксклюзивно</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="impl-sec">
+            <div class="impl-sec-hdr">Каналы — синхронизация через коммуникацию</div>
+            <div class="impl-sec-body">
+              <p class="tight">Канал — более высокоуровневый примитив чем мьютекс. Идея Go: <em>«не общайтесь через общую память — общайтесь через каналы»</em>. <b>Небуферизованный канал</b> блокирует отправителя до тех пор, пока получатель не готов принять — и наоборот. Это делает его встроенной точкой синхронизации без явного <code class="inline">WaitGroup</code>.</p>
+              <div class="codeblock">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">channel.go</span></div>
+                <pre><code class="language-go">ch := make(chan int) // небуферизованный
+
+// Дедлок — оба в одной горутине:
+// ch &lt;- 1       // блокирует
+// val := &lt;-ch   // до сюда не дойдёт
+
+// Правильно — отправитель в отдельной горутине:
+go func() { ch &lt;- 42 }()
+val := &lt;-ch // разблокируется когда горутина отправит
+fmt.Println(val) // 42
+
+// Канал как join — не нужен WaitGroup:
+done := make(chan struct{})
+go func() {
+    fmt.Println("работаю")
+    done &lt;- struct{}{}
+}()
+&lt;-done // ждём сигнала завершения</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="impl-sec">
+            <div class="impl-sec-hdr">Пример: 100 горутин → собрать результаты</div>
+            <div class="impl-sec-body">
+              <p class="tight" style="margin-bottom:10px">Два стандартных подхода для сбора результатов из N горутин — через буферизованный канал или через WaitGroup + Mutex. Оба корректны; канал чище, если каждая горутина производит ровно один результат.</p>
+              <div class="codeblock">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">fan_in.go</span></div>
+                <pre><code class="language-go">// Вариант 1: через канал
+ch := make(chan int, 100) // буферизованный — не блокирует горутины
+total := 0
+
+for range 100 {
+    go func() {
+        ch &lt;- doWork() // каждая горутина кладёт результат
+    }()
+}
+for range 100 {
+    total += &lt;-ch // собираем 100 результатов
+}
+fmt.Println(total)
+
+// Вариант 2: через WaitGroup + Mutex
+var mu sync.Mutex
+wg.Add(100) // сразу перед циклом — не рискуем гонкой с Wait()
+for range 100 {
+    go func() {
+        defer wg.Done()
+        result := doWork()
+        mu.Lock(); total += result; mu.Unlock()
+    }()
+}
+wg.Wait()
+fmt.Println(total)</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="impl-sources">Источники: go.dev/ref/mem · go.dev/blog/codelab-share · go.dev/doc/articles/race_detector · pkg.go.dev/sync · pkg.go.dev/sync/atomic</div>
+        ` },
+
+          { html: `
+          <h3 style="margin:0 0 14px;font-size:18px;font-weight:700">Каналы</h3>
+
+          <p class="tight" style="margin-bottom:16px">В Go два вида каналов. <b>Без буфера</b> — точка синхронизации: отправитель и получатель встречаются, данные переходят из рук в руки, никакого хранения. <b>С буфером</b> — очередь фиксированного размера внутри канала: отправитель кладёт данные и идёт дальше, не дожидаясь получателя.</p>
+
+          <details class="deep">
+            <summary>Канал без буфера <span class="tag">без буфера</span></summary>
+            <div class="deep-body">
+
+          <div class="impl-sec">
+            <div class="impl-sec-hdr">Правильная аналогия: P и C</div>
+            <div class="impl-sec-body">
+              <p class="tight" style="margin-bottom:14px">Представь двух роботов. <b style="color:#4D9BE6">P</b> (producer) раз в какое-то время производит деталь и должен кому-то её отдать. <b style="color:#E08C4A">C</b> (consumer) занимается только одним — ждёт и забирает. Они встречаются ровно раз: P протягивает деталь из рук в руки, C берёт — и оба идут дальше.</p>
+
+              <figure style="margin:0 0 14px">
+                <svg viewBox="0 0 300 145" style="width:100%;max-width:300px;display:block;margin:0 auto" role="img" aria-label="Producer-Consumer через небуферизованный канал">
+
+                  <!-- P circle -->
+                  <circle cx="48" cy="68" r="42" fill="rgba(77,155,230,.12)" stroke="#4D9BE6" stroke-width="2.5"/>
+                  <text x="48" y="86" text-anchor="middle" font-size="42" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+
+                  <!-- P arm line (blue) -->
+                  <line x1="90" y1="68" x2="120" y2="68" stroke="#4D9BE6" stroke-width="5" stroke-linecap="round"/>
+
+                  <!-- E letter (gray) -->
+                  <text x="129" y="88" text-anchor="middle" font-size="62" font-weight="700" fill="#888" font-family="Karla,sans-serif">E</text>
+
+                  <!-- ] bracket (orange): vertical bar + prongs starting at E's right edge -->
+                  <rect x="166" y="56" width="5" height="24" rx="1.5" fill="#E08C4A"/>
+                  <rect x="142" y="56" width="24" height="5" rx="1.5" fill="#E08C4A"/>
+                  <rect x="142" y="75" width="24" height="5" rx="1.5" fill="#E08C4A"/>
+
+                  <!-- C arm line (orange) -->
+                  <line x1="173" y1="68" x2="210" y2="68" stroke="#E08C4A" stroke-width="5" stroke-linecap="round"/>
+
+                  <!-- C circle -->
+                  <circle cx="252" cy="68" r="42" fill="rgba(224,140,74,.12)" stroke="#E08C4A" stroke-width="2.5"/>
+                  <text x="252" y="86" text-anchor="middle" font-size="42" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+
+                  <!-- Labels -->
+                  <text x="48" y="130" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.5" font-family="Karla,sans-serif">producer</text>
+                  <text x="252" y="130" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.5" font-family="Karla,sans-serif">consumer</text>
+
+                </svg>
+              </figure>
+
+              <p class="tight">Именно так работает <b>небуферизованный канал</b>: <code class="inline">ch &lt;- v</code> блокирует P до тех пор, пока C не выполнит <code class="inline">&lt;-ch</code>. Встреча обязательна — ни тот ни другой не могут «забежать вперёд». Это встроенная точка синхронизации без явных мьютексов.</p>
+            </div>
+          </div>
+
+          <div class="impl-sec">
+            <div class="impl-sec-hdr">Базовый синтаксис</div>
+            <div class="impl-sec-body">
+              <div class="codeblock" style="margin:0">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">channel.go</span></div>
+                <pre><code class="language-go">ch := make(chan int) // небуферизованный
+
+go func() {
+    ch &lt;- 42 // блокируется пока C не готов
+}()
+
+v := &lt;-ch       // блокируется пока P не отправит
+fmt.Println(v)  // 42</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="impl-sec">
+            <div class="impl-sec-hdr">Но мир сложнее одной пары</div>
+            <div class="impl-sec-body">
+              <p class="tight" style="margin-bottom:14px">В реальных задачах одной и той же деталью занимается <em>много</em> горутин сразу. Разработчики Go придумали такое решение: давайте соберём всех, кто работает с конкретной деталью, в одно «здание» — у здания есть вывеска (тип канала), и через него они передают детали.</p>
+
+              <figure style="margin:0 0 14px">
+                <svg viewBox="0 0 480 300" style="width:100%;max-width:480px;display:block;margin:0 auto" role="img" aria-label="Здание — все P и C одного типа внутри">
+
+                  <!-- Roof triangle -->
+                  <polygon points="240,12 28,92 452,92" fill="rgba(127,119,221,.06)" stroke="rgba(127,119,221,.35)" stroke-width="1.8" stroke-linejoin="round"/>
+
+                  <!-- Sign / badge at peak -->
+                  <circle cx="240" cy="34" r="22" fill="rgba(127,119,221,.15)" stroke="rgba(127,119,221,.55)" stroke-width="1.8"/>
+                  <text x="240" y="41" text-anchor="middle" font-size="18" font-weight="700" fill="rgba(127,119,221,.95)" font-family="Karla,sans-serif">E</text>
+
+                  <!-- Room walls -->
+                  <rect x="28" y="92" width="424" height="196" rx="0" fill="rgba(127,119,221,.04)" stroke="rgba(127,119,221,.35)" stroke-width="1.8"/>
+
+                  <!-- P circles (blue) -->
+                  <circle cx="85" cy="175" r="24" fill="rgba(77,155,230,.1)" stroke="#4D9BE6" stroke-width="2"/>
+                  <text x="85" y="184" text-anchor="middle" font-size="20" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+
+                  <circle cx="205" cy="253" r="24" fill="rgba(77,155,230,.1)" stroke="#4D9BE6" stroke-width="2"/>
+                  <text x="205" y="262" text-anchor="middle" font-size="20" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+
+                  <circle cx="295" cy="185" r="24" fill="rgba(77,155,230,.1)" stroke="#4D9BE6" stroke-width="2"/>
+                  <text x="295" y="194" text-anchor="middle" font-size="20" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+
+                  <circle cx="415" cy="253" r="24" fill="rgba(77,155,230,.1)" stroke="#4D9BE6" stroke-width="2"/>
+                  <text x="415" y="262" text-anchor="middle" font-size="20" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+
+                  <!-- C circles (orange) -->
+                  <circle cx="155" cy="122" r="24" fill="rgba(224,140,74,.1)" stroke="#E08C4A" stroke-width="2"/>
+                  <text x="155" y="131" text-anchor="middle" font-size="20" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+
+                  <circle cx="105" cy="248" r="24" fill="rgba(224,140,74,.1)" stroke="#E08C4A" stroke-width="2"/>
+                  <text x="105" y="257" text-anchor="middle" font-size="20" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+
+                  <circle cx="258" cy="130" r="24" fill="rgba(224,140,74,.1)" stroke="#E08C4A" stroke-width="2"/>
+                  <text x="258" y="139" text-anchor="middle" font-size="20" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+
+                  <circle cx="365" cy="122" r="24" fill="rgba(224,140,74,.1)" stroke="#E08C4A" stroke-width="2"/>
+                  <text x="365" y="131" text-anchor="middle" font-size="20" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+
+                  <circle cx="425" cy="175" r="24" fill="rgba(224,140,74,.07)" stroke="#E08C4A" stroke-width="1.8" opacity="0.7"/>
+                  <text x="425" y="184" text-anchor="middle" font-size="20" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif" opacity="0.7">C</text>
+
+                </svg>
+              </figure>
+
+              <p class="tight" style="margin-bottom:14px">Кажется, всё просто: P произвёл деталь — передаёт в комнату, C забирает. Но тут начинается проблема:</p>
+
+              <figure style="margin:0 0 14px">
+                <svg viewBox="0 0 325 240" style="width:100%;max-width:325px;display:block;margin:0 auto" role="img" aria-label="P через одну E к двум C — две отдельные принималки">
+
+                  <!-- P circle -->
+                  <circle cx="48" cy="107" r="42" fill="rgba(77,155,230,.12)" stroke="#4D9BE6" stroke-width="2.5"/>
+                  <text x="48" y="125" text-anchor="middle" font-size="42" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+
+                  <!-- P arm -->
+                  <line x1="90" y1="107" x2="116" y2="107" stroke="#4D9BE6" stroke-width="5" stroke-linecap="round"/>
+
+                  <!-- E letter (big, single) -->
+                  <text x="126" y="132" text-anchor="middle" font-size="70" font-weight="700" fill="#888" font-family="Karla,sans-serif">E</text>
+
+                  <!-- TOP ] bracket: prong at BOTTOM of bar (in top gap of E), bar extends UP, arm exits from TOP -->
+                  <rect x="143" y="93" width="19" height="5" rx="1.5" fill="#E08C4A"/>
+                  <rect x="160" y="80" width="5" height="18" rx="1.5" fill="#E08C4A"/>
+                  <!-- arm exits from TOP of vertical bar → goes UP-right to C1 -->
+                  <line x1="162" y1="80" x2="246" y2="42" stroke="#E08C4A" stroke-width="4.5" stroke-linecap="round"/>
+
+                  <!-- BOTTOM ] bracket: prong at TOP of bar (in bottom gap of E), bar extends DOWN, arm exits from BOTTOM -->
+                  <rect x="143" y="116" width="19" height="5" rx="1.5" fill="#E08C4A"/>
+                  <rect x="160" y="116" width="5" height="18" rx="1.5" fill="#E08C4A"/>
+                  <!-- arm exits from BOTTOM of vertical bar → goes DOWN-right to C2 -->
+                  <line x1="162" y1="134" x2="246" y2="192" stroke="#E08C4A" stroke-width="4.5" stroke-linecap="round"/>
+
+                  <!-- C1 circle (top, smaller) -->
+                  <circle cx="282" cy="42" r="34" fill="rgba(224,140,74,.12)" stroke="#E08C4A" stroke-width="2.5"/>
+                  <text x="282" y="55" text-anchor="middle" font-size="32" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+
+                  <!-- C2 circle (bottom, smaller) -->
+                  <circle cx="282" cy="192" r="34" fill="rgba(224,140,74,.12)" stroke="#E08C4A" stroke-width="2.5"/>
+                  <text x="282" y="205" text-anchor="middle" font-size="32" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+
+                  <!-- labels -->
+                  <text x="48" y="165" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.4" font-family="Karla,sans-serif">producer</text>
+                  <text x="282" y="236" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.4" font-family="Karla,sans-serif">consumers</text>
+
+                </svg>
+              </figure>
+
+              <p class="tight">Если запустить несколько горутин-получателей через <em>канал</em> — Go сам гарантирует, что деталь заберёт ровно один. Канал — это встроенная синхронизация.<br><br>Но стоит вынести деталь в <b>общую переменную</b> вместо канала — и все трое одновременно потянутся к ней. Это и есть <b>гонка данных (data race)</b>: кто успел — тот съел, а данные скорее всего испорчены.</p>
+
+              <p class="tight">Разносим всех по комнатам: продюсеры у себя, консюмеры у себя. Между ними — перегородка с единственным окошком. P подходит и кладёт деталь. Ровно один C забирает.</p>
+
+              <figure style="margin:16px 0">
+                <svg viewBox="0 0 540 280" style="width:100%;max-width:540px;display:block;margin:0 auto" role="img" aria-label="Две комнаты — producers и consumers, канал в перегородке">
+
+                  <!-- Left room (producers) -->
+                  <rect x="5" y="28" width="216" height="244" fill="rgba(77,155,230,.07)" stroke="#4D9BE6" stroke-width="2" rx="3"/>
+                  <text x="113" y="48" text-anchor="middle" font-size="12" font-weight="600" fill="#4D9BE6" font-family="Karla,sans-serif" letter-spacing="0.4">producers room</text>
+
+                  <!-- Right room (consumers) -->
+                  <rect x="319" y="28" width="216" height="244" fill="rgba(224,140,74,.07)" stroke="#E08C4A" stroke-width="2" rx="3"/>
+                  <text x="427" y="48" text-anchor="middle" font-size="12" font-weight="600" fill="#E08C4A" font-family="Karla,sans-serif" letter-spacing="0.4">consumers room</text>
+
+                  <!-- Wall — two pieces with slot gap in middle -->
+                  <rect x="221" y="28" width="98" height="100" fill="rgba(40,40,40,1)" stroke="rgba(160,160,160,.3)" stroke-width="1.5"/>
+                  <rect x="221" y="178" width="98" height="94" fill="rgba(40,40,40,1)" stroke="rgba(160,160,160,.3)" stroke-width="1.5"/>
+
+                  <!-- E in the slot (channel sign on the wall) -->
+                  <text x="262" y="172" text-anchor="middle" font-size="50" font-weight="700" fill="#888" font-family="Karla,sans-serif">E</text>
+
+                  <!-- ] bracket (right side of E in slot) -->
+                  <rect x="281" y="146" width="14" height="4" rx="1" fill="#E08C4A"/>
+                  <rect x="281" y="166" width="14" height="4" rx="1" fill="#E08C4A"/>
+                  <rect x="293" y="146" width="4" height="24" rx="1" fill="#E08C4A"/>
+
+                  <!-- P near slot (active) -->
+                  <circle cx="175" cy="155" r="30" fill="rgba(77,155,230,.18)" stroke="#4D9BE6" stroke-width="2.5"/>
+                  <text x="175" y="165" text-anchor="middle" font-size="28" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+                  <!-- P arm → straight line to middle of E -->
+                  <line x1="205" y1="155" x2="250" y2="155" stroke="#4D9BE6" stroke-width="5" stroke-linecap="round"/>
+
+                  <!-- Other P's scattered in left room -->
+                  <circle cx="62" cy="105" r="25" fill="rgba(77,155,230,.1)" stroke="#4D9BE6" stroke-width="2"/>
+                  <text x="62" y="113" text-anchor="middle" font-size="24" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+                  <circle cx="115" cy="210" r="25" fill="rgba(77,155,230,.1)" stroke="#4D9BE6" stroke-width="2"/>
+                  <text x="115" y="218" text-anchor="middle" font-size="24" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+                  <circle cx="158" cy="82" r="21" fill="rgba(77,155,230,.08)" stroke="#4D9BE6" stroke-width="1.5"/>
+                  <text x="158" y="89" text-anchor="middle" font-size="20" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+
+                  <!-- C near slot (active, receiving) -->
+                  <circle cx="365" cy="158" r="30" fill="rgba(224,140,74,.18)" stroke="#E08C4A" stroke-width="2.5"/>
+                  <text x="365" y="168" text-anchor="middle" font-size="28" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+                  <!-- C arm ← straight line to ] bracket -->
+                  <line x1="335" y1="158" x2="298" y2="158" stroke="#E08C4A" stroke-width="5" stroke-linecap="round"/>
+
+                  <!-- Other C's scattered in right room -->
+                  <circle cx="445" cy="90" r="25" fill="rgba(224,140,74,.1)" stroke="#E08C4A" stroke-width="2"/>
+                  <text x="445" y="98" text-anchor="middle" font-size="24" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+                  <circle cx="490" cy="165" r="25" fill="rgba(224,140,74,.1)" stroke="#E08C4A" stroke-width="2"/>
+                  <text x="490" y="173" text-anchor="middle" font-size="24" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+                  <circle cx="420" cy="220" r="22" fill="rgba(224,140,74,.08)" stroke="#E08C4A" stroke-width="1.5"/>
+                  <text x="420" y="227" text-anchor="middle" font-size="20" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+                  <circle cx="480" cy="240" r="20" fill="rgba(224,140,74,.07)" stroke="#E08C4A" stroke-width="1.5"/>
+                  <text x="480" y="246" text-anchor="middle" font-size="18" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+
+                </svg>
+              </figure>
+
+              <p class="tight">Теперь — детали. Если P подходит к окошку раньше, чем C — он блокируется и ждёт. Если несколько P хотят сразу — встают в очередь: окошко маленькое, одновременно не пролезть.</p>
+
+              <figure style="margin:16px 0">
+                <svg viewBox="0 0 540 255" style="width:100%;max-width:540px;display:block;margin:0 auto" role="img" aria-label="Очередь P — C ещё нет">
+
+                  <!-- Left room -->
+                  <rect x="5" y="25" width="216" height="220" fill="rgba(77,155,230,.07)" stroke="#4D9BE6" stroke-width="2" rx="3"/>
+                  <text x="113" y="45" text-anchor="middle" font-size="12" font-weight="600" fill="#4D9BE6" font-family="Karla,sans-serif" letter-spacing="0.4">producers room</text>
+
+                  <!-- Right room (пусто) -->
+                  <rect x="319" y="25" width="216" height="220" fill="rgba(224,140,74,.04)" stroke="#E08C4A" stroke-width="2" stroke-dasharray="6,4" rx="3"/>
+                  <text x="427" y="45" text-anchor="middle" font-size="12" font-weight="600" fill="#E08C4A" font-family="Karla,sans-serif" letter-spacing="0.4" opacity="0.5">consumers room</text>
+
+                  <!-- Wall -->
+                  <rect x="221" y="25" width="98" height="90" fill="rgba(40,40,40,1)" stroke="rgba(160,160,160,.3)" stroke-width="1.5"/>
+                  <rect x="221" y="165" width="98" height="80" fill="rgba(40,40,40,1)" stroke="rgba(160,160,160,.3)" stroke-width="1.5"/>
+
+                  <!-- E (без принималки — C ещё нет) -->
+                  <text x="252" y="157" text-anchor="middle" font-size="46" font-weight="700" fill="#888" font-family="Karla,sans-serif">E</text>
+
+                  <!-- P1 (active, ждёт) -->
+                  <circle cx="180" cy="140" r="30" fill="rgba(77,155,230,.2)" stroke="#4D9BE6" stroke-width="2.5"/>
+                  <text x="180" y="150" text-anchor="middle" font-size="28" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+                  <line x1="210" y1="140" x2="246" y2="140" stroke="#4D9BE6" stroke-width="5" stroke-linecap="round"/>
+                  <text x="180" y="184" text-anchor="middle" font-size="10" fill="#4D9BE6" opacity="0.6" font-family="Karla,sans-serif">ждёт…</text>
+
+                  <!-- P2 -->
+                  <circle cx="126" cy="150" r="24" fill="rgba(77,155,230,.13)" stroke="#4D9BE6" stroke-width="2"/>
+                  <text x="126" y="158" text-anchor="middle" font-size="22" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+                  <!-- P3 -->
+                  <circle cx="76" cy="160" r="19" fill="rgba(77,155,230,.09)" stroke="#4D9BE6" stroke-width="1.5"/>
+                  <text x="76" y="167" text-anchor="middle" font-size="18" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+                  <!-- P4 -->
+                  <circle cx="35" cy="168" r="14" fill="rgba(77,155,230,.06)" stroke="#4D9BE6" stroke-width="1.5"/>
+                  <text x="35" y="173" text-anchor="middle" font-size="13" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+
+                </svg>
+              </figure>
+
+              <p class="tight">То же самое — с другой стороны. C подошёл, а P ещё нет — он вытягивает руку и ждёт.</p>
+
+              <figure style="margin:16px 0">
+                <svg viewBox="0 0 540 255" style="width:100%;max-width:540px;display:block;margin:0 auto" role="img" aria-label="Очередь C — P ещё нет">
+
+                  <!-- Left room (пусто) -->
+                  <rect x="5" y="25" width="216" height="220" fill="rgba(77,155,230,.04)" stroke="#4D9BE6" stroke-width="2" stroke-dasharray="6,4" rx="3"/>
+                  <text x="113" y="45" text-anchor="middle" font-size="12" font-weight="600" fill="#4D9BE6" font-family="Karla,sans-serif" letter-spacing="0.4" opacity="0.5">producers room</text>
+
+                  <!-- Right room -->
+                  <rect x="319" y="25" width="216" height="220" fill="rgba(224,140,74,.07)" stroke="#E08C4A" stroke-width="2" rx="3"/>
+                  <text x="427" y="45" text-anchor="middle" font-size="12" font-weight="600" fill="#E08C4A" font-family="Karla,sans-serif" letter-spacing="0.4">consumers room</text>
+
+                  <!-- Wall -->
+                  <rect x="221" y="25" width="98" height="90" fill="rgba(40,40,40,1)" stroke="rgba(160,160,160,.3)" stroke-width="1.5"/>
+                  <rect x="221" y="165" width="98" height="80" fill="rgba(40,40,40,1)" stroke="rgba(160,160,160,.3)" stroke-width="1.5"/>
+
+                  <!-- ] bracket (без E — P ещё нет) -->
+                  <rect x="271" y="128" width="13" height="4" rx="1" fill="#E08C4A"/>
+                  <rect x="271" y="148" width="13" height="4" rx="1" fill="#E08C4A"/>
+                  <rect x="282" y="128" width="4" height="24" rx="1" fill="#E08C4A"/>
+
+                  <!-- C1 (active, ждёт) -->
+                  <circle cx="360" cy="140" r="30" fill="rgba(224,140,74,.2)" stroke="#E08C4A" stroke-width="2.5"/>
+                  <text x="360" y="150" text-anchor="middle" font-size="28" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+                  <line x1="330" y1="140" x2="286" y2="140" stroke="#E08C4A" stroke-width="5" stroke-linecap="round"/>
+                  <text x="360" y="184" text-anchor="middle" font-size="10" fill="#E08C4A" opacity="0.6" font-family="Karla,sans-serif">ждёт…</text>
+
+                  <!-- C2 -->
+                  <circle cx="414" cy="150" r="24" fill="rgba(224,140,74,.13)" stroke="#E08C4A" stroke-width="2"/>
+                  <text x="414" y="158" text-anchor="middle" font-size="22" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+                  <!-- C3 -->
+                  <circle cx="464" cy="160" r="19" fill="rgba(224,140,74,.09)" stroke="#E08C4A" stroke-width="1.5"/>
+                  <text x="464" y="167" text-anchor="middle" font-size="18" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+                  <!-- C4 -->
+                  <circle cx="505" cy="168" r="14" fill="rgba(224,140,74,.06)" stroke="#E08C4A" stroke-width="1.5"/>
+                  <text x="505" y="173" text-anchor="middle" font-size="13" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+
+                </svg>
+              </figure>
+
+              <p class="tight">Количество P и C не обязано совпадать. Например: 4 продюсера, 1 консюмер.</p>
+
+              <figure style="margin:16px 0">
+                <svg viewBox="0 0 540 255" style="width:100%;max-width:540px;display:block;margin:0 auto" role="img" aria-label="4 продюсера и 1 консюмер">
+
+                  <!-- Left room -->
+                  <rect x="5" y="25" width="216" height="220" fill="rgba(77,155,230,.07)" stroke="#4D9BE6" stroke-width="2" rx="3"/>
+                  <text x="113" y="45" text-anchor="middle" font-size="12" font-weight="600" fill="#4D9BE6" font-family="Karla,sans-serif" letter-spacing="0.4">producers room</text>
+
+                  <!-- Right room -->
+                  <rect x="319" y="25" width="216" height="220" fill="rgba(224,140,74,.07)" stroke="#E08C4A" stroke-width="2" rx="3"/>
+                  <text x="427" y="45" text-anchor="middle" font-size="12" font-weight="600" fill="#E08C4A" font-family="Karla,sans-serif" letter-spacing="0.4">consumers room</text>
+
+                  <!-- Wall -->
+                  <rect x="221" y="25" width="98" height="90" fill="rgba(40,40,40,1)" stroke="rgba(160,160,160,.3)" stroke-width="1.5"/>
+                  <rect x="221" y="165" width="98" height="80" fill="rgba(40,40,40,1)" stroke="rgba(160,160,160,.3)" stroke-width="1.5"/>
+
+                  <!-- пустой канал — без E и ] -->
+
+                  <!-- 4 P circles scattered in left room -->
+                  <circle cx="80" cy="90" r="28" fill="rgba(77,155,230,.12)" stroke="#4D9BE6" stroke-width="2"/>
+                  <text x="80" y="99" text-anchor="middle" font-size="26" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+
+                  <circle cx="165" cy="85" r="28" fill="rgba(77,155,230,.12)" stroke="#4D9BE6" stroke-width="2"/>
+                  <text x="165" y="94" text-anchor="middle" font-size="26" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+
+                  <circle cx="70" cy="185" r="28" fill="rgba(77,155,230,.12)" stroke="#4D9BE6" stroke-width="2"/>
+                  <text x="70" y="194" text-anchor="middle" font-size="26" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+
+                  <circle cx="165" cy="190" r="28" fill="rgba(77,155,230,.12)" stroke="#4D9BE6" stroke-width="2"/>
+                  <text x="165" y="199" text-anchor="middle" font-size="26" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+
+                  <!-- 1 C — того же размера что P -->
+                  <circle cx="427" cy="138" r="28" fill="rgba(224,140,74,.12)" stroke="#E08C4A" stroke-width="2"/>
+                  <text x="427" y="147" text-anchor="middle" font-size="26" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+
+                  <!-- Count labels -->
+                  <text x="113" y="240" text-anchor="middle" font-size="11" fill="#4D9BE6" opacity="0.55" font-family="Karla,sans-serif">× 4</text>
+                  <text x="427" y="240" text-anchor="middle" font-size="11" fill="#E08C4A" opacity="0.55" font-family="Karla,sans-serif">× 1</text>
+
+                </svg>
+              </figure>
+
+              <p class="tight">А вот что нельзя — взять и засунуть P в комнату к консюмерам. Все C подбегают: «ты теперь один из нас, тоже будешь принимать». P, ладно, создаёт деталь, сует руку в окошко. C видит: «о, деталька появилась, сейчас заберу». Но P в этот момент думает: «ну я же теперь вроде консюмер» — и раз, сам у себя забирает. C остался стоять с протянутой рукой. Мир встал. <b>Дедлок.</b></p>
+
+              <figure style="margin:16px 0">
+                <svg viewBox="0 0 560 275" style="width:100%;max-width:560px;display:block;margin:0 auto" role="img" aria-label="Дедлок: P в комнате консюмеров, сам себе отдаёт деталь">
+
+                  <!-- Left room (пусто) -->
+                  <rect x="5" y="25" width="215" height="225" fill="rgba(77,155,230,.03)" stroke="#4D9BE6" stroke-width="2" stroke-dasharray="6,4" rx="3"/>
+                  <text x="112" y="45" text-anchor="middle" font-size="12" font-weight="600" fill="#4D9BE6" font-family="Karla,sans-serif" letter-spacing="0.4" opacity="0.4">producers room</text>
+                  <text x="112" y="145" text-anchor="middle" font-size="28" fill="currentColor" opacity="0.1" font-family="Karla,sans-serif">пусто</text>
+
+                  <!-- Right room (consumers) -->
+                  <rect x="320" y="25" width="232" height="225" fill="rgba(224,140,74,.07)" stroke="#E08C4A" stroke-width="2" rx="3"/>
+                  <text x="436" y="45" text-anchor="middle" font-size="12" font-weight="600" fill="#E08C4A" font-family="Karla,sans-serif" letter-spacing="0.4">consumers room</text>
+
+                  <!-- Wall pieces with slot gap y=120..172 -->
+                  <rect x="220" y="25" width="100" height="95" fill="rgba(30,30,30,1)" stroke="rgba(160,160,160,.3)" stroke-width="1.5"/>
+                  <rect x="220" y="172" width="100" height="78" fill="rgba(30,30,30,1)" stroke="rgba(160,160,160,.3)" stroke-width="1.5"/>
+
+                  <!-- P вверху consumers room -->
+                  <circle cx="436" cy="75" r="24" fill="rgba(77,155,230,.16)" stroke="#4D9BE6" stroke-width="2.5"/>
+                  <text x="436" y="83" text-anchor="middle" font-size="22" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+
+                  <!-- Синяя рука P → E (вниз-влево, под P) -->
+                  <line x1="423" y1="97" x2="418" y2="138" stroke="#4D9BE6" stroke-width="5" stroke-linecap="round"/>
+                  <text x="430" y="153" text-anchor="middle" font-size="38" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">E</text>
+
+                  <!-- Оранжевая рука P → ] (вниз-вправо, под P) — ближе к E -->
+                  <line x1="449" y1="97" x2="463" y2="138" stroke="#E08C4A" stroke-width="5" stroke-linecap="round"/>
+                  <!-- ] bracket перевёрнута (открывается влево, к E) -->
+                  <rect x="450" y="132" width="15" height="4" rx="1.5" fill="#E08C4A"/>
+                  <rect x="450" y="150" width="15" height="4" rx="1.5" fill="#E08C4A"/>
+                  <rect x="461" y="132" width="4" height="22" rx="1.5" fill="#E08C4A"/>
+
+                  <!-- C у слота — вплотную к стене, рука в центр отверстия -->
+                  <circle cx="348" cy="146" r="24" fill="rgba(224,140,74,.12)" stroke="#E08C4A" stroke-width="2"/>
+                  <text x="348" y="155" text-anchor="middle" font-size="22" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+                  <line x1="324" y1="146" x2="282" y2="146" stroke="#E08C4A" stroke-width="4.5" stroke-linecap="round"/>
+                  <!-- ] принималка на конце руки C, в отверстии -->
+                  <rect x="268" y="138" width="14" height="4" rx="1.5" fill="#E08C4A"/>
+                  <rect x="268" y="152" width="14" height="4" rx="1.5" fill="#E08C4A"/>
+                  <rect x="280" y="138" width="4" height="18" rx="1.5" fill="#E08C4A"/>
+                  <text x="348" y="183" text-anchor="middle" font-size="10" fill="#E08C4A" opacity="0.7" font-family="Karla,sans-serif">ждёт…</text>
+
+                  <!-- второй C -->
+                  <circle cx="485" cy="205" r="20" fill="rgba(224,140,74,.09)" stroke="#E08C4A" stroke-width="1.5"/>
+                  <text x="485" y="213" text-anchor="middle" font-size="18" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+
+                  <!-- Deadlock label -->
+                  <rect x="155" y="242" width="250" height="26" rx="5" fill="rgba(224,85,85,.12)" stroke="#e05555" stroke-width="1"/>
+                  <text x="280" y="259" text-anchor="middle" font-size="12" font-weight="700" fill="#e05555" font-family="Karla,sans-serif" letter-spacing="0.5">deadlock — никто не придёт</text>
+
+                </svg>
+              </figure>
+
+              <p class="tight">Поэтому продюсеры и консюмеры должны быть разнесены: P всегда <em>отправляет</em> через окошко, C всегда <em>принимает</em>. Иначе мир сломается.</p>
+
+              <div class="impl-sec-hdr" style="margin-top:24px">Итого: канал — это концепция</div>
+
+              <p class="tight">Канал — не труба и не отверстие в стене. Это концепция, которая включает сразу несколько вещей:</p>
+
+              <ul class="tight" style="margin:8px 0 0 0;padding-left:18px;line-height:1.7">
+                <li><b>Разделение на роли</b> — продюсеры и консюмеры живут отдельно, каждый в своей комнате.</li>
+                <li><b>Любое соотношение участников</b> — один к одному, многие к одному, один ко многим, многие ко многим.</li>
+                <li><b>Передача из рук в руки</b> — данные передаются точечно: два консюмера не могут одновременно забрать одно и то же. Конкурентно безопасно.</li>
+                <li><b>Блокировка</b> — P хочет передать, но никто не готов принять — он стоит и ждёт. C хочет принять, но ничего нет — стоит и ждёт. У каждой стороны своя очередь ожидания.</li>
+              </ul>
+
+              <p class="tight" style="margin-top:10px">Когда концепция ясна — роботов можно заменить горутинами. Горутина-писатель пишет в канал, горутина-читатель читает из него. Всё описанное выше и есть канал.</p>
+
+              <div class="impl-sec-hdr" style="margin-top:20px">Про роли</div>
+
+              <p class="tight">Роли могут комбинироваться внутри одной комнаты — но это уже устройство конкретной комнаты, а не суть канала. Горутина может получить данные из одного канала, трансформировать их и передать в другой. Такую горутину называют <b>передатчиком</b> (relay): она не продюсер и не консюмер в чистом виде, просто перекладывает данные дальше. Канал при этом работает одинаково в любом случае.</p>
+
+              <figure style="margin:14px 0">
+                <svg viewBox="0 0 560 248" style="width:100%;max-width:560px;display:block;margin:0 auto" role="img" aria-label="Hybrid room: C принимает снаружи и передаёт наружу">
+                  <defs>
+                    <marker id="arrowRelay" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+                      <path d="M0,0 L10,5 L0,10 z" fill="#E08C4A" opacity="0.55"/>
+                    </marker>
+                  </defs>
+
+                  <!-- Фон комнаты -->
+                  <rect x="28" y="18" width="504" height="218" fill="rgba(224,140,74,.06)" rx="2"/>
+                  <text x="280" y="36" text-anchor="middle" font-size="12" font-weight="600" fill="#E08C4A" font-family="Karla,sans-serif" letter-spacing="0.4">hybrid room</text>
+
+                  <!-- Стены кусками (дырка в левой и правой: y=92..152) -->
+                  <line x1="28" y1="18" x2="532" y2="18" stroke="#E08C4A" stroke-width="2"/>
+                  <line x1="28" y1="236" x2="532" y2="236" stroke="#E08C4A" stroke-width="2"/>
+                  <line x1="28" y1="18" x2="28" y2="92" stroke="#E08C4A" stroke-width="2"/>
+                  <line x1="28" y1="152" x2="28" y2="236" stroke="#E08C4A" stroke-width="2"/>
+                  <line x1="532" y1="18" x2="532" y2="92" stroke="#E08C4A" stroke-width="2"/>
+                  <line x1="532" y1="152" x2="532" y2="236" stroke="#E08C4A" stroke-width="2"/>
+
+                  <!-- Красная перегородка внутри -->
+                  <line x1="280" y1="18" x2="280" y2="236" stroke="#e05555" stroke-width="2.5"/>
+
+                  <!-- E СНАРУЖИ СЛЕВА -->
+                  <text x="10" y="130" text-anchor="middle" font-size="32" font-weight="700" fill="#888" font-family="Karla,sans-serif">E</text>
+
+                  <!-- C слева, рука к стене -->
+                  <circle cx="118" cy="120" r="24" fill="rgba(224,140,74,.12)" stroke="#E08C4A" stroke-width="2"/>
+                  <text x="118" y="129" text-anchor="middle" font-size="22" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+                  <line x1="94" y1="120" x2="32" y2="120" stroke="#E08C4A" stroke-width="4.5" stroke-linecap="round"/>
+
+                  <!-- ] принималка на КОНЧИКЕ левой руки (bar справа, prongs влево) -->
+                  <rect x="19" y="110" width="13" height="4" rx="1.5" fill="#888" opacity="0.6"/>
+                  <rect x="19" y="128" width="13" height="4" rx="1.5" fill="#888" opacity="0.6"/>
+                  <rect x="32" y="110" width="4" height="22" rx="1.5" fill="#888" opacity="0.6"/>
+
+                  <!-- Второй C внизу слева -->
+                  <circle cx="100" cy="200" r="20" fill="rgba(224,140,74,.08)" stroke="#E08C4A" stroke-width="1.5"/>
+                  <text x="100" y="208" text-anchor="middle" font-size="18" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+
+                  <!-- Пунктирная стрелка через перегородку -->
+                  <line x1="146" y1="80" x2="370" y2="80" stroke="#E08C4A" stroke-width="1.8" stroke-dasharray="6,4" opacity="0.55" marker-end="url(#arrowRelay)"/>
+                  <text x="258" y="72" text-anchor="middle" font-size="10" fill="#E08C4A" opacity="0.5" font-family="Karla,sans-serif" letter-spacing="0.2">трансформировал</text>
+
+                  <!-- C справа, рука вправо -->
+                  <circle cx="398" cy="120" r="24" fill="rgba(224,140,74,.12)" stroke="#E08C4A" stroke-width="2"/>
+                  <text x="398" y="129" text-anchor="middle" font-size="22" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+                  <line x1="422" y1="120" x2="496" y2="120" stroke="#E08C4A" stroke-width="4.5" stroke-linecap="round"/>
+
+                  <!-- ] принималка на КОНЧИКЕ правой руки (в другую сторону — bar слева, prongs вправо) -->
+                  <rect x="496" y="110" width="4" height="22" rx="1.5" fill="#888" opacity="0.6"/>
+                  <rect x="500" y="110" width="13" height="4" rx="1.5" fill="#888" opacity="0.6"/>
+                  <rect x="500" y="128" width="13" height="4" rx="1.5" fill="#888" opacity="0.6"/>
+
+                  <!-- E′ за принималкой (снаружи, в другую сторону) -->
+                  <text x="528" y="130" text-anchor="middle" font-size="32" font-weight="700" fill="#888" font-family="Karla,sans-serif">E</text>
+                  <text x="543" y="112" text-anchor="start" font-size="12" fill="#888" font-family="Karla,sans-serif">′</text>
+
+                </svg>
+              </figure>
+
+              <p class="tight">И всё сказанное выше — это про каналы <b>без буфера</b>.</p>
+
+            </div>
+          </div>
+
+            </div>
+          </details>
+
+          <details class="deep">
+            <summary>Буферизованный канал <span class="tag">buffered</span></summary>
+            <div class="deep-body">
+
+              <p class="tight">Канал с буфером — это другой принцип. Буфер — <b>склад-очередь внутри стены</b>. P не обязан ждать C напрямую.</p>
+
+              <p class="tight">Представь одну комнату: у неё большой вход и маленький выход (Exit). P приходит с деталью — но с деталью через узкий Exit не пролезть. Зато он может положить деталь в один из буферных слотов у правой стены и уйти налегке. Буфер на 3 — три детали могут лежать одновременно. Первый P вошёл → положил → ушёл. Второй — то же. Третий — то же. <b>Четвёртый P приходит</b> — слоты заняты. Он встаёт и ждёт.</p>
+
+              <pre><code class="language-go">ch := make(chan int, 3) // три слота в буфере</code></pre>
+
+              <p class="tight"><b>P кладёт деталь</b> — место есть, идёт дальше:</p>
+              <figure style="margin:0 0 16px">
+                <svg viewBox="0 0 420 420" style="width:100%;max-width:380px;display:block;margin:0 auto">
+                  <!-- Room walls (NO top wall — open entrance) -->
+                  <line x1="38" y1="22" x2="38" y2="392" stroke="#4D9BE6" stroke-width="5" stroke-linecap="round"/>
+                  <line x1="38" y1="392" x2="128" y2="392" stroke="#4D9BE6" stroke-width="5" stroke-linecap="round"/>
+                  <line x1="262" y1="22" x2="262" y2="392" stroke="#4D9BE6" stroke-width="5" stroke-linecap="round"/>
+
+                  <!-- Buffer label -->
+                  <text x="278" y="148" font-size="10" font-weight="700" fill="currentColor" opacity="0.6" font-family="Karla,sans-serif">Buffer</text>
+                  <text x="278" y="161" font-size="10" font-weight="700" fill="currentColor" opacity="0.6" font-family="Karla,sans-serif">(size = 3)</text>
+
+                  <!-- Slot 1 (top) — P is inserting, highlight -->
+                  <rect x="250" y="142" width="24" height="32" fill="rgba(77,155,230,.2)" stroke="#4D9BE6" stroke-width="2" rx="3"/>
+
+                  <!-- Slot 2 (mid) — EMPTY -->
+                  <rect x="250" y="182" width="24" height="32" fill="none" stroke="currentColor" stroke-width="1.5" rx="3" opacity="0.3"/>
+
+                  <!-- Slot 3 (bot) — EMPTY -->
+                  <rect x="250" y="222" width="24" height="32" fill="none" stroke="currentColor" stroke-width="1.5" rx="3" opacity="0.3"/>
+
+                  <!-- P in room aligned with slot 1 -->
+                  <circle cx="148" cy="158" r="28" fill="rgba(77,155,230,.15)" stroke="#4D9BE6" stroke-width="2.5"/>
+                  <text x="148" y="166" text-anchor="middle" font-size="20" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+
+                  <!-- Arm extending right to slot 1 -->
+                  <line x1="176" y1="158" x2="245" y2="158" stroke="#E08C4A" stroke-width="4.5" stroke-linecap="round"/>
+                  <!-- E at arm tip -->
+                  <text x="237" y="170" text-anchor="end" font-size="17" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">E</text>
+
+                  <!-- Exit label + arrow -->
+                  <text x="50" y="414" font-size="11" font-weight="700" fill="currentColor" font-family="Karla,sans-serif" opacity="0.6">Exit</text>
+                  <line x1="70" y1="408" x2="108" y2="398" stroke="currentColor" stroke-width="1.5" opacity="0.45" stroke-linecap="round"/>
+                </svg>
+              </figure>
+
+              <p class="tight"><b>Буфер полон</b> — 4-й P заблокирован:</p>
+              <figure style="margin:0 0 8px">
+                <svg viewBox="0 0 420 420" style="width:100%;max-width:380px;display:block;margin:0 auto">
+                  <!-- Room walls (NO top wall — open entrance) -->
+                  <line x1="38" y1="22" x2="38" y2="392" stroke="#4D9BE6" stroke-width="5" stroke-linecap="round"/>
+                  <line x1="38" y1="392" x2="128" y2="392" stroke="#4D9BE6" stroke-width="5" stroke-linecap="round"/>
+                  <line x1="262" y1="22" x2="262" y2="392" stroke="#4D9BE6" stroke-width="5" stroke-linecap="round"/>
+
+                  <!-- Buffer label -->
+                  <text x="278" y="148" font-size="10" font-weight="700" fill="currentColor" opacity="0.6" font-family="Karla,sans-serif">Buffer</text>
+                  <text x="278" y="161" font-size="10" font-weight="700" fill="currentColor" opacity="0.6" font-family="Karla,sans-serif">(size = 3)</text>
+
+                  <!-- Slot 1 — FILLED -->
+                  <rect x="250" y="142" width="24" height="32" fill="rgba(77,155,230,.25)" stroke="#4D9BE6" stroke-width="2" rx="3"/>
+                  <text x="262" y="163" text-anchor="middle" font-size="14" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">E</text>
+
+                  <!-- Slot 2 — FILLED -->
+                  <rect x="250" y="182" width="24" height="32" fill="rgba(77,155,230,.25)" stroke="#4D9BE6" stroke-width="2" rx="3"/>
+                  <text x="262" y="203" text-anchor="middle" font-size="14" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">E</text>
+
+                  <!-- Slot 3 — FILLED -->
+                  <rect x="250" y="222" width="24" height="32" fill="rgba(77,155,230,.25)" stroke="#4D9BE6" stroke-width="2" rx="3"/>
+                  <text x="262" y="243" text-anchor="middle" font-size="14" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">E</text>
+
+                  <!-- P in room, holding E, blocked -->
+                  <circle cx="148" cy="158" r="28" fill="rgba(77,155,230,.15)" stroke="#4D9BE6" stroke-width="2.5"/>
+                  <text x="148" y="166" text-anchor="middle" font-size="20" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+                  <!-- E held, no arm (blocked) -->
+                  <text x="184" y="171" text-anchor="start" font-size="17" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif" opacity="0.85">E</text>
+                  <!-- ждёт label -->
+                  <text x="148" y="200" text-anchor="middle" font-size="10" fill="#4D9BE6" opacity="0.65" font-family="Karla,sans-serif">ждёт…</text>
+
+                  <!-- Blocked status label -->
+                  <rect x="38" y="330" width="224" height="20" rx="4" fill="rgba(224,85,85,.1)" stroke="#e05555" stroke-width="1"/>
+                  <text x="150" y="344" text-anchor="middle" font-size="10" fill="#e05555" font-family="Karla,sans-serif">буфер полон — P заблокирован</text>
+
+                  <!-- Exit label -->
+                  <text x="50" y="414" font-size="11" font-weight="700" fill="currentColor" font-family="Karla,sans-serif" opacity="0.6">Exit</text>
+                  <line x1="70" y1="408" x2="108" y2="398" stroke="currentColor" stroke-width="1.5" opacity="0.45" stroke-linecap="round"/>
+                </svg>
+              </figure>
+
+              <div style="margin:24px 0 12px;display:flex;align-items:center;gap:8px">
+                <div style="flex:1;height:1px;background:var(--border,#e0e0e0)"></div>
+                <span style="font-size:9.5px;font-weight:700;letter-spacing:.1em;color:var(--text-dim,#888);text-transform:uppercase">Паттерны</span>
+                <div style="flex:1;height:1px;background:var(--border,#e0e0e0)"></div>
+              </div>
+
+              <div class="impl-sec">
+                <div class="impl-sec-hdr">Пример: rate limiter с burst</div>
+                <div class="impl-sec-body">
+                  <p class="tight">Теперь представь, что у стены стоит <b>вахтёр</b>. Раз в 20 минут он вытаскивает один кирпич из буфера — освобождает слот. Тот, кто стоял в очереди, кладёт свой токен и проходит. Больше одного за раз — нет, только по одному слоту за тик.</p>
+                  <p class="tight">Но если сразу трое пришли, а слотов три — они все одновременно подходят, немного толкаются у стены, кладут токены и проходят. Никто не заблокирован. Это <b>burst</b> — пропускаем накопленную очередь разом, пока есть буферные слоты.</p>
+                  <figure style="margin:0 0 16px">
+                    <svg viewBox="0 0 400 300" style="width:100%;max-width:400px;display:block;margin:0 auto">
+                      <!-- Room: left wall, floor with Exit gap, center divider -->
+                      <line x1="38" y1="20" x2="38" y2="268" stroke="#4D9BE6" stroke-width="5" stroke-linecap="round"/>
+                      <line x1="38" y1="268" x2="108" y2="268" stroke="#4D9BE6" stroke-width="5" stroke-linecap="round"/>
+                      <line x1="262" y1="20" x2="262" y2="268" stroke="#4D9BE6" stroke-width="5" stroke-linecap="round"/>
+
+                      <!-- Slot 1 — empty (вахтёр только что вытащил) -->
+                      <rect x="250" y="62" width="24" height="30" fill="rgba(77,155,230,.08)" stroke="currentColor" stroke-width="1.5" rx="3" opacity="0.35"/>
+                      <!-- Slot 2 — filled -->
+                      <rect x="250" y="100" width="24" height="30" fill="rgba(77,155,230,.25)" stroke="#4D9BE6" stroke-width="2" rx="3"/>
+                      <text x="262" y="120" text-anchor="middle" font-size="13" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">E</text>
+                      <!-- Slot 3 — filled -->
+                      <rect x="250" y="138" width="24" height="30" fill="rgba(77,155,230,.25)" stroke="#4D9BE6" stroke-width="2" rx="3"/>
+                      <text x="262" y="158" text-anchor="middle" font-size="13" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">E</text>
+
+                      <!-- Annex (пристройка) — shares divider as left wall -->
+                      <line x1="262" y1="36" x2="390" y2="36"  stroke="#E08C4A" stroke-width="3" stroke-linecap="round"/>
+                      <line x1="390" y1="36" x2="390" y2="172" stroke="#E08C4A" stroke-width="3" stroke-linecap="round"/>
+                      <line x1="262" y1="172" x2="390" y2="172" stroke="#E08C4A" stroke-width="3" stroke-linecap="round"/>
+                      <rect x="263" y="37" width="126" height="134" fill="rgba(224,140,74,.07)" rx="0"/>
+
+                      <!-- C inside annex -->
+                      <circle cx="336" cy="104" r="24" fill="rgba(224,140,74,.18)" stroke="#E08C4A" stroke-width="2.2"/>
+                      <text x="336" y="112" text-anchor="middle" font-size="18" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+
+                      <!-- Arm from C to slot 1 -->
+                      <line x1="312" y1="104" x2="276" y2="77" stroke="#E08C4A" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="4,3" opacity="0.75"/>
+                      <polygon points="277,73 270,77 278,81" fill="#E08C4A" opacity="0.6"/>
+
+                      <!-- Timer label -->
+                      <text x="326" y="155" text-anchor="middle" font-size="9" fill="#E08C4A" font-family="Karla,sans-serif" opacity="0.6">раз в 20 мин</text>
+
+                      <!-- P waiting, arm to free slot 1 -->
+                      <circle cx="175" cy="144" r="22" fill="rgba(77,155,230,.12)" stroke="#4D9BE6" stroke-width="2"/>
+                      <text x="175" y="152" text-anchor="middle" font-size="16" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+                      <line x1="197" y1="138" x2="248" y2="82" stroke="#E08C4A" stroke-width="3" stroke-linecap="round" stroke-dasharray="4,3" opacity="0.7"/>
+                      <text x="222" y="100" text-anchor="middle" font-size="10" fill="#E08C4A" font-family="Karla,sans-serif" opacity="0.8">слот свободен!</text>
+
+                      <!-- Exit label -->
+                      <text x="44" y="288" font-size="11" font-weight="700" fill="currentColor" font-family="Karla,sans-serif" opacity="0.6">Exit</text>
+                      <line x1="64" y1="282" x2="98" y2="272" stroke="currentColor" stroke-width="1.5" opacity="0.4" stroke-linecap="round"/>
+                    </svg>
+                  </figure>
+
+                  <p class="tight" style="margin-top:4px">А теперь то же самое, но <b>без буфера</b>:</p>
+                  <figure style="margin:0 0 16px">
+                    <svg viewBox="0 0 400 300" style="width:100%;max-width:400px;display:block;margin:0 auto">
+                      <!-- Room: left wall, floor with Exit gap -->
+                      <line x1="38" y1="20" x2="38" y2="268" stroke="#4D9BE6" stroke-width="5" stroke-linecap="round"/>
+                      <line x1="38" y1="268" x2="108" y2="268" stroke="#4D9BE6" stroke-width="5" stroke-linecap="round"/>
+
+                      <!-- Center divider with single hole (y=90..118) -->
+                      <line x1="262" y1="20"  x2="262" y2="90"  stroke="#4D9BE6" stroke-width="5" stroke-linecap="round"/>
+                      <line x1="262" y1="118" x2="262" y2="268" stroke="#4D9BE6" stroke-width="5" stroke-linecap="round"/>
+                      <!-- Hole outline — small rectangle opening in the wall -->
+                      <rect x="255" y="90" width="14" height="28" rx="3" fill="var(--surface,#f5f5f5)" stroke="#4D9BE6" stroke-width="1.5" opacity="0.9"/>
+                      <text x="262" y="109" text-anchor="middle" font-size="8" fill="#4D9BE6" font-family="Karla,sans-serif" opacity="0.5">↔</text>
+
+                      <!-- Annex (пристройка) for C -->
+                      <line x1="262" y1="36" x2="390" y2="36"  stroke="#E08C4A" stroke-width="3" stroke-linecap="round"/>
+                      <line x1="390" y1="36" x2="390" y2="172" stroke="#E08C4A" stroke-width="3" stroke-linecap="round"/>
+                      <line x1="262" y1="172" x2="390" y2="172" stroke="#E08C4A" stroke-width="3" stroke-linecap="round"/>
+                      <rect x="263" y="37" width="126" height="134" fill="rgba(224,140,74,.07)" rx="0"/>
+                      <circle cx="336" cy="104" r="24" fill="rgba(224,140,74,.18)" stroke="#E08C4A" stroke-width="2.2"/>
+                      <text x="336" y="112" text-anchor="middle" font-size="18" font-weight="700" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+                      <text x="326" y="155" text-anchor="middle" font-size="9" fill="#E08C4A" font-family="Karla,sans-serif" opacity="0.6">раз в 20 мин</text>
+
+                      <!-- P1 — horizontal arm -->
+                      <circle cx="110" cy="80" r="22" fill="rgba(77,155,230,.12)" stroke="#4D9BE6" stroke-width="2"/>
+                      <text x="110" y="88" text-anchor="middle" font-size="16" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+                      <line x1="132" y1="80" x2="175" y2="80" stroke="#E08C4A" stroke-width="4" stroke-linecap="round"/>
+                      <text x="110" y="108" text-anchor="middle" font-size="9" fill="#e05555" font-family="Karla,sans-serif">ждёт…</text>
+
+                      <!-- P2 — horizontal arm -->
+                      <circle cx="90" cy="158" r="22" fill="rgba(77,155,230,.12)" stroke="#4D9BE6" stroke-width="2"/>
+                      <text x="90" y="166" text-anchor="middle" font-size="16" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+                      <line x1="112" y1="158" x2="155" y2="158" stroke="#E08C4A" stroke-width="4" stroke-linecap="round"/>
+                      <text x="90" y="186" text-anchor="middle" font-size="9" fill="#e05555" font-family="Karla,sans-serif">ждёт…</text>
+
+                      <!-- P3 — horizontal arm -->
+                      <circle cx="130" cy="220" r="22" fill="rgba(77,155,230,.12)" stroke="#4D9BE6" stroke-width="2"/>
+                      <text x="130" y="228" text-anchor="middle" font-size="16" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+                      <line x1="152" y1="220" x2="195" y2="220" stroke="#E08C4A" stroke-width="4" stroke-linecap="round"/>
+                      <text x="130" y="248" text-anchor="middle" font-size="9" fill="#e05555" font-family="Karla,sans-serif">ждёт…</text>
+
+                      <!-- Red banner -->
+                      <rect x="38" y="282" width="224" height="16" rx="3" fill="rgba(224,85,85,.1)" stroke="#e05555" stroke-width="1"/>
+                      <text x="150" y="294" text-anchor="middle" font-size="9" fill="#e05555" font-family="Karla,sans-serif">все 3 заблокированы до прихода C</text>
+
+                      <!-- Exit label -->
+                      <text x="44" y="316" font-size="11" font-weight="700" fill="currentColor" font-family="Karla,sans-serif" opacity="0.6">Exit</text>
+                      <line x1="64" y1="310" x2="98" y2="272" stroke="currentColor" stroke-width="1.5" opacity="0.4" stroke-linecap="round"/>
+                    </svg>
+                  </figure>
+                  <p class="tight">Без буфера первый P сразу блокируется на канале — C нет, ждать 20 минут. Второй и третий тоже встают в очередь. C приходит раз в 20 минут — разблокирует одного, двое дальше ждут. Можно городить другие примитивы, но <b>проще просто поставить буфер</b>.</p>
+
+                  <pre><code class="language-go">ticker := time.NewTicker(20 * time.Minute)
+limiter := make(chan struct{}, 3) // burst = 3
+
+go func() {
+    for range ticker.C {
+        limiter &lt;- struct{}{} // вахтёр кладёт токен раз в тик
+    }
+}()
+
+// горутина "проходит" только забрав токен
+func pass() {
+    &lt;-limiter // берёт токен из буфера
+    doWork()
+}</code></pre>
+                  <p class="tight" style="margin-top:8px">Это <b>rate limiter с burst</b> — один из классических паттернов на буферизованном канале.</p>
+                </div>
+              </div>
+
+              <div class="impl-sec">
+                <div class="impl-sec-hdr">Зачем вообще два типа каналов</div>
+                <div class="impl-sec-body">
+                  <p class="tight">На буферизованном канале строятся паттерны, которые на небуферизованном не реализовать:</p>
+                  <ul class="tight" style="margin:8px 0 8px 18px;padding:0">
+                    <li><b>Rate limiter</b> — ограничить пропускную способность</li>
+                    <li><b>Worker pool</b> — ограничить количество воркеров</li>
+                    <li><b>Semaphore</b> — ограничить количество одновременных горутин</li>
+                  </ul>
+                  <p class="tight">Эти каналы <b>не взаимозаменяемы</b>. Как <code>int</code> и <code>string</code>: в строке можно хранить число, но тогда каждый раз конвертируй туда-обратно, лишний overhead. А строку в int вообще не засунешь. Так же и здесь:</p>
+                  <div class="callout callout-warn" style="margin:8px 0">
+                    Буферизованный канал <em>можно</em> поставить там, где нужен небуферизованный — но это overhead и риск скрытых багов.<br>
+                    Небуферизованный на месте буферизованного — <b>не получится вообще</b>.
+                  </div>
+                </div>
+              </div>
+
+              <div style="margin:24px 0 12px;display:flex;align-items:center;gap:8px">
+                <div style="flex:1;height:1px;background:var(--border,#e0e0e0)"></div>
+                <span style="font-size:9.5px;font-weight:700;letter-spacing:.1em;color:var(--text-dim,#888);text-transform:uppercase">Подводные камни</span>
+                <div style="flex:1;height:1px;background:var(--border,#e0e0e0)"></div>
+              </div>
+
+              <div class="impl-sec">
+                <div class="impl-sec-hdr">Буфер скрывает баги</div>
+                <div class="impl-sec-body">
+                  <p class="tight">Представь <b>засланного казачка</b> — горутину, которая живёт в комнате консюмеров, но тоже умеет отправлять. С буфером она спокойно кладёт деталь в слот <em>и сама же её оттуда забирает</em> — C до детали так и не доберётся. Данные потеряны, программа молчит.</p>
+                  <figure style="margin:12px 0 14px">
+                    <svg viewBox="0 0 540 260" style="width:100%;max-width:520px;display:block;margin:0 auto">
+                      <!-- Left room: producers -->
+                      <rect x="4" y="8" width="220" height="244" fill="rgba(77,155,230,.07)" stroke="#4D9BE6" stroke-width="2" rx="3"/>
+                      <text x="114" y="28" text-anchor="middle" font-size="11" font-weight="600" fill="#4D9BE6" font-family="Karla,sans-serif" letter-spacing="0.4">producers room</text>
+
+                      <!-- Right room: consumers -->
+                      <rect x="316" y="8" width="220" height="244" fill="rgba(224,140,74,.07)" stroke="#E08C4A" stroke-width="2" rx="3"/>
+                      <text x="426" y="28" text-anchor="middle" font-size="11" font-weight="600" fill="#E08C4A" font-family="Karla,sans-serif" letter-spacing="0.4">consumers room</text>
+
+                      <!-- Buffer slots (4) in center -->
+                      <rect x="221" y="44"  width="94" height="36" fill="rgba(120,120,130,.15)" stroke="currentColor" stroke-width="1.2" rx="3" opacity="0.6"/>
+                      <rect x="221" y="88"  width="94" height="36" fill="rgba(120,120,130,.15)" stroke="currentColor" stroke-width="1.2" rx="3" opacity="0.6"/>
+                      <rect x="221" y="132" width="94" height="36" fill="rgba(120,120,130,.15)" stroke="currentColor" stroke-width="1.2" rx="3" opacity="0.6"/>
+                      <rect x="221" y="176" width="94" height="36" fill="rgba(120,120,130,.15)" stroke="currentColor" stroke-width="1.2" rx="3" opacity="0.6"/>
+
+                      <!-- 2 normal P's in left room -->
+                      <circle cx="100" cy="100" r="28" fill="rgba(77,155,230,.12)" stroke="#4D9BE6" stroke-width="2"/>
+                      <text x="100" y="108" text-anchor="middle" font-size="22" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+                      <circle cx="65"  cy="175" r="28" fill="rgba(77,155,230,.12)" stroke="#4D9BE6" stroke-width="2"/>
+                      <text x="65"  y="183" text-anchor="middle" font-size="22" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+                      <circle cx="135" cy="185" r="28" fill="rgba(77,155,230,.12)" stroke="#4D9BE6" stroke-width="2"/>
+                      <text x="135" y="193" text-anchor="middle" font-size="22" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+
+                      <!-- Spy P (засланный казачок) in right room — blue circle, orange border -->
+                      <circle cx="390" cy="62" r="30" fill="rgba(77,155,230,.12)" stroke="#E08C4A" stroke-width="2.5" stroke-dasharray="5,3"/>
+                      <text x="390" y="70" text-anchor="middle" font-size="22" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+                      <text x="390" y="102" text-anchor="middle" font-size="9" fill="#E08C4A" font-family="Karla,sans-serif" opacity="0.8">засланный казачок</text>
+                      <!-- Spy arm: writes to slot AND reads back (loop arrow) -->
+                      <path d="M362,55 C330,44 318,62 322,80 C326,100 355,106 362,96" fill="none" stroke="#e05555" stroke-width="2" stroke-dasharray="3,2" stroke-linecap="round"/>
+                      <polygon points="360,92 362,102 368,95" fill="#e05555" opacity="0.7"/>
+
+                      <!-- Normal C's in right room -->
+                      <circle cx="460" cy="100" r="26" fill="rgba(224,140,74,.12)" stroke="#E08C4A" stroke-width="2"/>
+                      <text x="460" y="108" text-anchor="middle" font-size="22" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+                      <circle cx="415" cy="175" r="26" fill="rgba(224,140,74,.12)" stroke="#E08C4A" stroke-width="2"/>
+                      <text x="415" y="183" text-anchor="middle" font-size="22" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+                      <circle cx="472" cy="190" r="26" fill="rgba(224,140,74,.12)" stroke="#E08C4A" stroke-width="2"/>
+                      <text x="472" y="198" text-anchor="middle" font-size="22" fill="#E08C4A" font-family="Karla,sans-serif">C</text>
+                    </svg>
+                  </figure>
+                  <pre><code class="language-go">ch := make(chan int, 1)
+
+go func() {
+    ch &lt;- 42   // кладёт в буфер...
+    v := &lt;-ch  // ...и сам же забирает
+    // C не получает ничего — данные потеряны
+}()</code></pre>
+                  <p class="tight">С <b>небуферизованным</b> каналом та же горутина сразу получит <b>дедлок</b> — она блокируется на отправке и никогда не дойдёт до чтения. Программа падёт немедленно, баг очевиден. С буфером — молчаливая потеря данных, которую заметишь только по факту.</p>
+                  <div class="callout callout-warn" style="margin:8px 0 0">
+                    Если горутина и отправляет и принимает из одного канала — это почти всегда архитектурная ошибка. Небуферизованный канал поймает её сразу. Буферизованный — скроет.
+                  </div>
+                </div>
+              </div>
+
+              <div class="impl-sec" style="margin-top:20px">
+                <div class="impl-sec-hdr">Данные в буфере — не значит доставлены</div>
+                <div class="impl-sec-body">
+                  <p class="tight">Три продюсера записали данные в буферизованный канал — места хватило, никто не заблокировался. P-шки ушли дальше, считая своё дело сделанным. Но консюмеры в этот момент упали и перестали читать. Данные так и лежат в буфере — и никуда не денутся: ни обработаны, ни возвращены.</p>
+                  <p class="tight">Тысяча продюсеров записала тысячу событий — потеряли тысячу. Один консюмер вышел из строя — потеряли столько, сколько в буфере.</p>
+                  <figure style="margin:12px 0 14px">
+                    <svg viewBox="0 0 540 265" style="width:100%;max-width:520px;display:block;margin:0 auto">
+                      <!-- Left room: producers -->
+                      <rect x="4" y="8" width="220" height="249" fill="rgba(77,155,230,.07)" stroke="#4D9BE6" stroke-width="2" rx="3"/>
+                      <text x="114" y="28" text-anchor="middle" font-size="11" font-weight="600" fill="#4D9BE6" font-family="Karla,sans-serif" letter-spacing="0.4">producers room</text>
+
+                      <!-- Right room: consumers (crashed) -->
+                      <rect x="316" y="8" width="220" height="249" fill="rgba(224,85,85,.05)" stroke="#e05555" stroke-width="2" rx="3" stroke-dasharray="6,3"/>
+                      <text x="426" y="28" text-anchor="middle" font-size="11" font-weight="600" fill="#e05555" font-family="Karla,sans-serif" letter-spacing="0.4" opacity="0.7">consumers room</text>
+
+                      <!-- Buffer: 3 filled slots with E -->
+                      <rect x="221" y="50"  width="94" height="44" fill="rgba(77,155,230,.2)" stroke="#4D9BE6" stroke-width="1.5" rx="3"/>
+                      <text x="268" y="78"  text-anchor="middle" font-size="22" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">E</text>
+                      <rect x="221" y="103" width="94" height="44" fill="rgba(77,155,230,.2)" stroke="#4D9BE6" stroke-width="1.5" rx="3"/>
+                      <text x="268" y="131" text-anchor="middle" font-size="22" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">E</text>
+                      <rect x="221" y="156" width="94" height="44" fill="rgba(77,155,230,.2)" stroke="#4D9BE6" stroke-width="1.5" rx="3"/>
+                      <text x="268" y="184" text-anchor="middle" font-size="22" font-weight="700" fill="#4D9BE6" font-family="Karla,sans-serif">E</text>
+                      <!-- Empty 4th slot -->
+                      <rect x="221" y="209" width="94" height="44" fill="none" stroke="currentColor" stroke-width="1" rx="3" opacity="0.2"/>
+
+                      <!-- 3 P's in left room — near the exit, done -->
+                      <circle cx="95"  cy="90"  r="26" fill="rgba(77,155,230,.12)" stroke="#4D9BE6" stroke-width="2"/>
+                      <text x="95"  y="98"  text-anchor="middle" font-size="20" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+                      <circle cx="60"  cy="170" r="26" fill="rgba(77,155,230,.12)" stroke="#4D9BE6" stroke-width="2"/>
+                      <text x="60"  y="178" text-anchor="middle" font-size="20" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+                      <circle cx="135" cy="175" r="26" fill="rgba(77,155,230,.12)" stroke="#4D9BE6" stroke-width="2"/>
+                      <text x="135" y="183" text-anchor="middle" font-size="20" fill="#4D9BE6" font-family="Karla,sans-serif">P</text>
+                      <!-- "done" checkmarks -->
+                      <text x="95"  y="126" text-anchor="middle" font-size="9" fill="#4D9BE6" opacity="0.5" font-family="Karla,sans-serif">ушёл ✓</text>
+                      <text x="60"  y="206" text-anchor="middle" font-size="9" fill="#4D9BE6" opacity="0.5" font-family="Karla,sans-serif">ушёл ✓</text>
+                      <text x="135" y="211" text-anchor="middle" font-size="9" fill="#4D9BE6" opacity="0.5" font-family="Karla,sans-serif">ушёл ✓</text>
+
+                      <!-- Crashed C's (grey, X) -->
+                      <circle cx="390" cy="90"  r="26" fill="rgba(150,150,150,.1)" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+                      <text x="390" y="98"  text-anchor="middle" font-size="20" fill="currentColor" opacity="0.3" font-family="Karla,sans-serif">C</text>
+                      <line x1="375" y1="75" x2="405" y2="105" stroke="#e05555" stroke-width="2" opacity="0.5"/>
+                      <line x1="405" y1="75" x2="375" y2="105" stroke="#e05555" stroke-width="2" opacity="0.5"/>
+
+                      <circle cx="455" cy="145" r="26" fill="rgba(150,150,150,.1)" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+                      <text x="455" y="153" text-anchor="middle" font-size="20" fill="currentColor" opacity="0.3" font-family="Karla,sans-serif">C</text>
+                      <line x1="440" y1="130" x2="470" y2="160" stroke="#e05555" stroke-width="2" opacity="0.5"/>
+                      <line x1="470" y1="130" x2="440" y2="160" stroke="#e05555" stroke-width="2" opacity="0.5"/>
+
+                      <circle cx="390" cy="200" r="26" fill="rgba(150,150,150,.1)" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+                      <text x="390" y="208" text-anchor="middle" font-size="20" fill="currentColor" opacity="0.3" font-family="Karla,sans-serif">C</text>
+                      <line x1="375" y1="185" x2="405" y2="215" stroke="#e05555" stroke-width="2" opacity="0.5"/>
+                      <line x1="405" y1="185" x2="375" y2="215" stroke="#e05555" stroke-width="2" opacity="0.5"/>
+
+                      <!-- "упали" label -->
+                      <text x="426" y="248" text-anchor="middle" font-size="10" fill="#e05555" opacity="0.6" font-family="Karla,sans-serif">упали — данные некому забрать</text>
+                    </svg>
+                  </figure>
+                  <p class="tight">С <b>небуферизованным</b> каналом продюсер 1 заблокировался бы сразу на отправке — он стоит и ждёт, пока кто-то примет. Как только становится ясно, что консюмер упал, можно среагировать: отменить через контекст, залогировать, не потерять данные молча.</p>
+                  <div class="callout callout-warn" style="margin:8px 0 0">
+                    Буферизованный канал даёт <em>иллюзию доставки</em>: P записал — дело сделано. Но данные в буфере это не то же самое, что данные у получателя.
+                  </div>
+                </div>
+              </div>
+
+              <div style="margin:24px 0 12px;display:flex;align-items:center;gap:8px">
+                <div style="flex:1;height:1px;background:var(--border,#e0e0e0)"></div>
+                <span style="font-size:9.5px;font-weight:700;letter-spacing:.1em;color:var(--text-dim,#888);text-transform:uppercase">Итог</span>
+                <div style="flex:1;height:1px;background:var(--border,#e0e0e0)"></div>
+              </div>
+
+              <div class="impl-sec">
+                <div class="impl-sec-hdr">Итог: когда что использовать</div>
+                <div class="impl-sec-body">
+                  <p><strong>Канал без буфера</strong> — когда цель передать данные между горутинами напрямую. Отправитель и получатель встречаются, данные переходят из рук в руки.</p>
+                  <p><strong>Канал с буфером</strong> — когда горутины обмениваются служебной информацией об ограничении или разрешении. В примере с rate limiter конечная цель не передать данные, а сообщить «токен положен, можно работать». Данные — побочный эффект.</p>
+                  <p>Использовать буферизованный для передачи данных <em>можно</em>, но это overhead и риск: нужно явно обрабатывать переполнение буфера, потерю данных при падении консюмеров, гарантии доставки.</p>
+                  <div class="callout callout-warn">
+                    Если понимаешь, что без буфера не обойтись и нужны гарантии доставки — рассмотри готовое решение: Kafka, RabbitMQ, NATS. Там модель передачи данных, гарантии и dead letter queue уже продуманы. Буфер в канале — не замена очереди сообщений.
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </details>
+
+          <details class="deep">
+            <summary>Аксиомы каналов <span class="tag">axioms</span></summary>
+            <div class="deep-body">
+              <blockquote style="margin:0 0 16px;padding:14px 18px;border-left:3px solid var(--accent,#7F77DD);background:var(--surface,#f9f9f9);font-style:italic;font-size:14px;line-height:1.7;color:var(--text,#1d1d1d)">
+                <p style="margin:0 0 10px">Most new Go programmers quickly grasp the idea of a channel as a queue of values and are comfortable with the notion that channel operations may block when full or empty.</p>
+                <p style="margin:0 0 10px">This post explores four of the less common properties of channels:</p>
+                <ul style="margin:0;padding-left:20px">
+                  <li>A send to a nil channel blocks forever</li>
+                  <li>A receive from a nil channel blocks forever</li>
+                  <li>A send to a closed channel panics</li>
+                  <li>A receive from a closed channel returns the zero value immediately</li>
+                </ul>
+              </blockquote>
+
+              <p class="tight" style="margin-bottom:12px">Поведение канала полностью определяется двумя осями: <b>операция</b> × <b>состояние</b>. Для небуферизованного — 3×3 = 9 комбинаций. Знать их надо как таблицу умножения.</p>
+
+              <p class="tight" style="margin-bottom:6px">Начнём с 4 аксиом — и по ним выведем полную таблицу из 9 ячеек:</p>
+              <ol style="margin:0 0 12px;padding-left:18px;line-height:1.8">
+                <li>Закрытый → чтение возвращает zero value.</li>
+                <li>nil → и чтение, и запись блокируются навсегда.</li>
+                <li>Открытый → чтение блокируется до прихода писателя.</li>
+                <li>Открытый → запись блокируется до прихода читателя.</li>
+              </ol>
+              <p class="tight" style="margin-bottom:12px">Аксиома про закрытый — как бы две (чтение ≠ запись), итого 5 ключевых правил. Остальные 4 ячейки достраиваются по аналогии:</p>
+
+              <p class="tight" style="margin-bottom:6px;font-weight:600">Небуферизованный канал — 9 аксиом:</p>
+              <div class="tablewrap">
+                <table>
+                  <tr><th></th><th>Открытый</th><th>Закрытый</th><th>nil (неинициализированный)</th></tr>
+                  <tr>
+                    <td>Чтение</td>
+                    <td><span style="color:#e6a020">блокировка до прихода писателя</span></td>
+                    <td><span style="color:#4caf50">вернёт zero value</span></td>
+                    <td><span style="color:#e6a020">блокировка навсегда</span></td>
+                  </tr>
+                  <tr>
+                    <td>Запись</td>
+                    <td><span style="color:#e6a020">блокировка до прихода читателя</span></td>
+                    <td><span style="color:#e05555">panic</span></td>
+                    <td><span style="color:#e6a020">блокировка навсегда</span></td>
+                  </tr>
+                  <tr>
+                    <td>Закрытие</td>
+                    <td><span style="color:#4caf50">канал закроется</span></td>
+                    <td><span style="color:#e05555">panic</span></td>
+                    <td><span style="color:#e05555">panic</span></td>
+                  </tr>
+                </table>
+              </div>
+
+              <p class="tight" style="margin-top:20px;margin-bottom:6px;font-weight:600">Буферизованный канал — дополнительные состояния:</p>
+              <div class="tablewrap">
+                <table>
+                  <tr>
+                    <th></th>
+                    <th class="wrap">Открытый и частично заполненный</th>
+                    <th class="wrap">Открытый и полностью заполненный</th>
+                    <th class="wrap">Открытый и пустой</th>
+                    <th class="wrap">Закрытый и не пустой</th>
+                  </tr>
+                  <tr>
+                    <td>Чтение</td>
+                    <td><span style="color:#4caf50">прочитаем значение</span></td>
+                    <td><span style="color:#4caf50">прочитаем значение</span></td>
+                    <td><span style="color:#e6a020">блокировка до прихода писателя</span></td>
+                    <td><span style="color:#4caf50">прочитаем значение</span></td>
+                  </tr>
+                  <tr>
+                    <td>Запись</td>
+                    <td><span style="color:#4caf50">запишем значение</span></td>
+                    <td><span style="color:#e6a020">блокировка до прихода читателя</span></td>
+                    <td><span style="color:#4caf50">запишем значение</span></td>
+                    <td><span style="color:#e05555">panic</span></td>
+                  </tr>
+                </table>
+              </div>
+
+              <p class="tight" style="margin-top:20px;margin-bottom:6px;font-weight:600">Направленные каналы:</p>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:4px">
+                <div>
+                  <p class="tight" style="margin-bottom:6px"><code class="inline">&lt;-chan T</code> — только на чтение:</p>
+                  <div class="tablewrap">
+                    <table>
+                      <tr><td>Запись</td><td><span style="color:#e05555">ошибка компиляции</span></td></tr>
+                      <tr><td>Закрытие</td><td><span style="color:#e05555">ошибка компиляции</span></td></tr>
+                    </table>
+                  </div>
+                </div>
+                <div>
+                  <p class="tight" style="margin-bottom:6px"><code class="inline">chan&lt;- T</code> — только на запись:</p>
+                  <div class="tablewrap">
+                    <table>
+                      <tr><td>Чтение</td><td><span style="color:#e05555">ошибка компиляции</span></td></tr>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <details class="deep" style="margin-top:20px">
+            <summary>Паттерны и практика <span class="tag">patterns</span></summary>
+            <div class="deep-body">
+
+          <div class="impl-sec">
+            <div class="impl-sec-hdr">Инициализация: только через make</div>
+            <div class="impl-sec-body">
+              <p class="tight" style="margin-bottom:10px"><code class="inline">var ch chan int</code> даёт <b>nil-канал</b> — запись и чтение заблокируют горутину навсегда. Нужен <code class="inline">make</code>. То же правило для полей структур: инициализировать при создании.</p>
+              <div class="codeblock" style="margin:0">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">init.go</span></div>
+                <pre><code class="language-go">var ch chan int      // nil — не работает
+ch = make(chan int)  // теперь можно писать и читать
+
+type MyStruct struct{ ch chan int }
+s := MyStruct{ch: make(chan int)} // инициализируем сразу</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="impl-sec">
+            <div class="impl-sec-hdr">Дедлок: запись без читателя</div>
+            <div class="impl-sec-body">
+              <p class="tight" style="margin-bottom:10px">Небуферизованный канал — точка встречи. Запись блокируется до прихода читателя. Нет читателя — дедлок. Решение: запись в отдельной горутине.</p>
+              <div class="codeblock" style="margin:0">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">deadlock.go</span></div>
+                <pre><code class="language-go">ch := make(chan int)
+ch &lt;- 1   // дедлок: некому читать прямо сейчас
+
+// Решение: пишем в горутине
+go func() { ch &lt;- 1 }()
+v := &lt;-ch
+fmt.Println(v) // 1</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="impl-sec">
+            <div class="impl-sec-hdr">Чтение: идиома ok и for range ch</div>
+            <div class="impl-sec-body">
+              <p class="tight" style="margin-bottom:10px">Если не знаем заранее сколько значений придёт — проверяем <code class="inline">ok</code> или используем <code class="inline">for range ch</code>. Оба варианта выходят из цикла при закрытии канала. <b>Для range канал обязательно нужно закрыть</b>, иначе — дедлок.</p>
+              <div class="codeblock" style="margin:0">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">range.go</span></div>
+                <pre><code class="language-go">// Вариант 1: явная проверка
+for {
+    v, ok := &lt;-ch
+    if !ok { break }
+    fmt.Println(v)
+}
+
+// Вариант 2: короткая форма (эквивалентна)
+for v := range ch {
+    fmt.Println(v)
+}
+
+// Канал — не файл. Закрывать нужно только если читаем через range.
+// Если читаем фиксированное число раз — закрытие не обязательно.</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="impl-sec">
+            <div class="impl-sec-hdr">Микропаттерн: Генератор</div>
+            <div class="impl-sec-body">
+              <p class="tight" style="margin-bottom:10px">Функция создаёт канал, запускает горутину-писателя и <b>сразу возвращает канал</b>. Тип возврата <code class="inline">&lt;-chan T</code> — читатель не может случайно записать или закрыть.</p>
+              <div class="callout warn" style="margin-bottom:10px">Между <code class="inline">make(chan T)</code> и <code class="inline">return ch</code> не должно быть блокирующих операций — запись всегда в горутине.</div>
+              <div class="codeblock" style="margin:0">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">generator.go</span></div>
+                <pre><code class="language-go">func writer() &lt;-chan int {
+    ch := make(chan int)
+    go func() {
+        for i := range 5 { ch &lt;- i + 1 }
+        close(ch)
+    }()
+    return ch  // возвращаем сразу, не блокируясь
+}
+
+for v := range writer() {
+    fmt.Println(v) // 1 2 3 4 5
+}</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="impl-sec">
+            <div class="impl-sec-hdr">Несколько писателей: закрытие через WaitGroup</div>
+            <div class="impl-sec-body">
+              <p class="tight" style="margin-bottom:10px">Если две горутины пишут в один канал и обе вызывают <code class="inline">close(ch)</code> — race condition. В зависимости от расписания горутин возможны три исхода: всё ок (повезло), <code class="inline">close of closed channel</code> (обе закрыли), <code class="inline">send on closed channel</code> (одна закрыла пока вторая ещё пишет). Решение: только одна точка закрытия — после того как все писатели завершились.</p>
+              <div class="codeblock" style="margin:0">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">multi-writer.go</span></div>
+                <pre><code class="language-go">func writer() &lt;-chan int {
+    ch := make(chan int)
+    wg := &amp;sync.WaitGroup{}
+
+    wg.Add(2)
+    go func() {
+        defer wg.Done()
+        for i := range 5 { ch &lt;- i + 1 }
+        // НЕ закрываем здесь
+    }()
+    go func() {
+        defer wg.Done()
+        for i := range 5 { ch &lt;- i + 11 }
+        // НЕ закрываем здесь
+    }()
+
+    go func() {        // отдельная горутина — единственная точка закрытия
+        wg.Wait()
+        close(ch)
+    }()
+
+    return ch
+}</code></pre>
+              </div>
+              <p class="tight" style="margin-top:10px">В паттерне генератора нельзя вызвать <code class="inline">wg.Wait()</code> в основном потоке — он должен вернуть канал немедленно. Поэтому ожидание выносится в третью горутину.</p>
+            </div>
+          </div>
+
+          <div class="impl-sec">
+            <div class="impl-sec-hdr">select: мультиплексирование каналов</div>
+            <div class="impl-sec-body">
+              <p class="tight" style="margin-bottom:10px"><code class="inline">select</code> похож на <code class="inline">switch</code>, но для каналов. Выполняет первый разблокировавшийся <code class="inline">case</code>. Если все заблокированы — ждёт (без <code class="inline">default</code>) или выходит немедленно (с <code class="inline">default</code>).</p>
+              <div class="codeblock" style="margin:0">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">select.go</span></div>
+                <pre><code class="language-go">select {
+case v := &lt;-ch1:
+    fmt.Println("ch1:", v)
+case v := &lt;-ch2:
+    fmt.Println("ch2:", v)
+default:                      // неблокирующий select
+    fmt.Println("оба заблокированы")
+}</code></pre>
+              </div>
+              <p class="tight" style="margin-top:12px;margin-bottom:8px">Таймаут и отмена по контексту:</p>
+              <div class="codeblock" style="margin:0">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">timeout.go</span></div>
+                <pre><code class="language-go">ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+defer cancel()
+
+select {
+case v := &lt;-ch:
+    fmt.Println(v)
+case &lt;-time.After(1 * time.Second):    // одноразовый таймер
+    fmt.Println("timeout")
+case &lt;-ctx.Done():                     // предпочтительно
+    fmt.Println("cancelled:", ctx.Err())
+}</code></pre>
+              </div>
+              <p class="tight" style="margin-top:10px"><code class="inline">time.After</code>, <code class="inline">time.NewTimer.C</code> и <code class="inline">ctx.Done()</code> работают одинаково: возвращают канал, который <b>закрывается</b> по истечении времени или отмены. По аксиоме закрытого канала — читатель немедленно получает zero value и case срабатывает.</p>
+              <div class="callout ok" style="margin-top:10px">В реальном коде предпочитайте <code class="inline">context</code>: один контекст пробрасывается в несколько функций и все они согласованно отменяются.</div>
+            </div>
+          </div>
+
+          <div class="impl-sec">
+            <div class="impl-sec-hdr">Утечка горутин</div>
+            <div class="impl-sec-body">
+              <p class="tight" style="margin-bottom:10px">Горутина, заблокированная на <code class="inline">ch &lt;- i</code> когда читатель уже вышел — <b>утечка</b>. GC не уберёт её. Решение: горутина-писатель тоже слушает контекст.</p>
+              <div class="codeblock" style="margin:0">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">leak.go</span></div>
+                <pre><code class="language-go">go func() {
+    for i := range 1000 {
+        select {
+        case ch &lt;- i:      // пишем если читатель готов
+        case &lt;-ctx.Done(): // выходим вместе с читателем
+            return
+        }
+    }
+    close(ch)
+}()
+
+for {
+    select {
+    case v, ok := &lt;-ch:
+        if !ok { return }
+        fmt.Println(v)
+    case &lt;-ctx.Done():
+        return
+    }
+}</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div style="border-top:1px solid var(--border,rgba(255,255,255,.08));margin:20px 0 14px"></div>
+          <p class="tight" style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);margin-bottom:14px">Практические задачи</p>
+
+          <details class="deep">
+            <summary>Задача 1 — Pipeline: writer → doubler → reader <span class="tag">practice</span></summary>
+            <div class="deep-body">
+              <p class="tight" style="margin-bottom:10px">Написать три функции так, чтобы в <code class="inline">main</code> вызов выглядел как <code class="inline">reader(doubler(writer()))</code>:</p>
+              <ul style="margin:0 0 12px;padding-left:18px;line-height:1.9">
+                <li><b>writer</b> — генерирует числа от 1 до 10</li>
+                <li><b>doubler</b> — умножает каждое на 2, имитируя работу (500 мс задержка)</li>
+                <li><b>reader</b> — читает и выводит на экран, числа появляются с паузой ~500 мс</li>
+              </ul>
+              <p class="tight" style="margin-bottom:12px">Каждая функция принимает и/или возвращает <code class="inline">&lt;-chan int</code>. Это паттерн <b>pipeline</b>: данные текут по цепочке каналов.</p>
+              <details class="deep">
+                <summary>Решение</summary>
+                <div class="deep-body">
+                  <div class="codeblock" style="margin:0">
+                    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">pipeline.go</span></div>
+                    <pre><code class="language-go">func writer() &lt;-chan int {
+    ch := make(chan int)
+    go func() {
+        for i := range 10 { ch &lt;- i + 1 }
+        close(ch)
+    }()
+    return ch
+}
+
+func doubler(in &lt;-chan int) &lt;-chan int {
+    out := make(chan int)
+    go func() {
+        for v := range in {
+            out &lt;- v * 2
+            time.Sleep(500 * time.Millisecond)
+        }
+        close(out)
+    }()
+    return out
+}
+
+func reader(ch &lt;-chan int) {
+    for v := range ch { fmt.Println(v) }
+}
+
+func main() {
+    reader(doubler(writer()))
+}</code></pre>
+                  </div>
+                </div>
+              </details>
+            </div>
+          </details>
+
+          <details class="deep" style="margin-top:10px">
+            <summary>Задача 2 — Таймаут для долгой операции <span class="tag">practice</span></summary>
+            <div class="deep-body">
+              <p class="tight" style="margin-bottom:10px">Дана функция, которая работает неопределённо долго (до 100 секунд). Написать обёртку, которая прерывает выполнение если функция работает дольше 3 секунд, и возвращает ошибку.</p>
+              <div class="codeblock" style="margin:0 0 12px">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">task.go</span></div>
+                <pre><code class="language-go">func randomTimeWork() {
+    time.Sleep(time.Duration(rand.Intn(100)) * time.Second)
+}
+
+func predictableTimeWork() error { /* ??? */ }
+
+func main() {
+    if err := predictableTimeWork(); err != nil {
+        fmt.Println("timeout:", err)
+    }
+}</code></pre>
+              </div>
+              <details class="deep">
+                <summary>Решение</summary>
+                <div class="deep-body">
+                  <div class="codeblock" style="margin:0">
+                    <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">solution.go</span></div>
+                    <pre><code class="language-go">func predictableTimeWork() error {
+    done := make(chan struct{})
+    go func() {
+        randomTimeWork()
+        close(done)
+    }()
+    select {
+    case &lt;-done:
+        return nil
+    case &lt;-time.After(3 * time.Second):
+        return errors.New("timeout: exceeded 3s")
+    }
+}</code></pre>
+                  </div>
+                </div>
+              </details>
+            </div>
+          </details>
+
+          <details class="deep" style="margin-top:10px">
+            <summary>Задача 3 — Worker pool: параллельная обработка <span class="tag">practice</span></summary>
+            <div class="deep-body">
+              <p class="tight" style="margin-bottom:10px">Реализовать функцию <code class="inline">processParallel</code>, которая обрабатывает данные из <code class="inline">in</code> параллельно через <code class="inline">numWorkers</code> воркеров и кладёт результаты в <code class="inline">out</code>. Общее время выполнения должно быть не более 5 секунд.</p>
+              <div class="codeblock" style="margin:0">
+                <div class="tab"><div class="dots"><span></span><span></span><span></span></div><span class="fname">task.go</span></div>
+                <pre><code class="language-go">func processData(val int) int {
+    time.Sleep(time.Duration(rand.Intn(10)) * time.Second)
+    return val * 2
+}
+
+// операция должна выполняться не более 5 секунд
+func processParallel(in &lt;-chan int, out chan&lt;- int, numWorkers int) {
+    // ???
+}
+
+func main() {
+    in := make(chan int)
+    out := make(chan int)
+
+    go func() {
+        for i := range 100 { in &lt;- i }
+        close(in)
+    }()
+
+    now := time.Now()
+    processParallel(in, out, 5)
+
+    for val := range out { fmt.Println(val) }
+    fmt.Println(time.Since(now))
+}</code></pre>
+              </div>
+            </div>
+          </details>
+
+            </div>
+          </details>
+
+          ` }
+        ]
+      },
+
       pointer: {
         title: 'Указатель — под капотом',
         html: `
@@ -4090,15 +5676,32 @@ type Type struct {
     var closeBtn = document.getElementById('implClose');
 
     if (overlay && panel && body && titleEl && closeBtn) {
-      var openImpl = function(key){
+      var openImpl = function(key, page){
+        page = (page !== undefined) ? Number(page) : 0;
         var data = IMPL_DATA[key];
+        var html;
+        if (data && data.pages) {
+          var pg = data.pages[page];
+          var total = data.pages.length;
+          var bBase = 'font-family:Karla,sans-serif;font-size:13px;font-weight:600;padding:7px 18px;border-radius:8px;cursor:pointer;transition:opacity .15s;';
+          var nav = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid rgba(127,119,221,.2);">';
+          nav += '<span style="font-size:11.5px;color:var(--text-dim);font-family:\'JetBrains Mono\',monospace">' + (page+1) + ' / ' + total + '</span>';
+          nav += '<div style="display:flex;gap:8px;">';
+          if (page > 0) nav += '<button onclick="openImpl(\'' + key + '\',' + (page-1) + ')" style="' + bBase + 'border:1.5px solid rgba(127,119,221,.35);background:none;color:currentColor;">&#8592; назад</button>';
+          if (page < total - 1) nav += '<button onclick="openImpl(\'' + key + '\',' + (page+1) + ')" style="' + bBase + 'border:1.5px solid var(--accent,#7F77DD);background:var(--accent,#7F77DD);color:#fff;">дальше &#8594;</button>';
+          nav += '</div></div>';
+          html = nav + pg.html;
+        } else {
+          html = data ? data.html : '<p class="tight">Разбор этого типа ещё не готов — скоро появится.</p>';
+        }
         titleEl.textContent = data ? data.title : (key + ' — скоро');
-        body.innerHTML = data ? data.html : '<p class="tight">Разбор этого типа ещё не готов — скоро появится.</p>';
+        body.innerHTML = html;
         overlay.classList.add('is-open');
         panel.classList.add('is-open');
         document.body.style.overflow = 'hidden';
         if (window.hljs) { body.querySelectorAll('pre code').forEach(function(el){ hljs.highlightElement(el); }); }
         if (key === 'struct' && window._alignInit) setTimeout(window._alignInit, 0);
+        body.scrollTop = 0;
         closeBtn.focus();
       };
       var closeImpl = function(){
