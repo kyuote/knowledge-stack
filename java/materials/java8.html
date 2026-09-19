@@ -1,0 +1,1368 @@
+<div class="kicker"><span class="line"></span>Материалы</div>
+<h1 class="title">Java 8</h1>
+<p class="lede">Конспект из источника — вопросы и ответы в оригинальном виде.</p>
+
+<style>
+.mat-item { margin-bottom: 28px; border-bottom: 1px solid var(--border,#eee); padding-bottom: 20px; }
+.mat-q { font-weight: 600; font-size: 1.05em; color: var(--text); margin-bottom: 10px; }
+.mat-a { color: var(--text-dim, #555); line-height: 1.7; }
+.mat-a p { margin: 4px 0; }
+.mat-a ul { margin: 6px 0 6px 20px; }
+.mat-a li { margin: 3px 0; }
+.mat-section { margin: 32px 0 12px; font-size: 1.15em; color: var(--accent); border-left: 3px solid var(--accent); padding-left: 10px; }
+</style>
+
+<div class="mat-list">
+<div class="mat-item">
+  <div class="mat-q">Какие нововведения, появились в Java 8 и JDK 8?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое «лямбда»? Какова структура и особенности использования лямбда-выражения?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">К каким переменным есть доступ у лямбда-выражений?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как отсортировать список строк с помощью лямбда-выражения?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое «ссылка на метод»?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие виды ссылок на методы вы знаете?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Объясните выражение System.out::println.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое «функциональные интерфейсы»?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужны функциональные интерфейсы Function&amp;lt;T,R&amp;gt;, DoubleFunction&amp;lt;R&amp;gt;, IntFunction&amp;lt;R&amp;gt; и LongFunction&amp;lt;R&amp;gt;?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужны функциональные интерфейсы UnaryOperator&amp;lt;T&amp;gt;, DoubleUnaryOperator, IntUnaryOperator и LongUnaryOperator?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужны функциональные интерфейсы BinaryOperator&amp;lt;T&amp;gt;, DoubleBinaryOperator, IntBinaryOperator и LongBinaryOperator?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужны функциональные интерфейсы Predicate&amp;lt;T&amp;gt;, DoublePredicate, IntPredicate и LongPredicate?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужны функциональные интерфейсы Consumer&amp;lt;T&amp;gt;, DoubleConsumer, IntConsumer и LongConsumer?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужны функциональные интерфейсы Supplier&amp;lt;T&amp;gt;,  BooleanSupplier, DoubleSupplier, IntSupplier и LongSupplier?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужен функциональный интерфейс BiConsumer&amp;lt;T,U&amp;gt;?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужен функциональный интерфейс BiFunction&amp;lt;T,U,R&amp;gt;?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужен функциональный интерфейс BiPredicate&amp;lt;T,U&amp;gt;?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужны функциональные интерфейсы вида _To_Function?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужны функциональные интерфейсы ToDoubleBiFunction&amp;lt;T,U&amp;gt;, ToIntBiFunction&amp;lt;T,U&amp;gt; и ToLongBiFunction&amp;lt;T,U&amp;gt;?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужны функциональные интерфейсы ToDoubleFunction&amp;lt;T&amp;gt;, ToIntFunction&amp;lt;T&amp;gt; и ToLongFunction&amp;lt;T&amp;gt;?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужны функциональные интерфейсы ObjDoubleConsumer&amp;lt;T&amp;gt;, ObjIntConsumer&amp;lt;T&amp;gt; и ObjLongConsumer&amp;lt;T&amp;gt;?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое StringJoiner?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое default методы интрефейса?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как вызывать default метод интерфейса в реализующем этот интерфейс классе?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое static метод интерфейса?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как вызывать static метод интерфейса?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое Optional?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое Stream?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие существуют способы создания стрима?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">В чем разница между Collection и Stream?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужен метод collect() в стримах?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего в стримах применяются методы forEach() и forEachOrdered()?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего в стримах предназначены методы map() и mapToInt(), mapToDouble(), mapToLong()?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какова цель метода filter() в стримах?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего в стримах предназначен метод limit()?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего в стримах предназначен метод sorted()?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего в стримах предназначены методы flatMap(), flatMapToInt(), flatMapToDouble(), flatMapToLong()?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Расскажите о параллельной обработке в Java 8.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие конечные методы работы со стримами вы знаете?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие промежуточные методы работы со стримами вы знаете?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как вывести на экран 10 случайных чисел, используя forEach()?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как можно вывести на экран уникальные квадраты чисел используя метод map()?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как вывести на экран количество пустых строк с помощью метода filter()?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как вывести на экран 10 случайных чисел в порядке возрастания?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как найти максимальное число в наборе?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как найти минимальное число в наборе?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как получить сумму всех чисел в наборе?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как получить среднее значение всех чисел?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие дополнительные методы для работы с ассоциативными массивами (maps) появились в Java 8?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое LocalDateTime?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое ZonedDateTime?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как получить текущую дату с использованием Date Time API из Java 8?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как добавить 1 неделю, 1 месяц, 1 год, 10 лет к текущей дате с использованием Date Time API?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как получить следующий вторник используя Date Time API?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как получить вторую субботу текущего месяца используя Date Time API?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как получить текущее время с точностью до миллисекунд используя Date Time API?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как получить текущее время по местному времени с точностью до миллисекунд используя Date Time API?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как определить повторяемую аннотацию?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое Nashorn?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое jjs?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какой класс появился в Java 8 для кодирования/декодирования данных?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие нововведения, появились в Java 8 и JDK 8?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Методы интерфейсов по умолчанию;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Лямбда-выражения;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Функциональные интерфейсы;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Ссылки на методы и конструкторы;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Повторяемые аннотации;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Аннотации на типы данных;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Рефлексия для параметров методов;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Stream API для работы с коллекциями;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Параллельная сортировка массивов;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Новое API для работы с датами и временем;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Новый движок JavaScript Nashorn;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Добавлено несколько новых классов для потокобезопасной работы;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Добавлен новый API для Calendar и Locale;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Добавлена поддержка Unicode 6.2.0;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Добавлен стандартный класс для работы с Base64;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Добавлена поддержка беззнаковой арифметики;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Улучшена производительность конструктора java.lang.String(byte[], *) и метода java.lang.String.getBytes();</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Новая реализация AccessController.doPrivileged, позволяющая устанавливать подмножество привилегий без необходимости проверки всех остальных уровней доступа;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Password-based алгоритмы стали более устойчивыми;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Добавлена поддержка SSL/TLS Server Name Indication (NSI) в JSSE Server;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Улучшено хранилище ключей (KeyStore);</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Добавлен алгоритм SHA-224;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Удален мост JDBC - ODBC;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Удален PermGen, изменен способ хранения мета-данных классов;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Возможность создания профилей для платформы Java SE, которые включают в себя не всю платформу целиком, а некоторую ее часть;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Инструментарий</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Добавлена утилита jjs для использования JavaScript Nashorn;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Команда java может запускать JavaFX приложения;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Добавлена утилита jdeps для анализа .class-файлов.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое «лямбда»? Какова структура и особенности использования лямбда-выражения?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Лямбда представляет собой набор инструкций, которые можно выделить в отдельную переменную и затем многократно вызвать в различных местах программы.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Основу лямбда-выражения составляет лямбда-оператор, который представляет стрелку -&amp;gt;. Этот оператор разделяет лямбда-выражение на две части: левая часть содержит список параметров выражения, а правая, собственно, представляет тело лямбда-выражения, где выполняются все действия.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Лямбда-выражение не выполняется само по себе, а образует реализацию метода, определенного в функциональном интерфейсе. При этом важно, что функциональный интерфейс должен содержать только один единственный метод без реализации.</div>
+  <div class="mat-a"><p>interface Operationable {    int calculate(int x, int y);}public static void main(String[] args) {    Operationable operation = (x, y) -&amp;gt; x + y;         int result = operation.calculate(10, 20);    System.out.println(result); //30}</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">По факту лямбда-выражения являются в некотором роде сокращенной формой внутренних анонимных классов, которые ранее применялись в Java.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Отложенное выполнение (deferred execution) лямбда-выражения- определяется один раз в одном месте программы, вызываются при необходимости, любое количество раз и в произвольном месте программы.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Параметры лямбда-выражения должны соответствовать по типу параметрам метода функционального интерфейса:</div>
+  <div class="mat-a"><p>operation = (int x, int y) -&amp;gt; x + y;//При написании самого лямбда-выражения тип параметров разрешается не указывать:(x, y) -&amp;gt; x + y;//Если метод не принимает никаких параметров, то пишутся пустые скобки, например,() -&amp;gt; 30 + 20;//Если метод принимает только один параметр, то скобки можно опустить:n -&amp;gt; n * n;</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Конечные лямбда-выражения не обязаны возвращать какое-либо значение.</div>
+  <div class="mat-a"><p>interface Printable {    void print(String s);} public static void main(String[] args) {    Printable printer = s -&amp;gt; System.out.println(s);    printer.print("Hello, world");}</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Блочные лямбда-выражения обрамляются фигурными скобками. В блочных лямбда-выражениях можно использовать внутренние вложенные блоки, циклы, конструкции if, switch, создавать переменные и т.д. Если блочное лямбда-выражение должно возвращать значение, то явным образом применяется оператор return:</div>
+  <div class="mat-a"><p>Operationable operation = (int x, int y) -&amp;gt; {           if (y == 0) {        return 0;    }    else {        return x / y;    }};</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Передача лямбда-выражения в качестве параметра метода:</div>
+  <div class="mat-a"><p>interface Condition {    boolean isAppropriate(int n);}private static int sum(int[] numbers, Condition condition) {    int result = 0;    for (int i : numbers) {        if (condition.isAppropriate(i)) {            result += i;        }    }    return result;}public static void main(String[] args) {    System.out.println(sum(new int[] {0, 1, 0, 3, 0, 5, 0, 7, 0, 9}, (n) -&amp;gt; n != 0));}</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">К каким переменным есть доступ у лямбда-выражений?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Доступ к переменным внешней области действия из лямбда-выражения очень схож к доступу из анонимных объектов. Можно ссылаться на:</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">неизменяемые (effectively final - не обязательно помеченные как final) локальные переменные;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">поля класса;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">статические переменные.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">К методам по умолчанию реализуемого функционального интерфейса обращаться внутри лямбда-выражения запрещено.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как отсортировать список строк с помощью лямбда-выражения?</div>
+  <div class="mat-a"><p>public static List&amp;lt;String&amp;gt; sort(List&amp;lt;String&amp;gt; list){    Collections.sort(list, (a, b) -&amp;gt; a.compareTo(b));    return list;}</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое «ссылка на метод»?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Если существующий в классе метод уже делает все, что необходимо, то можно воспользоваться механизмом method reference (ссылка на метод) для непосредственной передачи этого метода. Такая ссылка передается в виде:</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">имя_класса::имя_статического_метода для статического метода;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">объект_класса::имя_метода для метода экземпляра;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">название_класса::new для конструктора.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Результат будет в точности таким же, как в случае определения лямбда-выражения, которое вызывает этот метод.</div>
+  <div class="mat-a"><p>private interface Measurable {    public int length(String string);}public static void main(String[] args) {    Measurable a = String::length;    System.out.println(a.length("abc"));}</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Ссылки на методы потенциально более эффективны, чем использование лямбда-выражений. Кроме того, они предоставляют компилятору более качественную информацию о типе и при возможности выбора между использованием ссылки на существующий метод и использованием лямбда-выражения, следует всегда предпочитать использование ссылки на метод.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие виды ссылок на методы вы знаете?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">на статический метод;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">на метод экземпляра;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">на конструктор.</div>
+  <div class="mat-a"><p>Объясните выражение System.out::println.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Данное выражение иллюстрирует механизм instance method reference: передачи ссылки на метод println() статического поля out класса System.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое «функциональные интерфейсы»?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Функциональный интерфейс - это интерфейс, который определяет только один абстрактный метод.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Чтобы точно определить интерфейс как функциональный, добавлена аннотация @FunctionalInterface, работающая по принципу @Override. Она обозначит замысел и не даст определить второй абстрактный метод в интерфейсе.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Интерфейс может включать сколько угодно default методов и при этом оставаться функциональным, потому что default методы - не абстрактные.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужны функциональные интерфейсы Function&amp;lt;T,R&amp;gt;, DoubleFunction&amp;lt;R&amp;gt;, IntFunction&amp;lt;R&amp;gt; и LongFunction&amp;lt;R&amp;gt;?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Function&amp;lt;T, R&amp;gt; - интерфейс, с помощью которого реализуется функция, получающая на вход экземпляр класса T и возвращающая на выходе экземпляр класса R.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Методы по умолчанию могут использоваться для построения цепочек вызовов (compose, andThen).</div>
+  <div class="mat-a"><p>Function&amp;lt;String, Integer&amp;gt; toInteger = Integer::valueOf;Function&amp;lt;String, String&amp;gt; backToString = toInteger.andThen(String::valueOf);backToString.apply("123");     // "123"</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">DoubleFunction&amp;lt;R&amp;gt; - функция, получающая на вход Double и возвращающая на выходе экземпляр класса R;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">IntFunction&amp;lt;R&amp;gt; - функция, получающая на вход Integer и возвращающая на выходе экземпляр класса R;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">LongFunction&amp;lt;R&amp;gt; - функция, получающая на вход Long и возвращающая на выходе экземпляр класса R.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужны функциональные интерфейсы UnaryOperator&amp;lt;T&amp;gt;, DoubleUnaryOperator, IntUnaryOperator и LongUnaryOperator?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">UnaryOperator&amp;lt;T&amp;gt; (унарный оператор) принимает в качестве параметра объект типа T, выполняет над ними операции и возвращает результат операций в виде объекта типа T:</div>
+  <div class="mat-a"><p>UnaryOperator&amp;lt;Integer&amp;gt; operator = x -&amp;gt; x * x;System.out.println(operator.apply(5)); // 25</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">DoubleUnaryOperator - унарный оператор, получающий на вход Double;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">IntUnaryOperator - унарный оператор, получающий на вход Integer;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">LongUnaryOperator - унарный оператор, получающий на вход Long.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужны функциональные интерфейсы BinaryOperator&amp;lt;T&amp;gt;, DoubleBinaryOperator, IntBinaryOperator и LongBinaryOperator?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">BinaryOperator&amp;lt;T&amp;gt; (бинарный оператор) - интерфейс, с помощью которого реализуется функция, получающая на вход два экземпляра класса T и возвращающая на выходе экземпляр класса T.</div>
+  <div class="mat-a"><p>BinaryOperator&amp;lt;Integer&amp;gt; operator = (a, b) -&amp;gt; a + b;System.out.println(operator.apply(1, 2)); // 3</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">DoubleBinaryOperator - бинарный оператор, получающий на вход Double;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">IntBinaryOperator - бинарный оператор, получающий на вход Integer;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">LongBinaryOperator - бинарный оператор, получающий на вход Long.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужны функциональные интерфейсы Predicate&amp;lt;T&amp;gt;, DoublePredicate, IntPredicate и LongPredicate?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Predicate&amp;lt;T&amp;gt; (предикат) - интерфейс, с помощью которого реализуется функция, получающая на вход экземпляр класса T и возвращающая на выходе значение типа boolean.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Интерфейс содержит различные методы по умолчанию, позволяющие строить сложные условия (and, or, negate).</div>
+  <div class="mat-a"><p>Predicate&amp;lt;String&amp;gt; predicate = (s) -&amp;gt; s.length() &amp;gt; 0;predicate.test("foo"); // truepredicate.negate().test("foo"); // false</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">DoublePredicate - предикат, получающий на вход Double;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">IntPredicate - предикат, получающий на вход Integer;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">LongPredicate - предикат, получающий на вход Long.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужны функциональные интерфейсы Consumer&amp;lt;T&amp;gt;, DoubleConsumer, IntConsumer и LongConsumer?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Consumer&amp;lt;T&amp;gt; (потребитель) - интерфейс, с помощью которого реализуется функция, которая получает на вход экземпляр класса T, производит с ним некоторое действие и ничего не возвращает.</div>
+  <div class="mat-a"><p>Consumer&amp;lt;String&amp;gt; hello = (name) -&amp;gt; System.out.println("Hello, " + name);hello.accept("world");</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">DoubleConsumer - потребитель, получающий на вход Double;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">IntConsumer - потребитель, получающий на вход Integer;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">LongConsumer - потребитель, получающий на вход Long.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужны функциональные интерфейсы Supplier&amp;lt;T&amp;gt;,  BooleanSupplier, DoubleSupplier, IntSupplier и LongSupplier?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Supplier&amp;lt;T&amp;gt; (поставщик) - интерфейс, с помощью которого реализуется функция, ничего не принимающая на вход, но возвращающая на выход результат класса T;</div>
+  <div class="mat-a"><p>Supplier&amp;lt;LocalDateTime&amp;gt; now = LocalDateTime::now;now.get();</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">DoubleSupplier - поставщик, возвращающий Double;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">IntSupplier - поставщик, возвращающий Integer;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">LongSupplier - поставщик, возвращающий Long.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужен функциональный интерфейс BiConsumer&amp;lt;T,U&amp;gt;?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">BiConsumer&amp;lt;T,U&amp;gt; представляет собой операцию, которая принимает два аргумента классов T и U производит с ними некоторое действие и ничего не возвращает.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужен функциональный интерфейс BiFunction&amp;lt;T,U,R&amp;gt;?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">BiFunction&amp;lt;T,U,R&amp;gt; представляет собой операцию, которая принимает два аргумента классов T и U и возвращающая результат класса R.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужен функциональный интерфейс BiPredicate&amp;lt;T,U&amp;gt;?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">BiPredicate&amp;lt;T,U&amp;gt; представляет собой операцию, которая принимает два аргумента классов T и U и возвращающая результат типа boolean.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужны функциональные интерфейсы вида _To_Function?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">DoubleToIntFunction - операция, принимающая аргумент класса Double и возвращающая результат типа Integer;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">DoubleToLongFunction - операция, принимающая аргумент класса Double и возвращающая результат типа Long;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">IntToDoubleFunction - операция, принимающая аргумент класса Integer и возвращающая результат типа Double;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">IntToLongFunction - операция, принимающая аргумент класса Integer и возвращающая результат типа Long;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">LongToDoubleFunction - операция, принимающая аргумент класса Long и возвращающая результат типа Double;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">LongToIntFunction - операция, принимающая аргумент класса Long и возвращающая результат типа Integer.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужны функциональные интерфейсы ToDoubleBiFunction&amp;lt;T,U&amp;gt;, ToIntBiFunction&amp;lt;T,U&amp;gt; и ToLongBiFunction&amp;lt;T,U&amp;gt;?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">ToDoubleBiFunction&amp;lt;T,U&amp;gt; - операция принимающая два аргумента классов T и U и возвращающая результат типа Double;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">ToLongBiFunction&amp;lt;T,U&amp;gt; - операция принимающая два аргумента классов T и U и возвращающая результат типа Long;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">ToIntBiFunction&amp;lt;T,U&amp;gt;  - операция принимающая два аргумента классов T и U и возвращающая результат типа Integer.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужны функциональные интерфейсы ToDoubleFunction&amp;lt;T&amp;gt;, ToIntFunction&amp;lt;T&amp;gt; и ToLongFunction&amp;lt;T&amp;gt;?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">ToDoubleFunction&amp;lt;T&amp;gt; - операция, принимающая аргумент класса T и возвращающая результат типа Double;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">ToLongFunction&amp;lt;T&amp;gt; - операция, принимающая аргумент класса T и возвращающая результат типа Long;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">ToIntFunction&amp;lt;T&amp;gt; - операция, принимающая аргумент класса T и возвращающая результат типа Integer.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужны функциональные интерфейсы ObjDoubleConsumer&amp;lt;T&amp;gt;, ObjIntConsumer&amp;lt;T&amp;gt; и ObjLongConsumer&amp;lt;T&amp;gt;?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">ObjDoubleConsumer&amp;lt;T&amp;gt; - операция, которая принимает два аргумента классов T и Double, производит с ними некоторое действие и ничего не возвращает;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">ObjLongConsumer&amp;lt;T&amp;gt; - операция, которая принимает два аргумента классов T и Long, производит с ними некоторое действие и ничего не возвращает;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">ObjIntConsumer&amp;lt;T&amp;gt; - операция, которая принимает два аргумента классов T и Integer, производит с ними некоторое действие и ничего не возвращает.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое StringJoiner?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Класс StringJoiner используется, чтобы создать последовательность строк, разделенных разделителем с возможностью присоединить к полученной строке префикс и суффикс:</div>
+  <div class="mat-a"><p>StringJoiner joiner = new StringJoiner(".", "prefix-", "-suffix");for (String s : "Hello the brave world".split(" ")) {    joiner.add(s);}System.out.println(joiner); //prefix-Hello.the.brave.world-suffix</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое default методы интрефейса?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Java 8 позволяет добавлять неабстрактные реализации методов в интерфейс, используя ключевое слово default:</div>
+  <div class="mat-a"><p>interface Example {    int process(int a);    default void show() {        System.out.println("default show()");    }}</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Если класс реализует интерфейс, он может, но не обязан, реализовать методы по-умолчанию, уже реализованные в интерфейсе. Класс наследует реализацию по умолчанию.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Если некий класс реализует несколько интерфейсов, которые имеют одинаковый метод по умолчанию, то класс должен реализовать метод с совпадающей сигнатурой самостоятельно. Ситуация аналогична, если один интерфейс имеет метод по умолчанию, а в другом этот же метод является абстрактным - никакой реализации по умолчанию классом не наследуется.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Метод по умолчанию не может переопределить метод класса java.lang.Object.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Помогают реализовывать интерфейсы без страха нарушить работу других классов.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Позволяют избежать создания служебных классов, так как все необходимые методы могут быть представлены в самих интерфейсах.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Дают свободу классам выбрать метод, который нужно переопределить.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Одной из основных причин внедрения методов по умолчанию является возможность коллекций в Java 8 использовать лямбда-выражения.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как вызывать default метод интерфейса в реализующем этот интерфейс классе?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Используя ключевое слово super вместе с именем интерфейса:</div>
+  <div class="mat-a"><p>interface Paper {    default void show() {        System.out.println("default show()");    }}class Licence implements Paper {    public void show() {        Paper.super.show();    }}</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое static метод интерфейса?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Статические методы интерфейса похожи на методы по умолчанию, за исключением того, что для них отсутствует возможность переопределения в классах, реализующих интерфейс.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Статические методы в интерфейсе являются частью интерфейса без возможности переопределить их для объектов класса реализации;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Методы класса java.lang.Object нельзя переопределить как статические;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Статические методы в интерфейсе используются для обеспечения вспомогательных методов, например, проверки на null, сортировки коллекций и т.д.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как вызывать static метод интерфейса?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Используя имя интерфейса:</div>
+  <div class="mat-a"><p>interface Paper {    static void show() {        System.out.println("static show()");    }}class Licence {    public void showPaper() {        Paper.show();    }}</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое Optional?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Опциональное значение Optional — это контейнер для объекта, который может содержать или не содержать значение null. Такая обёртка является удобным средством предотвращения NullPointerException, т.к. имеет некоторые функции высшего порядка, избавляющие от добавления повторяющихся if null/notNull проверок:</div>
+  <div class="mat-a"><p>Optional&amp;lt;String&amp;gt; optional = Optional.of("hello");optional.isPresent(); // trueoptional.ifPresent(s -&amp;gt; System.out.println(s.length())); // 5optional.get(); // "hello"optional.orElse("ops..."); // "hello"</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое Stream?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Интерфейс java.util.Stream представляет собой последовательность элементов, над которой можно производить различные операции.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Операции над стримами бывают или промежуточными (intermediate) или конечными (terminal). Конечные операции возвращают результат определенного типа, а промежуточные операции возвращают тот же стрим. Таким образом вы можете строить цепочки из несколько операций над одним и тем же стримом.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">У стрима может быть сколько угодно вызовов промежуточных операций и последним вызов конечной операции. При этом все промежуточные операции выполняются лениво и пока не будет вызвана конечная операция никаких действий на самом деле не происходит (похоже на создание объекта Thread или Runnable, без вызова start()).</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Стримы создаются на основе каких-либо источников, например классов из java.util.Collection.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Ассоциативные массивы (maps), например, HashMap, не поддерживаются.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Операции над стримами могут выполняться как последовательно, так и параллельно.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Потоки не могут быть использованы повторно. Как только была вызвана какая-нибудь конечная операция, поток закрывается.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Кроме универсальных объектных существуют особые виды стримов для работы с примитивными типами данных int, long и double: IntStream, LongStream и DoubleStream. Эти примитивные стримы работают так же, как и обычные объектные, но со следующими отличиями:</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">используют специализированные лямбда-выражения, например, IntFunction или IntPredicate вместо Function и Predicate;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">поддерживают дополнительные конечные операции sum(), average(), mapToObj().</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие существуют способы создания стрима?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">1) Из коллекции:</div>
+  <div class="mat-a"><p>Stream&amp;lt;String&amp;gt; fromCollection = Arrays.asList("x", "y", "z").stream();</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">2) Из набора значений:</div>
+  <div class="mat-a"><p>Stream&amp;lt;String&amp;gt; fromValues = Stream.of("x", "y", "z");</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">3) Из массива:</div>
+  <div class="mat-a"><p>Stream&amp;lt;String&amp;gt; fromArray = Arrays.stream(new String[]{"x", "y", "z"});</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">4) Из файла (каждая строка в файле будет отдельным элементом в стриме):</div>
+  <div class="mat-a"><p>Stream&amp;lt;String&amp;gt; fromFile = Files.lines(Paths.get("input.txt"));</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">5) Из строки:</div>
+  <div class="mat-a"><p>IntStream fromString = "0123456789".chars();</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">6) С помощью Stream.builder():</div>
+  <div class="mat-a"><p>Stream&amp;lt;String&amp;gt; fromBuilder = Stream.builder().add("z").add("y").add("z").build();</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">7) С помощью Stream.iterate() (бесконечный):</div>
+  <div class="mat-a"><p>Stream&amp;lt;Integer&amp;gt; fromIterate = Stream.iterate(1, n -&amp;gt; n + 1);</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">8) С помощью Stream.generate() (бесконечный):</div>
+  <div class="mat-a"><p>Stream&amp;lt;String&amp;gt; fromGenerate = Stream.generate(() -&amp;gt; "0");</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">В чем разница между Collection и Stream?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Коллекции позволяют работать с элементами по-отдельности, тогда как стримы так делать не позволяют, но вместо этого предоставляют возможность выполнять функции над данными как над одним целым.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Также стоит отметить важность самой концепции сущностей: Collection - это прежде всего воплощение Структуры Данных. Например, Set не просто хранит в себе элементы, он реализует идею множества с уникальными элементами, тогда как Stream, это прежде всего абстракция необходимая для реализации конвейера вычислений, собственно, поэтому, результатом работы конвейера являются те или иные Структуры Данных или же результаты проверок/поиска и т.п.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужен метод collect() в стримах?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Метод collect() является конечной операцией, которая используется для представления результата в виде коллекции или какой-либо другой структуры данных.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">collect() принимает на вход Collector&amp;lt;Тип_источника, Тип_аккумулятора, Тип_результата&amp;gt;, который содержит четыре этапа: supplier - инициализация аккумулятора, accumulator - обработка каждого элемента, combiner - соединение двух аккумуляторов при параллельном выполнении, [finisher] - необязательный метод последней обработки аккумулятора. В Java 8 в классе Collectors реализовано несколько распространённых коллекторов:</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">toList(), toCollection(), toSet() - представляют стрим в виде списка, коллекции или множества;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">toConcurrentMap(), toMap() - позволяют преобразовать стрим в Map;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">averagingInt(), averagingDouble(), averagingLong() - возвращают среднее значение;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">summingInt(), summingDouble(), summingLong() - возвращает сумму;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">summarizingInt(), summarizingDouble(), summarizingLong() - возвращают SummaryStatistics с разными агрегатными значениями;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">partitioningBy() - разделяет коллекцию на две части по соответствию условию и возвращает их как Map&amp;lt;Boolean, List&amp;gt;;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">groupingBy() - разделяет коллекцию на несколько частей и возвращает Map&amp;lt;N, List&amp;lt;T&amp;gt;&amp;gt;;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">mapping() - дополнительные преобразования значений для сложных Collector-ов.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Так же существует возможность создания собственного коллектора через Collector.of():</div>
+  <div class="mat-a"><p>Collector&amp;lt;String, List&amp;lt;String&amp;gt;, List&amp;lt;String&amp;gt;&amp;gt; toList = Collector.of(    ArrayList::new,    List::add,    (l1, l2) -&amp;gt; { l1.addAll(l2); return l1; });</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего в стримах применяются методы forEach() и forEachOrdered()?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">forEach() применяет функцию к каждому объекту стрима, порядок при параллельном выполнении не гарантируется;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">forEachOrdered() применяет функцию к каждому объекту стрима с сохранением порядка элементов.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего в стримах предназначены методы map() и mapToInt(), mapToDouble(), mapToLong()?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Метод map() является промежуточной операцией, которая заданным образом преобразует каждый элемент стрима.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">mapToInt(), mapToDouble(), mapToLong() - аналоги map(), возвращающие соответствующий числовой стрим (то есть стрим из числовых примитивов):</div>
+  <div class="mat-a"><p>Stream    .of("12", "22", "4", "444", "123")    .mapToInt(Integer::parseInt)    .toArray(); //[12, 22, 4, 444, 123]</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какова цель метода filter() в стримах?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Метод filter() является промежуточной операцией принимающей предикат, который фильтрует все элементы, возвращая только те, что соответствуют условию.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего в стримах предназначен метод limit()?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Метод limit() является промежуточной операцией, которая позволяет ограничить выборку определенным количеством первых элементов.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего в стримах предназначен метод sorted()?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Метод sorted() является промежуточной операцией, которая позволяет сортировать значения либо в натуральном порядке, либо задавая Comparator.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Порядок элементов в исходной коллекции остается нетронутым - sorted() всего лишь создает его отсортированное представление.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего в стримах предназначены методы flatMap(), flatMapToInt(), flatMapToDouble(), flatMapToLong()?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Метод flatMap() похож на map, но может создавать из одного элемента несколько. Таким образом, каждый объект будет преобразован в ноль, один или несколько других объектов, поддерживаемых потоком.  Наиболее очевидный способ применения этой операции — преобразование элементов контейнера при помощи функций, которые возвращают контейнеры.</div>
+  <div class="mat-a"><p>Stream    .of("H e l l o", "w o r l d !")    .flatMap((p) -&amp;gt; Arrays.stream(p.split(" ")))    .toArray(String[]::new);//["H", "e", "l", "l", "o", "w", "o", "r", "l", "d", "!"]</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">flatMapToInt(), flatMapToDouble(), flatMapToLong() - это аналоги flatMap(), возвращающие соответствующий числовой стрим.</div>
+  <div class="mat-a"><p>Расскажите о параллельной обработке в Java 8.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Стримы могут быть последовательными и параллельными. Операции над последовательными стримами выполняются в одном потоке процессора, над параллельными — используя несколько потоков процессора. Параллельные стримы используют общий ForkJoinPool доступный через статический ForkJoinPool.commonPool() метод. При этом, если окружение не является многоядерным, то поток будет выполняться как последовательный. Фактически применение параллельных стримов сводится к тому, что данные в стримах будут разделены на части, каждая часть обрабатывается на отдельном ядре процессора, и в конце эти части соединяются, и над ними выполняются конечные операции.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для создания параллельного потока из коллекции можно также использовать метод parallelStream() интерфейса Collection.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Чтобы сделать обычный последовательный стрим параллельным, надо вызвать у объекта Stream метод parallel(). Метод isParallel() позволяет узнать является ли стрим параллельным.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">С помощью, методов parallel() и sequential() можно определять какие операции могут быть параллельными, а какие только последовательными. Так же из любого последовательного стрима можно сделать параллельный и наоборот:</div>
+  <div class="mat-a"><p>collection.stream().peek(...) // операция последовательна.parallel().map(...) // операция может выполняться параллельно,.sequential().reduce(...) // операция снова последовательна</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как правило, элементы передаются в стрим в том же порядке, в котором они определены в источнике данных. При работе с параллельными стримами система сохраняет порядок следования элементов. Исключение составляет метод forEach(), который может выводить элементы в произвольном порядке. И чтобы сохранить порядок следования, необходимо применять метод forEachOrdered().</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Критерии, которые могут повлиять на производительность в параллельных стримах:</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Размер данных - чем больше данных, тем сложнее сначала разделять данные, а потом их соединять.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Количество ядер процессора. Теоретически, чем больше ядер в компьютере, тем быстрее программа будет работать. Если на машине одно ядро, нет смысла применять параллельные потоки.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Чем проще структура данных, с которой работает поток, тем быстрее будут происходить операции. Например, данные из ArrayList легко использовать, так как структура данной коллекции предполагает последовательность несвязанных данных. А вот коллекция типа LinkedList - не лучший вариант, так как в последовательном списке все элементы связаны с предыдущими/последующими. И такие данные трудно распараллелить.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Над данными примитивных типов операции будут производиться быстрее, чем над объектами классов.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Крайне не рекомендуется использовать параллельные стримы для скольких-нибудь долгих операций (например, сетевых соединений), так как все параллельные стримы работают c одним ForkJoinPool, то такие долгие операции могут остановить работу всех параллельных стримов в JVM из-за отсутствия доступных потоков в пуле, т.е. параллельные стримы стоит использовать лишь для коротких операций, где счет идет на миллисекунды, но не для тех где счет может идти на секунды и минуты;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Сохранение порядка в параллельных стримах увеличивает издержки при выполнении и если порядок не важен, то имеется возможность отключить его сохранение и тем самым увеличить производительность, использовав промежуточную операцию unordered():</div>
+  <div class="mat-a"><p>collection.parallelStream()    .sorted()    .unordered()    .collect(Collectors.toList());</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие конечные методы работы со стримами вы знаете?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">findFirst() возвращает первый элемент;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">findAny() возвращает любой подходящий элемент;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">collect() представление результатов в виде коллекций и других структур данных;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">count() возвращает количество элементов;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">anyMatch() возвращает true, если условие выполняется хотя бы для одного элемента;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">noneMatch() возвращает true, если условие не выполняется ни для одного элемента;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">allMatch() возвращает true, если условие выполняется для всех элементов;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">min() возвращает минимальный элемент, используя в качестве условия Comparator;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">max() возвращает максимальный элемент, используя в качестве условия Comparator;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">forEach() применяет функцию к каждому объекту (порядок при параллельном выполнении не гарантируется);</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">forEachOrdered() применяет функцию к каждому объекту с сохранением порядка элементов;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">toArray() возвращает массив значений;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">reduce()позволяет выполнять агрегатные функции и возвращать один результат.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для числовых стримов дополнительно доступны:</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">sum() возвращает сумму всех чисел;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">average() возвращает среднее арифметическое всех чисел.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие промежуточные методы работы со стримами вы знаете?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">filter() отфильтровывает записи, возвращая только записи, соответствующие условию;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">skip() позволяет пропустить определённое количество элементов в начале;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">distinct() возвращает стрим без дубликатов (для метода equals());</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">map() преобразует каждый элемент;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">peek() возвращает тот же стрим, применяя к каждому элементу функцию;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">limit() позволяет ограничить выборку определенным количеством первых элементов;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">sorted() позволяет сортировать значения либо в натуральном порядке, либо задавая Comparator;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">mapToInt(), mapToDouble(), mapToLong() - аналоги map() возвращающие стрим числовых примитивов;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">flatMap(), flatMapToInt(), flatMapToDouble(), flatMapToLong() - похожи на map(), но могут создавать из одного элемента несколько.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для числовых стримов дополнительно доступен метод mapToObj(), который преобразует числовой стрим обратно в объектный.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как вывести на экран 10 случайных чисел, используя forEach()?</div>
+  <div class="mat-a"><p>(new Random())    .ints()    .limit(10)    .forEach(System.out::println);</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как можно вывести на экран уникальные квадраты чисел используя метод map()?</div>
+  <div class="mat-a"><p>Stream    .of(1, 2, 3, 2, 1)    .map(s -&amp;gt; s * s)    .distinct()    .forEach(System.out::println);</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как вывести на экран количество пустых строк с помощью метода filter()?</div>
+  <div class="mat-a"><p>System.out.println(    Stream        .of("Hello", "", ", ", "world", "!")        .filter(String::isEmpty)        .count());</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как вывести на экран 10 случайных чисел в порядке возрастания?</div>
+  <div class="mat-a"><p>(new Random())    .ints()    .limit(10)    .sorted()    .forEach(System.out::println);</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как найти максимальное число в наборе?</div>
+  <div class="mat-a"><p>Stream    .of(5, 3, 4, 55, 2)    .mapToInt(a -&amp;gt; a)    .max()    .getAsInt(); //55</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как найти минимальное число в наборе?</div>
+  <div class="mat-a"><p>Stream    .of(5, 3, 4, 55, 2)    .mapToInt(a -&amp;gt; a)    .min()    .getAsInt(); //2</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как получить сумму всех чисел в наборе?</div>
+  <div class="mat-a"><p>Stream    .of(5, 3, 4, 55, 2)    .mapToInt()    .sum(); //69</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как получить среднее значение всех чисел?</div>
+  <div class="mat-a"><p>Stream    .of(5, 3, 4, 55, 2)    .mapToInt(a -&amp;gt; a)    .average()    .getAsDouble(); //13.8</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие дополнительные методы для работы с ассоциативными массивами (maps) появились в Java 8?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">putIfAbsent() добавляет пару «ключ-значение», только если ключ отсутствовал:</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">map.putIfAbsent("a", "Aa");</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">forEach() принимает функцию, которая производит операцию над каждым элементом:</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">map.forEach((k, v) -&amp;gt; System.out.println(v));</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">compute() создаёт или обновляет текущее значение на полученное в результате вычисления (возможно использовать ключ и текущее значение):</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">map.compute("a", (k, v) -&amp;gt; String.valueOf(k).concat(v)); //["a", "aAa"]</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">computeIfPresent() если ключ существует, обновляет текущее значение на полученное в результате вычисления (возможно использовать ключ и текущее значение):</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">map.computeIfPresent("a", (k, v) -&amp;gt; k.concat(v));</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">computeIfAbsent() если ключ отсутствует, создаёт его со значением, которое вычисляется (возможно использовать ключ):</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">map.computeIfAbsent("a", k -&amp;gt; "A".concat(k)); //["a","Aa"]</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">getOrDefault() в случае отсутствия ключа, возвращает переданное значение по-умолчанию:</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">map.getOrDefault("a", "not found");</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">merge() принимает ключ, значение и функцию, которая объединяет передаваемое и текущее значения. Если под заданным ключем значение отсутствует, то записывает туда передаваемое значение.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">map.merge("a", "z", (value, newValue) -&amp;gt; value.concat(newValue)); //["a","Aaz"]</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое LocalDateTime?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">LocalDateTime объединяет вместе LocaleDate и LocalTime, содержит дату и время в календарной системе ISO-8601 без привязки к часовому поясу. Время хранится с точностью до наносекунды. Содержит множество удобных методов, таких как plusMinutes, plusHours, isAfter, toSecondOfDay и т.д.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое ZonedDateTime?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">java.time.ZonedDateTime — аналог java.util.Calendar, класс с самым полным объемом информации о временном контексте в календарной системе ISO-8601. Включает временную зону, поэтому все операции с временными сдвигами этот класс проводит с её учётом.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как получить текущую дату с использованием Date Time API из Java 8?</div>
+  <div class="mat-a"><p>LocalDate.now();</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как добавить 1 неделю, 1 месяц, 1 год, 10 лет к текущей дате с использованием Date Time API?</div>
+  <div class="mat-a"><p>LocalDate.now().plusWeeks(1);LocalDate.now().plusMonths(1);LocalDate.now().plusYears(1);LocalDate.now().plus(1, ChronoUnit.DECADES);</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как получить следующий вторник используя Date Time API?</div>
+  <div class="mat-a"><p>LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.TUESDAY));</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как получить вторую субботу текущего месяца используя Date Time API?</div>
+  <div class="mat-a"><p>LocalDate    .of(LocalDate.now().getYear(), LocalDate.now().getMonth(), 1)    .with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY))    .with(TemporalAdjusters.next(DayOfWeek.SATURDAY));</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как получить текущее время с точностью до миллисекунд используя Date Time API?</div>
+  <div class="mat-a"><p>new Date().toInstant();</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как получить текущее время по местному времени с точностью до миллисекунд используя Date Time API?</div>
+  <div class="mat-a"><p>LocalDateTime.ofInstant(new Date().toInstant(), ZoneId.systemDefault());</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как определить повторяемую аннотацию?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Чтобы определить повторяемую аннотацию, необходимо создать аннотацию-контейнер для списка повторяемых аннотаций и обозначить повторяемую мета-аннотацией @Repeatable:</div>
+  <div class="mat-a"><p>@interface Schedulers{    Scheduler[] value();}@Repeatable(Schedulers.class)@interface Scheduler{    String birthday() default "Jan 8 1935";}</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое Nashorn?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Nashorn - это движок JavaScript, разрабатываемый на Java компанией Oracle. Призван дать возможность встраивать код JavaScript в приложения Java. В сравнении с Rhino, который поддерживается Mozilla Foundation, Nashorn обеспечивает от 2 до 10 раз более высокую производительность, так как он компилирует код и передает байт-код виртуальной машине Java непосредственно в памяти. Nashorn умеет компилировать код JavaScript и генерировать классы Java, которые загружаются специальным загрузчиком. Так же возможен вызов кода Java прямо из JavaScript.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое jjs?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">jjs это утилита командной строки, которая позволяет исполнять программы на языке JavaScript прямо в консоли.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какой класс появился в Java 8 для кодирования/декодирования данных?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Base64 - потокобезопасный класс, который реализует кодировщик и декодировщик данных, используя схему кодирования base64 согласно RFC 4648 и RFC 2045.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Base64 содержит 6 основных методов:</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">getEncoder()/getDecoder() - возвращает кодировщик/декодировщик base64, соответствующий стандарту RFC 4648; getUrlEncoder()/getUrlDecoder() - возвращает URL-safe кодировщик/декодировщик base64, соответствующий стандарту RFC 4648; getMimeEncoder()/getMimeDecoder() - возвращает MIME кодировщик/декодировщик, соответствующий стандарту RFC 2045.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как создать Base64 кодировщик и декодировщик?</div>
+  <div class="mat-a"><p>// EncodeString b64 = Base64.getEncoder().encodeToString("input".getBytes("utf-8")); //aW5wdXQ==// Decodenew String(Base64.getDecoder().decode("aW5wdXQ=="), "utf-8"); //input</p></div>
+</div>
+</div>

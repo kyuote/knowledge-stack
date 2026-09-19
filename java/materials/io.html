@@ -1,0 +1,788 @@
+<div class="kicker"><span class="line"></span>Материалы</div>
+<h1 class="title">Java IO / NIO</h1>
+<p class="lede">Конспект из источника — вопросы и ответы в оригинальном виде.</p>
+
+<style>
+.mat-item { margin-bottom: 28px; border-bottom: 1px solid var(--border,#eee); padding-bottom: 20px; }
+.mat-q { font-weight: 600; font-size: 1.05em; color: var(--text); margin-bottom: 10px; }
+.mat-a { color: var(--text-dim, #555); line-height: 1.7; }
+.mat-a p { margin: 4px 0; }
+.mat-a ul { margin: 6px 0 6px 20px; }
+.mat-a li { margin: 3px 0; }
+.mat-section { margin: 32px 0 12px; font-size: 1.15em; color: var(--accent); border-left: 3px solid var(--accent); padding-left: 10px; }
+</style>
+
+<div class="mat-list">
+<div class="mat-item">
+  <div class="mat-q">В чём заключается разница между IO и NIO?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие особенности NIO вы знаете?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое «каналы»?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие существуют виды потоков ввода/вывода?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Назовите основные классы потоков ввода/вывода.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">В каких пакетах расположены классы потоков ввода/вывода?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие подклассы класса InputStream вы знаете, для чего они предназначены?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего используется PushbackInputStream?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего используется SequenceInputStream?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какой класс позволяет читать данные из входного байтового потока в формате примитивных типов данных?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие подклассы класса OutputStream вы знаете, для чего они предназначены?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие подклассы класса Reader вы знаете, для чего они предназначены?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие подклассы класса Writer вы знаете, для чего они предназначены?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">В чем отличие класса PrintWriter от PrintStream?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Чем отличаются и что общего у InputStream, OutputStream, Reader, Writer?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие классы позволяют преобразовать байтовые потоки в символьные и обратно?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие классы позволяют ускорить чтение/запись за счет использования буфера?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какой класс предназначен для работы с элементами файловой системы?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие методы класса File вы знаете?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что вы знаете об интерфейсе FileFilter?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как выбрать все элементы определенного каталога по критерию (например, с определенным расширением)?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что вы знаете о RandomAccessFile?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие режимы доступа к файлу есть у RandomAccessFile?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие классы поддерживают чтение и запись потоков в компрессированном формате?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Существует ли возможность перенаправить потоки стандартного ввода/вывода?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какой символ является разделителем при указании пути в файловой системе?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое «абсолютный путь» и «относительный путь»?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое «символьная ссылка»?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">В чём заключается разница между IO и NIO?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Java IO (input-output) является потокоориентированным, а Java NIO (new/non-blocking io) – буфер-ориентированным. Потокоориентированный ввод/вывод подразумевает чтение/запись из потока/в поток одного или нескольких байт в единицу времени поочередно. Данная информация нигде не кэшируются. Таким образом, невозможно произвольно двигаться по потоку данных вперед или назад. В Java NIO данные сначала считываются в буфер, что дает больше гибкости при обработке данных.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Потоки ввода/вывода в Java IO являются блокирующими. Это значит, что когда в потоке выполнения вызывается read() или write() метод любого класса из пакета java.io.*, происходит блокировка до тех пор, пока данные не будут считаны или записаны. Поток выполнения в данный момент не может делать ничего другого. Неблокирующий режим Java NIO позволяет запрашивать считанные данные из канала (channel) и получать только то, что доступно на данный момент, или вообще ничего, если доступных данных пока нет. Вместо того, чтобы оставаться заблокированным пока данные не станут доступными для считывания, поток выполнения может заняться чем-то другим. Тоже самое справедливо и для неблокирующего вывода. Поток выполнения может запросить запись в канал некоторых данных, но не дожидаться при этом пока они не будут полностью записаны.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">В Java NIO имеются селекторы, которые позволяют одному потоку выполнения мониторить несколько каналов ввода. Т.е. существует возможность зарегистрировать несколько каналов с селектором, а потом использовать один поток выполнения для обслуживания каналов, имеющих доступные для обработки данные, или для выбора каналов, готовых для записи.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие особенности NIO вы знаете?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Каналы и селекторы: NIO поддерживает различные типы каналов. Канал является абстракцией объектов более низкого уровня файловой системы (например, отображенные в памяти файлы и блокировки файлов), что позволяет передавать данные с более высокой скоростью. Каналы не блокируются и поэтому Java предоставляет еще такие инструменты, как селектор, который позволяет выбрать готовый канал для передачи данных, и сокет, который является инструментом для блокировки.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Буферы: имеет буферизация для всех классов-обёрток примитивов (кроме Boolean). Появился абстрактный класс Buffer, который предоставляет такие операции, как clear, flip, mark и т.д. Его подклассы предоставляют методы для получения и установки данных.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Кодировки: появились кодеры и декодеры для отображения байт и символов Unicode.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое «каналы»?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Каналы (channels) – это логические (не физические) порталы, абстракции объектов более низкого уровня файловой системы (например, отображенные в памяти файлы и блокировки файлов), через которые осуществляется ввод/вывод данных, а буферы являются источниками или приёмниками этих переданных данных. При организации вывода, данные, которые необходимо отправить, помещаются в буфер, который затем передается в канал. При вводе, данные из канала помещаются в заранее предоставленный буфер.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Каналы напоминают трубопроводы, по которым эффективно транспортируются данные между буферами байтов и сущностями по ту сторону каналов. Каналы – это шлюзы, которые позволяют получить доступ к сервисам ввода/вывода операционной системы с минимальными накладными расходами, а буферы – внутренние конечные точки этих шлюзов, используемые для передачи и приема данных.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как Селекторы устроены под капотом операционной системы?</div>
+  <div class="mat-a"><strong>В Java NIO селекторы используют системные вызовы ядра ОС для мультиплексирования. На Linux это epoll, на Windows — IOCP, на macOS — kqueue. Вместо того чтобы Java-код постоянно в цикле опрашивал тысячи сокетов, сама операционная система на низком уровне эффективно следит за сетевыми пакетами и мгновенно «будит» поток Java, когда данные пришли. На этом принципе построена сверхбыстрая сетевая библиотека Netty.</strong></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">В чем разница между Non-blocking IO (NIO) и Asynchronous IO (AIO / NIO.2)?</div>
+  <div class="mat-a"><strong>NIO (Неблокирующий): Поток самостоятельно запрашивает данные из канала. Если данных нет, метод возвращает 0, и поток сразу переключается на опрос других каналов, не застревая в ожидании.</strong><strong>AIO (Асинхронный): Поток инициирует чтение/запись и сразу уходит делать другую работу. Операционная система сама выполняет операцию в фоне и по завершении уведомляет приложение через Callback (CompletionHandler) или Future.</strong></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">В чем разница между Heap Buffer и Direct Buffer (ByteBuffer.allocateDirect())?</div>
+  <div class="mat-a"><strong>Heap Buffer (Буфер в куче): Память выделяется внутри JVM. При передаче данных в сеть или на диск, JVM вынуждена сначала скопировать эти данные в промежуточный буфер ОС, что тратит ресурсы.</strong><strong>Direct Buffer (Прямой буфер) и Zero-Copy: Память выделяется операционной системой напрямую (вне кучи JVM, в native-памяти). Это позволяет реализовать концепцию Zero-Copy (Нулевое копирование) — ОС передает данные из файла в сеть напрямую на уровне своего ядра (через FileChannel.transferTo()), вообще не дублируя их в памяти Java-приложения.</strong></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое Memory-Mapped Files (MappedByteBuffer)?</div>
+  <div class="mat-a"><strong>Это механизм (создается через FileChannel.map()), который проецирует файл с жесткого диска прямо в виртуальную память процесса. ОС сама синхронизирует эту память с диском через системный кэш страниц (Page Cache). В результате вы можете читать и писать огромные файлы размером в несколько гигабайт так же быстро, как если бы они просто лежали в оперативной памяти, минуя классические дорогие системные вызовы чтения.</strong></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие существуют виды потоков ввода/вывода?</div>
+  <div class="mat-a"><p>Назовите основные классы потоков ввода/вывода.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Разделяют два вида потоков ввода/вывода:</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">байтовые - java.io.InputStream, java.io.OutputStream;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">символьные - java.io.Reader, java.io.Writer.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">В каких пакетах расположены классы потоков ввода/вывода?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">java.io, java.nio. Для работы с потоками компрессированных данных используются классы из пакета java.util.zip</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие подклассы класса InputStream вы знаете, для чего они предназначены?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">InputStream - абстрактный класс, описывающий поток ввода;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">BufferedInputStream - буферизованный входной поток;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">ByteArrayInputStream позволяет использовать буфер в памяти (массив байтов) в качестве источника данных для входного потока;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">DataInputStream - входной поток для байтовых данных, включающий методы для чтения стандартных типов данных Java;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">FileInputStream - входной поток для чтения информации из файла;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">FilterInputStream - абстрактный класс, предоставляющий интерфейс для классов-надстроек, которые добавляют к существующим потокам полезные свойства;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">ObjectInputStream - входной поток для объектов;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">StringBufferInputStream превращает строку (String) во входной поток данных InputStream;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">PipedInputStream реализует понятие входного канала;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">PushbackInputStream - разновидность буферизации, обеспечивающая чтение байта с последующим его возвратом в поток, позволяет «заглянуть» во входной поток и увидеть, что оттуда поступит в следующий момент, не извлекая информации.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">SequenceInputStream используется для слияния двух или более потоков InputStream в единый.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего используется PushbackInputStream?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Разновидность буферизации, обеспечивающая чтение байта с последующим его возвратом в поток. Класс PushbackInputStream представляет механизм «заглянуть» во входной поток и увидеть, что оттуда поступит в следующий момент, не извлекая информации.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">У класса есть дополнительный метод unread().</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего используется SequenceInputStream?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Класс SequenceInputStream позволяет сливать вместе несколько экземпляров класса InputStream. Конструктор принимает в качестве аргумента либо пару объектов класса InputStream, либо интерфейс Enumeration.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Во время работы класс выполняет запросы на чтение из первого объекта класса InputStream и до конца, а затем переключается на второй. При использовании интерфейса работа продолжится по всем объектам класса InputStream. По достижении конца, связанный с ним поток закрывается. Закрытие потока, созданного объектом класса SequenceInputStream, приводит к закрытию всех открытых потоков.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какой класс позволяет читать данные из входного байтового потока в формате примитивных типов данных?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Класс DataInputStream представляет поток ввода и предназначен для записи данных примитивных типов, таких, как int, double и т.д. Для каждого примитивного типа определен свой метод для считывания:</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">boolean readBoolean(): считывает из потока булевое однобайтовое значение</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">byte readByte(): считывает из потока 1 байт</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">char readChar(): считывает из потока значение char</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">double readDouble(): считывает из потока 8-байтовое значение double</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">float readFloat(): считывает из потока 4-байтовое значение float</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">int readInt(): считывает из потока целочисленное значение int</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">long readLong(): считывает из потока значение long</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">short readShort(): считывает значение short</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">String readUTF(): считывает из потока строку в кодировке UTF-8</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие подклассы класса OutputStream вы знаете, для чего они предназначены?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">OutputStream - это абстрактный класс, определяющий потоковый байтовый вывод;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">BufferedOutputStream - буферизированный выходной поток;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">ByteArrayOutputStream - все данные, посылаемые в этот поток, размещаются в предварительно созданном буфере;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">DataOutputStream - выходной поток байт, включающий методы для записи стандартных типов данных Java;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">FileOutputStream - запись данных в файл на физическом носителе;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">FilterOutputStream - абстрактный класс, предоставляющий интерфейс для классов-надстроек, которые добавляют к существующим потокам полезные свойства;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">PrintStream - выходной поток, включающий методы print() и println();</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">ObjectOutputStream - выходной поток для записи объектов;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">PipedOutputStream реализует понятие выходного канала.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие подклассы класса Reader вы знаете, для чего они предназначены?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Reader - абстрактный класс, описывающий символьный ввод;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">BufferedReader - буферизованный входной символьный поток;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">CharArrayReader - входной поток, который читает из символьного массива;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">FileReader - входной поток, читающий файл;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">FilterReader - абстрактный класс, предоставляющий интерфейс для классов-надстроек;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">InputStreamReader- входной поток, транслирующий байты в символы;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">LineNumberReader - входной поток, подсчитывающий строки;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">PipedReader - входной канал;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">PushbackReader - входной поток, позволяющий возвращать символы обратно в поток;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">StringReader - входной поток, читающий из строки.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие подклассы класса Writer вы знаете, для чего они предназначены?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Writer - абстрактный класс, описывающий символьный вывод;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">BufferedWriter - буферизованный выходной символьный поток;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">CharArrayWriter - выходной поток, который пишет в символьный массив;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">FileWriter - выходной поток, пишущий в файл;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">FilterWriter - абстрактный класс, предоставляющий интерфейс для классов-надстроек;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">OutputStreamWriter - выходной поток, транслирующий байты в символы;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">PipedWriter - выходной канал;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">PrintWriter - выходной поток символов, включающий методы print() и println();</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">StringWriter - выходной поток, пишущий в строку;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">В чем отличие класса PrintWriter от PrintStream?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Прежде всего, в классе PrintWriter применен усовершенствованный способ работы с символами Unicode и другой механизм буферизации вывода: в классе PrintStream буфер вывода сбрасывался всякий раз, когда вызывался метод print() или println(), а при использовании класса PrintWriter существует возможность отказаться от автоматического сброса буферов, выполняя его явным образом при помощи метода flush().</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Кроме того, методы класса PrintWriter никогда не создают исключений. Для проверки ошибок необходимо явно вызвать метод checkError().</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Чем отличаются и что общего у InputStream, OutputStream, Reader, Writer?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">InputStream и его наследники - совокупность для получения байтовых данных из различных источников;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">OutputStream и его наследники - набор классов, определяющих потоковый байтовый вывод;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Reader и его наследники определяют потоковый ввод символов Unicode;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Writer и его наследники определяют потоковый вывод символов Unicode.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие классы позволяют преобразовать байтовые потоки в символьные и обратно?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">OutputStreamWriter — «мост» между классом OutputStream и классом Writer. Символы, записанные в поток, преобразовываются в байты.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">InputStreamReader — аналог для чтения. При помощи методов класса Reader читаются байты из потока InputStream и далее преобразуются в символы.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие классы позволяют ускорить чтение/запись за счет использования буфера?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">BufferedInputStream(InputStream in)/BufferedInputStream(InputStream in, int size),</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">BufferedOutputStream(OutputStream out)/BufferedOutputStream(OutputStream out, int size),</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">BufferedReader(Reader r)/BufferedReader(Reader in, int sz),</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">BufferedWriter(Writer out)/BufferedWriter(Writer out, int sz)</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какой класс предназначен для работы с элементами файловой системы?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">File работает непосредственно с файлами и каталогами. Данный класс позволяет создавать новые элементы и получать информацию существующих: размер, права доступа, время и дату создания, путь к родительскому каталогу.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие методы класса File вы знаете?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Наиболее используемые методы класса File:</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">boolean createNewFile(): делает попытку создать новый файл;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">boolean delete(): делает попытку удалить каталог или файл;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">boolean mkdir(): делает попытку создать новый каталог;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">boolean renameTo(File dest): делает попытку переименовать файл или каталог;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">boolean exists(): проверяет, существует ли файл или каталог;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">String getAbsolutePath(): возвращает абсолютный путь для пути, переданного в конструктор объекта;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">String getName(): возвращает краткое имя файла или каталога;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">String getParent(): возвращает имя родительского каталога;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">boolean isDirectory(): возвращает значение true, если по указанному пути располагается каталог;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">boolean isFile(): возвращает значение true, если по указанному пути находится файл;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">boolean isHidden(): возвращает значение true, если каталог или файл являются скрытыми;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">long length(): возвращает размер файла в байтах;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">long lastModified(): возвращает время последнего изменения файла или каталога;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">String[] list(): возвращает массив файлов и подкаталогов, которые находятся в определенном каталоге;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">File[] listFiles(): возвращает массив файлов и подкаталогов, которые находятся в определенном каталоге.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что вы знаете об интерфейсе FileFilter?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Интерфейс FileFilter применяется для проверки, попадает ли объект File под некоторое условие. Этот интерфейс содержит единственный метод boolean accept(File pathName). Этот метод необходимо переопределить и реализовать. Например:</div>
+  <div class="mat-a"><p>public boolean accept(final File file) {    return file.isExists() &amp;amp;&amp;amp; file.isDirectory();}</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как выбрать все элементы определенного каталога по критерию (например, с определенным расширением)?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Метод File.listFiles() возвращает массив объектов File, содержащихся в каталоге. Метод может принимать в качестве параметра объект класса, реализующего FileFilter. Это позволяет включить в список только те элементы, для которых метод accept возвращает true (критерием может быть длина имени файла или его расширение).</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что вы знаете о RandomAccessFile?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Класс java.io.RandomAccessFile обеспечивает чтение и запись данных в произвольном месте файла. Он не является частью иерархии InputStream или OutputStream. Это полностью отдельный класс, имеющий свои собственные (в большинстве своем native) методы. Объяснением этого может быть то, что RandomAccessFile имеет во многом отличающееся поведение по сравнению с остальными классами ввода/вывода так как позволяет, в пределах файла, перемещаться вперед и назад.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">RandomAccessFile имеет такие специфические методы как:</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">getFilePointer() для определения текущего местоположения в файле;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">seek() для перемещения на новую позицию в файле;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">length() для выяснения размера файла;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">setLength() для установки размера файла;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">skipBytes() для того, чтобы попытаться пропустить определённое число байт;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">getChannel() для работы с уникальным файловым каналом, ассоциированным с заданным файлом;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">методы для выполнения обычного и форматированного вывода из файла (read(), readInt(), readLine(), readUTF() и т.п.);</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">методы для обычной или форматированной записи в файл с прямым доступом (write(), writeBoolean(), writeByte() и т.п.).</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Так же следует отметить, что конструкторы RandomAccessFile требуют второй аргумент, указывающий необходимый режим доступа к файлу - только чтение ("r"), чтение и запись ("rw") или иную их разновидность.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие режимы доступа к файлу есть у RandomAccessFile?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">"r" открывает файл только для чтения. Запуск любых методов записи данных приведет к выбросу исключения IOException.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">"rw" открывает файл для чтения и записи. Если файл еще не создан, то осуществляется попытка создать его.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">"rws" открывает файл для чтения и записи подобно "rw", но требует от системы при каждом изменении содержимого файла или метаданных синхронно записывать эти изменения на физический носитель.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">"rwd" открывает файл для чтения и записи подобно "rws", но требует от системы синхронно записывать изменения на физический носитель только при каждом изменении содержимого файла. Если изменяются метаданные, синхронная запись не требуется.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие классы поддерживают чтение и запись потоков в компрессированном формате?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">DeflaterOutputStream - компрессия данных в формате deflate.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Deflater - компрессия данных в формат ZLIB</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">ZipOutputStream - потомок DeflaterOutputStream для компрессии данных в формат Zip.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">GZIPOutputStream - потомок DeflaterOutputStream для компрессии данных в формат GZIP.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">InflaterInputStream - декомпрессия данных в формате deflate.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Inflater - декомпрессия данных в формате ZLIB</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">ZipInputStream - потомок InflaterInputStream для декомпрессии данных в формате Zip.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">GZIPInputStream - потомок InflaterInputStream для декомпрессии данных в формате GZIP.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Существует ли возможность перенаправить потоки стандартного ввода/вывода?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Класс System позволяет вам перенаправлять стандартный ввод, вывод и поток вывода ошибок, используя простой вызов статического метода:</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">setIn(InputStream) - для ввода;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">setOut(PrintStream) - для вывода;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">setErr(PrintStream) - для вывода ошибок.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какой символ является разделителем при указании пути в файловой системе?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для различных операционных систем символ разделителя различается. Для Windows это \, для Linux - /.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">В Java получить разделитель для текущей операционной системы можно через обращение к статическому полю File.separator.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое «абсолютный путь» и «относительный путь»?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Абсолютный (полный) путь — это путь, который указывает на одно и то же место в файловой системе, вне зависимости от текущей рабочей директории или других обстоятельств. Полный путь всегда начинается с корневого каталога.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Относительный путь представляет собой путь по отношению к текущему рабочему каталогу пользователя или активного приложения.</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое «символьная ссылка»?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Символьная (символическая) ссылка (также «симлинк», Symbolic link) — специальный файл в файловой системе, в котором, вместо пользовательских данных, содержится путь к файлу, который должен быть открыт при попытке обратиться к данной ссылке (файлу). Целью ссылки может быть любой объект: например, другая ссылка, файл, каталог или даже несуществующий файл (в последнем случае, при попытке открыть его, должно выдаваться сообщение об отсутствии файла).</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Символьные ссылки используются для более удобной организации структуры файлов на компьютере, так как:</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">позволяют для одного файла или каталога иметь несколько имён и различных атрибутов;</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">свободны от некоторых ограничений, присущих жёстким ссылкам (последние действуют только в пределах одной файловой системы (одного раздела) и не могут ссылаться на каталоги).</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое NIO.2 и интерфейсы Path, Paths, Files? Почему они предпочтительнее класса File?</div>
+  <div class="mat-a"><strong>NIO.2 (Java 7+) — масштабное обновление для работы с файловой системой. Path — это современный интерфейс (замена класса File), описывающий путь к объекту. Paths — утилитарный класс для сборки путей. Files — класс с набором статических методов для манипуляций с ними.</strong><strong>Преимущества перед File: Они выбрасывают информативные IOException вместо возврата true/false при ошибках, полноценно поддерживают метаданные (права доступа, владельцев) и корректно работают с символьными ссылками.</strong></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как быстро прочитать или записать файл с помощью класса Files?</div>
+  <div class="mat-a"><strong>Для небольших файлов Files позволяет уйти от создания цепочек потоков (FileInputStream -&amp;gt; BufferedReader). Все делается одной строчкой кода: Files.readAllLines(path) (в список строк), Files.readString(path) (в одну строку String, с Java 11) или Files.writeString(path, text) для моментальной записи.</strong><strong>Важно: эти методы загружают файл в оперативную память целиком. Для работы с огромными файлами (гигабайты) их использовать нельзя — будет OutOfMemoryError.</strong><strong>Как эффективно искать файлы или обходить папки с помощью Files? (Разница Files.walk(), Files.find(), Files.walkFileTree())</strong><strong>Вместо старого метода file.listFiles(), который создавал гигантский массив в памяти, класс Files использует ленивые стримы (Stream&amp;lt;Path&amp;gt;), где элементы извлекаются по мере необходимости:</strong><strong>Files.walk(path) — возвращает ленивый Stream&amp;lt;Path&amp;gt; для обхода дерева папок в глубину. Идеален для обработки файлов через Java 8 Stream API.</strong><strong>Files.find(...) — делает то же самое, но принимает предикат (BiPredicate), позволяя фильтровать файлы по атрибутам (размер, дата создания) прямо во время обхода.</strong><strong>Files.walkFileTree(Path start, FileVisitor) — классический способ. Не использует Stream API, а выполняет кастомные действия на каждое событие обхода папок через объект-посетитель.</strong></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое интерфейс FileVisitor и для каких задач он применяется?</div>
+  <div class="mat-a"><strong>Это интерфейс для глубокого контроля обхода файлов. Имеет 4 метода-события: preVisitDirectory (перед входом в папку), visitFile (при нахождении файла), visitFileFailed (при ошибке доступа), postVisitDirectory (после выхода из папки). Применяется для сложных задач, таких как рекурсивное удаление или копирование дерева каталогов.</strong></div>
+</div>
+</div>

@@ -1,0 +1,852 @@
+<div class="kicker"><span class="line"></span>Материалы</div>
+<h1 class="title">Java Core</h1>
+<p class="lede">Конспект из источника — вопросы и ответы в оригинальном виде.</p>
+
+<style>
+.mat-item { margin-bottom: 28px; border-bottom: 1px solid var(--border,#eee); padding-bottom: 20px; }
+.mat-q { font-weight: 600; font-size: 1.05em; color: var(--text); margin-bottom: 10px; }
+.mat-a { color: var(--text-dim, #555); line-height: 1.7; }
+.mat-a p { margin: 4px 0; }
+.mat-a ul { margin: 6px 0 6px 20px; }
+.mat-a li { margin: 3px 0; }
+.mat-section { margin: 32px 0 12px; font-size: 1.15em; color: var(--accent); border-left: 3px solid var(--accent); padding-left: 10px; }
+</style>
+
+<div class="mat-list">
+<div class="mat-item">
+  <div class="mat-q">Чем различаются JRE, JVM и JDK?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие существуют модификаторы доступа?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">О чем говорит ключевое слово final?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какими значениями инициализируются переменные по умолчанию?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что вы знаете о функции main()?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие логические операции и операторы вы знаете?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое тернарный оператор выбора?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие побитовые операции вы знаете?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Где и для чего используется модификатор abstract?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Дайте определение понятию «интерфейс». Какие модификаторы по умолчанию имеют поля и методы интерфейсов?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Чем абстрактный класс отличается от интерфейса? В каких случаях следует использовать абстрактный класс, а в каких интерфейс?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Почему в некоторых интерфейсах вообще не определяют методов?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Почему нельзя объявить метод интерфейса с модификатором final?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что имеет более высокий уровень абстракции - класс, абстрактный класс или интерфейс?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Может ли объект получить доступ к члену класса, объявленному как private? Если да, то каким образом?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">%D0%B1%D0%BB%D0%BE%D0%BA%D0%BE%D0%B2-%D0%B8%D0%BD%D0%B8%D1%86%D0%B8%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D0%B8-%D1%81-%D1%83%D1%87%D1%91%D1%82%D0%BE%D0%BC-%D0%B8%D0%B5%D1%80%D0%B0%D1%80%D1%85%D0%B8%D0%B8-%D0%BA%D0%BB%D0%B0%D1%81%D1%81%D0%BE%D0%B2"Каков порядок вызова конструкторов и блоков инициализации с учётом иерархии классов?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Зачем нужны и какие бывают блоки инициализации?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">К каким конструкциям Java применим модификатор static?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего в Java используются статические блоки инициализации?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что произойдёт, если в блоке инициализации возникнет исключительная ситуация?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какое исключение выбрасывается при возникновении ошибки в блоке инициализации класса?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Может ли статический метод быть переопределён или перегружен?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Могут ли нестатические методы перегрузить статические?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Можно ли сузить уровень доступа/тип возвращаемого значения при переопределении метода?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Возможно ли при переопределении метода изменить: модификатор доступа, возвращаемый тип, тип аргумента или их количество, имена аргументов или их порядок; убирать, добавлять, изменять порядок следования элементов секции throws?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как получить доступ к переопределенным методам родительского класса?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Можно ли объявить метод абстрактным и статическим одновременно?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">В чем разница между членом экземпляра класса и статическим членом класса?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Где разрешена инициализация статических/нестатических полей?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие типы классов бывают в java?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Расскажите про вложенные классы. В каких случаях они применяются?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое «статический класс»?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие существуют особенности использования вложенных классов: статических и внутренних? В чем заключается разница между ними?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое «локальный класс»? Каковы его особенности?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое «анонимные классы»? Где они применяются?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Каким образом из вложенного класса получить доступ к полю внешнего класса?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего используется оператор assert?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое Heap и Stack память в Java? Какая разница между ними?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">%D1%82%D0%B8%D0%BF%D1%8B-%D0%B4%D0%B0%D0%BD%D0%BD%D1%8B%D1%85-%D0%B2%D1%81%D0%B5%D0%B3%D0%B4%D0%B0-%D1%85%D1%80%D0%B0%D0%BD%D1%8F%D1%82%D1%81%D1%8F-%D0%B2-%D1%81%D1%82%D0%B5%D0%BA%D0%B5-%D0%B0-%D1%8D%D0%BA%D0%B7%D0%B5%D0%BC%D0%BF%D0%BB%D1%8F%D1%80%D1%8B-%D1%81%D1%81%D1%8B%D0%BB%D0%BE%D1%87%D0%BD%D1%8B%D1%85-%D1%82%D0%B8%D0%BF%D0%BE%D0%B2-%D0%B4%D0%B0%D0%BD%D0%BD%D1%8B%D1%85-%D0%B2-%D0%BA%D1%83%D1%87%D0%B5"Верно ли утверждение, что примитивные типы данных всегда хранятся в стеке, а экземпляры ссылочных типов данных в куче?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Каким образом передаются переменные в методы, по значению или по ссылке?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужен сборщик мусора?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как работает сборщик мусора?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие разновидности сборщиков мусора реализованы в виртуальной машине HotSpot?</div>
+  <div class="mat-a"><p>Опишите алгоритм работы какого-нибудь сборщика мусора, реализованного в виртуальной машине HotSpot.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое «пул строк»?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое finalize()? Зачем он нужен?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что произойдет со сборщиком мусора, если выполнение метода finalize() требует ощутимо много времени, или в процессе выполнения будет выброшено исключение?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Чем отличаются final, finally и finalize()?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Расскажите про приведение типов. Что такое понижение и повышение типа?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Когда в приложении может быть выброшено исключение ClassCastException?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое литералы?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое autoboxing («автоупаковка») в Java и каковы правила упаковки примитивных типов в классы-обертки?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие есть особенности класса String?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Почему String неизменяемый и финализированный класс?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Почему char[] предпочтительнее String для хранения пароля?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Почему строка является популярным ключом в HashMap в Java?</div>
+  <div class="mat-a"><p>Что делает метод intern() в классе String?.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Можно ли использовать строки в конструкции switch?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какая основная разница между String, StringBuffer, StringBuilder?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое класс Object? Какие в нем есть методы?</div>
+  <div class="mat-a"><p>Дайте определение понятию «конструктор».</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое «конструктор по умолчанию»?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Чем отличаются конструктор по-умолчанию, конструктор копирования и конструктор с параметрами?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Где и как вы можете использовать приватный конструктор?</div>
+  <div class="mat-a"><p>Расскажите про классы-загрузчики и про динамическую загрузку классов.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое Reflection?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Зачем нужен equals(). Чем он отличается от операции ==?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Если вы хотите переопределить equals(), какие условия должны выполняться?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какими свойствами обладает порождаемое equals() отношение эквивалентности?</div>
+  <div class="mat-a"><p>Правила переопределения метода Object.equals().</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какая связь между hashCode() и equals()?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Если equals() переопределен, есть ли какие-либо другие методы, которые следует переопределить?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что будет, если переопределить equals() не переопределяя hashCode()? Какие могут возникнуть проблемы?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Каким образом реализованы методы hashCode() и equals() в классе Object?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужен метод hashCode()?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Каковы правила переопределения метода Object.hashCode()?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Есть ли какие-либо рекомендации о том, какие поля следует использовать при подсчете hashCode()?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Могут ли у разных объектов быть одинаковые hashCode()?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Если у класса Point{int x, y;} реализовать метод equals(Object that) {(return this.x == that.x &amp;amp;&amp;amp; this.y == that.y)}, но сделать хэш код в виде int hashCode() {return x;}, то будут ли корректно такие точки помещаться и извлекаться из HashSet?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Могут ли у разных объектов (ref0 != ref1) быть ref0.equals(ref1) == true?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Могут ли у разных ссылок на один объект (ref0 == ref1) быть ref0.equals(ref1) == false?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Можно ли так реализовать метод equals(Object that) {return this.hashCode() == that.hashCode()}?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">thisgetclass--thatgetclass-%D0%B8-that-instanceof-myclass"В thisgetclass--thatgetclass-%D0%B8-that-instanceof-myclass"equals()thisgetclass--thatgetclass-%D0%B8-that-instanceof-myclass" требуется проверять, что аргумент thisgetclass--thatgetclass-%D0%B8-that-instanceof-myclass"equals(Object that)thisgetclass--thatgetclass-%D0%B8-that-instanceof-myclass" такого же типа что и сам объект. В чем разница между thisgetclass--thatgetclass-%D0%B8-that-instanceof-myclass"this.getClass() == that.getClass()thisgetclass--thatgetclass-%D0%B8-that-instanceof-myclass" и thisgetclass--thatgetclass-%D0%B8-that-instanceof-myclass"that instanceof MyClassthisgetclass--thatgetclass-%D0%B8-that-instanceof-myclass"?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">this--that"Можно ли реализовать метод this--that"equals()this--that" класса this--that"MyClassthis--that" вот так: this--that"class MyClass {public boolean equals(MyClass that) {return this == that;}}this--that"?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Есть класс Point{int x, y;}. Почему хэш код в виде 31 * x + y предпочтительнее чем x + y?</div>
+  <div class="mat-a"><p>Расскажите про клонирование объектов.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">В чем отличие между поверхностным и глубоким клонированием?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какой способ клонирования предпочтительней?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Почему метод clone() объявлен в классе Object, а не в интерфейсе Cloneable?</div>
+  <div class="mat-a"><p>Опишите иерархию исключений.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие виды исключений в Java вы знаете, чем они отличаются?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое checked и unchecked exception?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какой оператор позволяет принудительно выбросить исключение?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">О чем говорит ключевое слово throws?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как написать собственное («пользовательское») исключение?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие существуют unchecked exception?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что представляет из себя ошибки класса Error?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что вы знаете о OutOfMemoryError?</div>
+  <div class="mat-a"><p>Опишите работу блока try-catch-finally.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое механизм try-with-resources?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Возможно ли использование блока try-finally (без catch)?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Может ли один блок catch отлавливать сразу несколько исключений?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Всегда ли исполняется блок finally?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Существуют ли ситуации, когда блок finally не будет выполнен?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Может ли метод main() выбросить исключение во вне и если да, то где будет происходить обработка данного исключения?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">%D0%B2%D1%8B%D0%B1%D1%80%D0%BE%D1%81%D0%B8%D1%82%D1%8C-ioexception-%D0%B8-filenotfoundexception-%D0%B2-%D0%BA%D0%B0%D0%BA%D0%BE%D0%B9-%D0%BF%D0%BE%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%BE%D1%81%D1%82%D0%B8-%D0%B4%D0%BE%D0%BB%D0%B6%D0%BD%D1%8B-%D0%B8%D0%B4%D1%82%D0%B8-%D0%B1%D0%BB%D0%BE%D0%BA%D0%B8-catch-%D0%A1%D0%BA%D0%BE%D0%BB%D1%8C%D0%BA%D0%BE-%D0%B1%D0%BB%D0%BE%D0%BA%D0%BE%D0%B2-catch-%D0%B1%D1%83%D0%B4%D0%B5%D1%82-%D0%B2%D1%8B%D0%BF%D0%BE%D0%BB%D0%BD%D0%B5%D0%BD%D0%BE"Предположим, есть метод, который может выбросить %D0%B2%D1%8B%D0%B1%D1%80%D0%BE%D1%81%D0%B8%D1%82%D1%8C-ioexception-%D0%B8-filenotfoundexception-%D0%B2-%D0%BA%D0%B0%D0%BA%D0%BE%D0%B9-%D0%BF%D0%BE%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%BE%D1%81%D1%82%D0%B8-%D0%B4%D0%BE%D0%BB%D0%B6%D0%BD%D1%8B-%D0%B8%D0%B4%D1%82%D0%B8-%D0%B1%D0%BB%D0%BE%D0%BA%D0%B8-catch-%D0%A1%D0%BA%D0%BE%D0%BB%D1%8C%D0%BA%D0%BE-%D0%B1%D0%BB%D0%BE%D0%BA%D0%BE%D0%B2-catch-%D0%B1%D1%83%D0%B4%D0%B5%D1%82-%D0%B2%D1%8B%D0%BF%D0%BE%D0%BB%D0%BD%D0%B5%D0%BD%D0%BE"IOException%D0%B2%D1%8B%D0%B1%D1%80%D0%BE%D1%81%D0%B8%D1%82%D1%8C-ioexception-%D0%B8-filenotfoundexception-%D0%B2-%D0%BA%D0%B0%D0%BA%D0%BE%D0%B9-%D0%BF%D0%BE%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%BE%D1%81%D1%82%D0%B8-%D0%B4%D0%BE%D0%BB%D0%B6%D0%BD%D1%8B-%D0%B8%D0%B4%D1%82%D0%B8-%D0%B1%D0%BB%D0%BE%D0%BA%D0%B8-catch-%D0%A1%D0%BA%D0%BE%D0%BB%D1%8C%D0%BA%D0%BE-%D0%B1%D0%BB%D0%BE%D0%BA%D0%BE%D0%B2-catch-%D0%B1%D1%83%D0%B4%D0%B5%D1%82-%D0%B2%D1%8B%D0%BF%D0%BE%D0%BB%D0%BD%D0%B5%D0%BD%D0%BE" и %D0%B2%D1%8B%D0%B1%D1%80%D0%BE%D1%81%D0%B8%D1%82%D1%8C-ioexception-%D0%B8-filenotfoundexception-%D0%B2-%D0%BA%D0%B0%D0%BA%D0%BE%D0%B9-%D0%BF%D0%BE%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%BE%D1%81%D1%82%D0%B8-%D0%B4%D0%BE%D0%BB%D0%B6%D0%BD%D1%8B-%D0%B8%D0%B4%D1%82%D0%B8-%D0%B1%D0%BB%D0%BE%D0%BA%D0%B8-catch-%D0%A1%D0%BA%D0%BE%D0%BB%D1%8C%D0%BA%D0%BE-%D0%B1%D0%BB%D0%BE%D0%BA%D0%BE%D0%B2-catch-%D0%B1%D1%83%D0%B4%D0%B5%D1%82-%D0%B2%D1%8B%D0%BF%D0%BE%D0%BB%D0%BD%D0%B5%D0%BD%D0%BE"FileNotFoundException%D0%B2%D1%8B%D0%B1%D1%80%D0%BE%D1%81%D0%B8%D1%82%D1%8C-ioexception-%D0%B8-filenotfoundexception-%D0%B2-%D0%BA%D0%B0%D0%BA%D0%BE%D0%B9-%D0%BF%D0%BE%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%BE%D1%81%D1%82%D0%B8-%D0%B4%D0%BE%D0%BB%D0%B6%D0%BD%D1%8B-%D0%B8%D0%B4%D1%82%D0%B8-%D0%B1%D0%BB%D0%BE%D0%BA%D0%B8-catch-%D0%A1%D0%BA%D0%BE%D0%BB%D1%8C%D0%BA%D0%BE-%D0%B1%D0%BB%D0%BE%D0%BA%D0%BE%D0%B2-catch-%D0%B1%D1%83%D0%B4%D0%B5%D1%82-%D0%B2%D1%8B%D0%BF%D0%BE%D0%BB%D0%BD%D0%B5%D0%BD%D0%BE" в какой последовательности должны идти блоки %D0%B2%D1%8B%D0%B1%D1%80%D0%BE%D1%81%D0%B8%D1%82%D1%8C-ioexception-%D0%B8-filenotfoundexception-%D0%B2-%D0%BA%D0%B0%D0%BA%D0%BE%D0%B9-%D0%BF%D0%BE%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%BE%D1%81%D1%82%D0%B8-%D0%B4%D0%BE%D0%BB%D0%B6%D0%BD%D1%8B-%D0%B8%D0%B4%D1%82%D0%B8-%D0%B1%D0%BB%D0%BE%D0%BA%D0%B8-catch-%D0%A1%D0%BA%D0%BE%D0%BB%D1%8C%D0%BA%D0%BE-%D0%B1%D0%BB%D0%BE%D0%BA%D0%BE%D0%B2-catch-%D0%B1%D1%83%D0%B4%D0%B5%D1%82-%D0%B2%D1%8B%D0%BF%D0%BE%D0%BB%D0%BD%D0%B5%D0%BD%D0%BE"catch%D0%B2%D1%8B%D0%B1%D1%80%D0%BE%D1%81%D0%B8%D1%82%D1%8C-ioexception-%D0%B8-filenotfoundexception-%D0%B2-%D0%BA%D0%B0%D0%BA%D0%BE%D0%B9-%D0%BF%D0%BE%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%BE%D1%81%D1%82%D0%B8-%D0%B4%D0%BE%D0%BB%D0%B6%D0%BD%D1%8B-%D0%B8%D0%B4%D1%82%D0%B8-%D0%B1%D0%BB%D0%BE%D0%BA%D0%B8-catch-%D0%A1%D0%BA%D0%BE%D0%BB%D1%8C%D0%BA%D0%BE-%D0%B1%D0%BB%D0%BE%D0%BA%D0%BE%D0%B2-catch-%D0%B1%D1%83%D0%B4%D0%B5%D1%82-%D0%B2%D1%8B%D0%BF%D0%BE%D0%BB%D0%BD%D0%B5%D0%BD%D0%BE"? Сколько блоков %D0%B2%D1%8B%D0%B1%D1%80%D0%BE%D1%81%D0%B8%D1%82%D1%8C-ioexception-%D0%B8-filenotfoundexception-%D0%B2-%D0%BA%D0%B0%D0%BA%D0%BE%D0%B9-%D0%BF%D0%BE%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%BE%D1%81%D1%82%D0%B8-%D0%B4%D0%BE%D0%BB%D0%B6%D0%BD%D1%8B-%D0%B8%D0%B4%D1%82%D0%B8-%D0%B1%D0%BB%D0%BE%D0%BA%D0%B8-catch-%D0%A1%D0%BA%D0%BE%D0%BB%D1%8C%D0%BA%D0%BE-%D0%B1%D0%BB%D0%BE%D0%BA%D0%BE%D0%B2-catch-%D0%B1%D1%83%D0%B4%D0%B5%D1%82-%D0%B2%D1%8B%D0%BF%D0%BE%D0%BB%D0%BD%D0%B5%D0%BD%D0%BE"catch%D0%B2%D1%8B%D0%B1%D1%80%D0%BE%D1%81%D0%B8%D1%82%D1%8C-ioexception-%D0%B8-filenotfoundexception-%D0%B2-%D0%BA%D0%B0%D0%BA%D0%BE%D0%B9-%D0%BF%D0%BE%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%BE%D1%81%D1%82%D0%B8-%D0%B4%D0%BE%D0%BB%D0%B6%D0%BD%D1%8B-%D0%B8%D0%B4%D1%82%D0%B8-%D0%B1%D0%BB%D0%BE%D0%BA%D0%B8-catch-%D0%A1%D0%BA%D0%BE%D0%BB%D1%8C%D0%BA%D0%BE-%D0%B1%D0%BB%D0%BE%D0%BA%D0%BE%D0%B2-catch-%D0%B1%D1%83%D0%B4%D0%B5%D1%82-%D0%B2%D1%8B%D0%BF%D0%BE%D0%BB%D0%BD%D0%B5%D0%BD%D0%BE" будет выполнено?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое generics?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое «интернационализация», «локализация»?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Типы данных в Java</div>
+  <div class="mat-a"><p>Примитивные типы — это 8 базовых типов (int, double и т.д.), которые хранят само значение прямо в переменной. Они пишутся с маленькой буквы.</p><p>Непримитивные (ссылочные) типы — это объекты (String, массивы, классы), которые хранят не само значение, а ссылку (адрес в памяти) на то место, где этот объект лежит. Они пишутся с большой буквы.</p><strong>В чем польза непримитивных аналогов (классов-оберток вроде Integer, Double):</strong><p>1. Работают со списками: Позволяют сохранять числа и другие данные в динамические коллекции (например, в ArrayList&amp;lt;Integer&amp;gt;), куда примитивы вставлять технически запрещено.</p><p>2. Могут хранить null: Позволяют указать, что значения вообще нет (например, null вместо 0 для пустой ячейки в базе данных), что невозможно для обычного примитива.</p><p>3. Дают встроенные инструменты: Содержат полезные готовые методы для трансформации данных (например, перевод текста в число с помощью Integer.parseInt()).</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие существуют модификаторы доступа?</div>
+  <div class="mat-a"><strong>private (приватный): члены класса доступны только внутри класса. Для обозначения используется служебное слово private.</strong><strong>default, package-private, package level (доступ на уровне пакета): видимость класса/членов класса только внутри пакета. Является модификатором доступа по умолчанию - специальное обозначение не требуется.</strong><strong>protected (защищённый): члены класса доступны внутри пакета и в наследниках. Для обозначения используется служебное слово protected.</strong><strong>public (публичный): класс/члены класса доступны всем. Для обозначения используется служебное слово public.</strong><p>Последовательность модификаторов по возрастанию уровня закрытости: public, protected, default, private.</p><strong>Во время наследования (@Override) возможно изменения модификаторов доступа в сторону большей видимости (для поддержания соответствия принципу подстановки Барбары Лисков), но не имеете права её сузить.</strong></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">О чем говорит ключевое слово final?</div>
+  <div class="mat-a"><p>Модификатор final может применяться к переменным, параметрам методов, полям и методам класса или самим классам.</p><p>Класс не может иметь наследников;</p><p>Метод не может быть переопределен в классах наследниках;</p><p>Поле не может изменить свое значение после инициализации;</p><p>Параметры методов не могут изменять своё значение внутри метода;</p><p>Локальные переменные не могут быть изменены после присвоения им значения.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какими значениями инициализируются переменные по умолчанию?</div>
+  <div class="mat-a"><p>byte — (byte)0;</p><p>short — (short)0;</p><p>int — 0;</p><p>long — 0L;</p><p>floatg — 0f;</p><p>double — 0d;</p><p>char — \u0000;</p><p>boolean — false;</p><p>Объекты (в том числе String) — null.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что вы знаете о функции main()?</div>
+  <div class="mat-a"><p>Метод main() — точка входа в программу. В приложении может быть несколько таких методов. Если метод отсутствует, то компиляция возможна, но при запуске будет получена ошибка `Error: Main method not found`.</p><p>public static void main(String[] args) {}</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие логические операции и операторы вы знаете?</div>
+  <div class="mat-a"><p>&amp;amp;: Логическое AND (И);</p><p>&amp;amp;&amp;amp;: Сокращённое AND;</p><p>|: Логическое OR (ИЛИ);</p><p>||: Сокращённое OR;</p><p>^: Логическое XOR (исключающее OR (ИЛИ));</p><p>!: Логическое унарное NOT (НЕ);</p><p>&amp;amp;=: AND с присваиванием;</p><p>|=: OR с присваиванием;</p><p>^=: XOR с присваиванием;</p><p>==: Равно;</p><p>!=: Не равно;</p><p>?:: Тернарный (троичный) условный оператор.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое тернарный оператор выбора?</div>
+  <div class="mat-a"><p>Тернарный условный оператор ?: - оператор, которым можно заменить некоторые конструкции операторов if-then-else.</p><p>Выражение записывается в следующей форме:</p><p>условие ? выражение1 : выражение2</p><p>Если условие выполняется, то вычисляется выражение1 и его результат становится результатом выполнения всего оператора. Если же условие равно false, то вычисляется выражение2 и его значение становится результатом работы оператора. Оба операнда выражение1 и выражение2 должны возвращать значение одинакового (или совместимого) типа.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие побитовые операции вы знаете?</div>
+  <div class="mat-a"><p>~: Побитовый унарный оператор NOT;</p><p>&amp;amp;: Побитовый AND;</p><p>&amp;amp;=: Побитовый AND с присваиванием;</p><p>|: Побитовый OR;</p><p>|=: Побитовый OR с присваиванием;</p><p>^: Побитовый исключающее XOR;</p><p>^=: Побитовый исключающее XOR с присваиванием;</p><p>&amp;gt;&amp;gt;: Сдвиг вправо (деление на 2 в степени сдвига);</p><p>&amp;gt;&amp;gt;=: Сдвиг вправо с присваиванием;</p><p>&amp;gt;&amp;gt;&amp;gt;: Сдвиг вправо без учёта знака;</p><p>&amp;gt;&amp;gt;&amp;gt;=: Сдвиг вправо без учёта знака с присваиванием;</p><p>&amp;lt;&amp;lt;: Сдвиг влево (умножение на 2 в степени сдвига);</p><p>&amp;lt;&amp;lt;=: Сдвиг влево с присваиванием.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Где и для чего используется модификатор abstract?</div>
+  <div class="mat-a"><p>Класс, помеченный модификатором abstract, называется абстрактным классом. Такие классы могут выступать только предками для других классов. Создавать экземпляры самого абстрактного класса не разрешается. При этом наследниками абстрактного класса могут быть как другие абстрактные классы, так и классы, допускающие создание объектов.</p><p>Метод, помеченный ключевым словом abstract - абстрактный метод, т.е. метод, который не имеет реализации. Если в классе присутствует хотя бы один абстрактный метод, то весь класс должен быть объявлен абстрактным.</p><p>Использование абстрактных классов и методов позволяет описать некий шаблон объекта, который должен быть реализован в других классах. В них же самих описывается лишь некое общее для всех потомков поведение.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Дайте определение понятию «интерфейс». Какие модификаторы по умолчанию имеют поля и методы интерфейсов?</div>
+  <div class="mat-a"><p>Ключевое слово interface используется для создания полностью абстрактных классов. Основное предназначение интерфейса - определять каким образом мы можем использовать класс, который его реализует. Создатель интерфейса определяет имена методов, списки аргументов и типы возвращаемых значений, но не реализует их поведение. Все методы неявно объявляются как public.</p><p>Начиная с Java 8 в интерфейсах разрешается размещать реализацию методов по умолчанию default и статических static методов.</p><p>Интерфейс также может содержать и поля. В этом случае они автоматически являются публичными public, статическими static и неизменяемыми final.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Чем абстрактный класс отличается от интерфейса? В каких случаях следует использовать абстрактный класс, а в каких интерфейс?</div>
+  <div class="mat-a"><p>В Java класс может одновременно реализовать несколько интерфейсов, но наследоваться только от одного класса.</p><p>Абстрактные классы используются только тогда, когда присутствует тип отношений «is a» (является). Интерфейсы могут реализоваться классами, которые не связаны друг с другом.</p><p>Абстрактный класс - средство, позволяющее избежать написания повторяющегося кода, инструмент для частичной реализации поведения. Интерфейс - это средство выражения семантики класса, контракт, описывающий возможности. Все методы интерфейса неявно объявляются как public abstract или (начиная с Java 8) default - методами с реализацией по-умолчанию, а поля - public static final.</p><p>Интерфейсы позволяют создавать структуры типов без иерархии.</p><p>Наследуясь от абстрактного, класс «растворяет» собственную индивидуальность. Реализуя интерфейс, он расширяет собственную функциональность.</p><p>Абстрактные классы содержат частичную реализацию, которая дополняется или расширяется в подклассах. При этом все подклассы схожи между собой в части реализации, унаследованной от абстрактного класса, и отличаются лишь в части собственной реализации абстрактных методов родителя. Поэтому абстрактные классы применяются в случае построения иерархии однотипных, очень похожих друг на друга классов. В этом случае наследование от абстрактного класса, реализующего поведение объекта по умолчанию может быть полезно, так как позволяет избежать написания повторяющегося кода. Во всех остальных случаях лучше использовать интерфейсы.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Почему в некоторых интерфейсах вообще не определяют методов?</div>
+  <div class="mat-a"><p>Это так называемые маркерные интерфейсы. Они просто указывают что класс относится к определенному типу. Примером может послужить интерфейс Clonable, который указывает на то, что класс поддерживает механизм клонирования.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Почему нельзя объявить метод интерфейса с модификатором final?</div>
+  <div class="mat-a"><p>В случае интерфейсов указание модификатора final бессмысленно, т.к. все методы интерфейсов неявно объявляются как абстрактные, т.е. их невозможно выполнить, не реализовав где-то еще, а этого нельзя будет сделать, если у метода идентификатор final.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что имеет более высокий уровень абстракции - класс, абстрактный класс или интерфейс?</div>
+  <div class="mat-a"><p>Интерфейс.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Может ли объект получить доступ к члену класса, объявленному как private? Если да, то каким образом?</div>
+  <div class="mat-a"><p>Внутри класса доступ к приватной переменной открыт без ограничений;</p><p>Вложенный класс имеет полный доступ ко всем (в том числе и приватным) членам содержащего его класса;</p><p>Доступ к приватным переменным извне может быть организован через отличные от приватных методов, которые предоставлены разработчиком класса. Например: getX() и setX().</p><p>Через механизм рефлексии (Reflection API):</p><p>class Victim {</p><p>private int field = 42;</p><p>}</p><p>//...</p><p>Victim victim = new Victim();</p><p>Field field = Victim.class.getDeclaredField("field");</p><p>field.setAccessible(true);</p><p>int fieldValue = (int) field.get(victim);</p><p>//...</p><strong>getDeclaredField находит приватное поле по имени, setAccessible(true) отключает у него проверку доступа, а field.get считывает его значение из объекта.</strong></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Каков порядок вызова конструкторов и блоков инициализации с учётом иерархии классов?</div>
+  <div class="mat-a"><p>Сначала вызываются все статические блоки в очередности от первого статического блока корневого предка и выше по цепочке иерархии до статических блоков самого класса.</p><p>Затем вызываются нестатические блоки инициализации корневого предка, конструктор корневого предка и так далее вплоть до нестатических блоков и конструктора самого класса.</p><p>Parent static block(s) → Child static block(s) → Grandchild static block(s)</p><p>→ Parent non-static block(s) → Parent constructor →</p><p>→ Child non-static block(s) → Child constructor →</p><p>→ Grandchild non-static block(s) → Grandchild constructor</p><p>Пример 1:</p><p>public class MainClass {    public static void main(String args[]) {        System.out.println(TestClass.v);        new TestClass().a();    }</p><p>}</p><p>public class TestClass {    public static String v = "Some val";    {        System.out.println("!!! Non-static initializer");    }    static {        System.out.println("!!! Static initializer");    }    public void a() {        System.out.println("!!! a() called");    }}</p><p>Результат выполнения:</p><p>!!! Static initializerSome val!!! Non-static initializer!!! a() called</p><p>Пример 2:</p><p>public class MainClass {    public static void main(String args[]) {                new TestClass().a();    }}</p><p>Результат выполнения:</p><p>!!! Static initializer!!! Non-static initializer!!! a() called</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Зачем нужны и какие бывают блоки инициализации?</div>
+  <div class="mat-a"><p>Блоки инициализации представляют собой код, заключенный в фигурные скобки и размещаемый внутри класса вне объявления методов или конструкторов.</p><p>Существуют статические и нестатические блоки инициализации.</p><p>Блок инициализации выполняется перед инициализацией класса загрузчиком классов или созданием объекта класса с помощью конструктора.</p><p>Несколько блоков инициализации выполняются в порядке следования в коде класса.</p><p>Блок инициализации способен генерировать исключения, если их объявления перечислены в throws всех конструкторов класса.</p><p>Блок инициализации возможно создать и в анонимном классе.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">К каким конструкциям Java применим модификатор static?</div>
+  <div class="mat-a"><p>полям;</p><p>методам;</p><p>вложенным классам;</p><p>блокам инициализации;</p><p>членам секции import.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего в Java используются статические блоки инициализации?</div>
+  <div class="mat-a"><p>Статические блоки инициализация используются для выполнения кода, который должен выполняться один раз при инициализации класса загрузчиком классов, в момент, предшествующий созданию объектов этого класса при помощи конструктора. Такой блок (в отличие от нестатических, принадлежащих конкретном объекту класса) принадлежит только самому классу (объекту метакласса Class).</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что произойдёт, если в блоке инициализации возникнет исключительная ситуация?</div>
+  <div class="mat-a"><p>Для нестатических блоков инициализации, если выбрасывание исключения прописано явным образом требуется, чтобы объявления этих исключений были перечислены в throws всех конструкторов класса. Иначе будет ошибка компиляции. Для статического блока выбрасывание исключения в явном виде, приводит к ошибке компиляции.</p><strong>Компилятор удаляет сам нестатический блок, берет его содержимое и вставляет в начало каждого конструктора. В итоге ваш код превращается вот в такой:</strong><p>В остальных случаях, взаимодействие с исключениями будет проходить так же, как и в любом другом месте. Класс не будет инициализирован, если ошибка происходит в статическом блоке и объект класса не будет создан, если ошибка возникает в нестатическом блоке.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какое исключение выбрасывается при возникновении ошибки в блоке инициализации класса?</div>
+  <div class="mat-a"><p>Если возникшее исключение - наследник RuntimeException:</p><p>для статических блоков инициализации будет выброшено java.lang.ExceptionInInitializerError;</p><p>для нестатических будет проброшено исключение-источник.</p><p>Если возникшее исключение - наследник Error, то в обоих случаях будет выброшено java.lang.Error. Исключение: java.lang.ThreadDeath - смерть потока. В этом случае никакое исключение выброшено не будет.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Может ли статический метод быть переопределён или перегружен?</div>
+  <div class="mat-a"><p>Перегружен - да. Всё работает точно так же, как и с обычными методами - 2 статических метода могут иметь одинаковое имя, если количество их параметров или типов различается.</p><p>Переопределён - нет. Выбор вызываемого статического метода происходит при раннем связывании (на этапе компиляции, а не выполнения) и выполняться всегда будет родительский метод, хотя синтаксически переопределение статического метода - это вполне корректная языковая конструкция.</p><p>В целом, к статическим полям и методам рекомендуется обращаться через имя класса, а не объект.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Могут ли нестатические методы перегрузить статические?</div>
+  <div class="mat-a"><p>Да. В итоге получится два разных метода. Статический будет принадлежать классу и будет доступен через его имя, а нестатический будет принадлежать конкретному объекту и доступен через вызов метода этого объекта.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Можно ли сузить уровень доступа/тип возвращаемого значения при переопределении метода?</div>
+  <div class="mat-a"><p>При переопределении метода нельзя сузить модификатор доступа к методу (например с public в MainClass до private в Class extends MainClass).</p><p>Изменить тип возвращаемого значения при переопределении метода нельзя, будет ошибка attempting to use incompatible return type.</p><p>Можно сузить возвращаемое значение, если они совместимы.</p><p>Например:</p><p>public class Animal {    public Animal eat() {        System.out.println("animal eat");        return null;    }        public Long calc() {        return null;    }}public class Dog extends Animal {    public Dog eat() {        return new Dog();    }/*attempting to use incompatible return type    public Integer calc() {        return null;    }*/}</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Возможно ли при переопределении метода изменить: модификатор доступа, возвращаемый тип, тип аргумента или их количество, имена аргументов или их порядок; убирать, добавлять, изменять порядок следования элементов секции throws?</div>
+  <div class="mat-a"><p>При переопределении метода сужать модификатор доступа не разрешается, т.к. это приведёт к нарушению принципа подстановки Барбары Лисков. Расширение уровня доступа возможно.</p><p>Можно изменять все, что не мешает компилятору понять какой метод родительского класса имеется в виду:</p><p>Изменять тип возвращаемого значения при переопределении метода разрешено только в сторону сужения типа (вместо родительского класса - наследника).</p><p>При изменении типа, количества, порядка следования аргументов вместо переопределения будет происходить overloading (перегрузка) метода.</p><p>Секцию throws метода можно не указывать, но стоит помнить, что она остаётся действительной, если уже определена у метода родительского класса. Так же, возможно добавлять новые исключения, являющиеся наследниками от уже объявленных или исключения RuntimeException. Порядок следования таких элементов при переопределении значения не имеет.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как получить доступ к переопределенным методам родительского класса?</div>
+  <div class="mat-a"><p>С помощью ключевого слова super мы можем обратиться к любому члену родительского класса - методу или полю, если они не определены с модификатором private.</p><p>super.method();</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Можно ли объявить метод абстрактным и статическим одновременно?</div>
+  <div class="mat-a"><p>Нет. В таком случае компилятор выдаст ошибку: "Illegal combination of modifiers: ‘abstract’ and ‘static’". Модификатор abstract говорит, что метод будет реализован в другом классе, а static наоборот указывает, что этот метод будет доступен по имени класса.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">В чем разница между членом экземпляра класса и статическим членом класса?</div>
+  <div class="mat-a"><p>Модификатор static говорит о том, что данный метод или поле принадлежат самому классу и доступ к ним возможен даже без создания экземпляра класса. Поля, помеченные static инициализируются при инициализации класса. На методы, объявленные как static, накладывается ряд ограничений:</p><p>Они могут вызывать только другие статические методы.</p><p>Они должны осуществлять доступ только к статическим переменным.</p><p>Они не могут ссылаться на члены типа this или super.</p><p>В отличии от статических, поля экземпляра класса принадлежат конкретному объекту и могут иметь разные значения для каждого. Вызов метода экземпляра возможен только после предварительного создания объекта класса.</p><p>Пример:</p><p>public class MainClass {        public static void main(String args[]) {                System.out.println(TestClass.v);                new TestClass().a();                System.out.println(TestClass.v);        }}</p><p>public class TestClass {        public static String v = "Initial val";        {                System.out.println("!!! Non-static initializer");                v = "Val from non-static";        }        static {                System.out.println("!!! Static initializer");                v = "Some val";        }        public void a() {                System.out.println("!!! a() called");        }}</p><p>Результат:</p><p>!!! Static initializerSome val!!! Non-static initializer!!! a() calledVal from non-static</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Где разрешена инициализация статических/нестатических полей?</div>
+  <div class="mat-a"><p>Статические поля можно инициализировать при объявлении, в статическом или нестатическом блоке инициализации.</p><p>Нестатические поля можно инициализировать при объявлении, в нестатическом блоке инициализации или в конструкторе.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие типы классов бывают в java?</div>
+  <div class="mat-a"><p>Top level class (Обычный класс):</p><p>Abstract class (Абстрактный класс);</p><p>Final class (Финализированный класс).</p><p>Interfaces (Интерфейс).</p><p>Enum (Перечисление).</p><p>Nested class (Вложенный класс):</p><p>Static nested class (Статический вложенный класс);</p><p>Member inner class (Простой внутренний класс);</p><p>Local inner class (Локальный класс);</p><p>Anonymous inner class (Анонимный класс).</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Расскажите про вложенные классы. В каких случаях они применяются?</div>
+  <div class="mat-a"><p>Класс называется вложенным (Nested class), если он определен внутри другого класса. Вложенный класс должен создаваться только для того, чтобы обслуживать обрамляющий его класс. Если вложенный класс оказывается полезен в каком-либо ином контексте, он должен стать классом верхнего уровня. Вложенные классы имеют доступ ко всем (в том числе приватным) полям и методам внешнего класса, но не наоборот. Из-за этого разрешения использование вложенных классов приводит к некоторому нарушению инкапсуляции.</p><p>Существуют четыре категории вложенных классов:</p><p>Static nested class (Статический вложенный класс);</p><p>Member inner class (Простой внутренний класс);</p><p>Local inner class (Локальный класс);</p><p>Anonymous inner class (Анонимный класс).</p><p>Такие категории классов, за исключением первого, также называют внутренними (Inner class). Внутренние классы ассоциируются не с внешним классом, а с экземпляром внешнего.</p><p>Каждая из категорий имеет рекомендации по своему применению. Если вложенный класс должен быть виден за пределами одного метода или он слишком длинный для того, чтобы его можно было удобно разместить в границах одного метода и если каждому экземпляру такого класса необходима ссылка на включающий его экземпляр, то используется нестатический внутренний класс. В случае, если ссылка на обрамляющий класс не требуется - лучше сделать такой класс статическим. Если класс необходим только внутри какого-то метода и требуется создавать экземпляры этого класса только в этом методе, то используется локальный класс. А, если к тому же применение класса сводится к использованию лишь в одном месте и уже существует тип, характеризующий этот класс, то рекомендуется делать его анонимным классом.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое «статический класс»?</div>
+  <div class="mat-a"><p>Это вложенный класс, объявленный с использованием ключевого слова static. К классам верхнего уровня модификатор static неприменим.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие существуют особенности использования вложенных классов: статических и внутренних? В чем заключается разница между ними?</div>
+  <div class="mat-a"><p>Вложенные классы могут обращаться ко всем членам обрамляющего класса, в том числе и приватным.</p><p>Для создания объекта статического вложенного класса объект внешнего класса не требуется.</p><p>Из объекта статического вложенного класса нельзя обращаться к не статическим членам обрамляющего класса напрямую, а только через ссылку на экземпляр внешнего класса.</p><p>Обычные вложенные классы не могут содержать статических методов, блоков инициализации и классов. Статические вложенные классы - могут.</p><p>В объекте обычного вложенного класса хранится ссылка на объект внешнего класса. Внутри статической такой ссылки нет. Доступ к экземпляру обрамляющего класса осуществляется через указание .this после его имени. Например: Outer.this.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое «локальный класс»? Каковы его особенности?</div>
+  <div class="mat-a"><strong>Local inner class (Локальный класс) - это вложенный класс, который может быть декларирован в любом блоке, в котором разрешается декларировать переменные. Как и простые внутренние классы (Member inner class) локальные классы имеют имена и могут использоваться многократно. Как и анонимные классы, они имеют окружающий их экземпляр только тогда, когда применяются в нестатическом контексте.</strong><p>Локальные классы имеют следующие особенности:</p><p>Видны только в пределах блока, в котором объявлены;</p><p>Не могут быть объявлены как private/public/protected или static;</p><p>Не могут иметь внутри себя статических объявлений методов и классов, но могут иметь финальные статические поля, проинициализированные константой;</p><p>Имеют доступ к полям и методам обрамляющего класса;</p><p>Могут обращаться к локальным переменным и параметрам метода, если они объявлены с модификатором final.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое «анонимные классы»? Где они применяются?</div>
+  <div class="mat-a"><p>Это вложенный локальный класс без имени, который разрешено декларировать в любом месте обрамляющего класса, разрешающем размещение выражений. Создание экземпляра анонимного класса происходит одновременно с его объявлением. В зависимости от местоположения анонимный класс ведет себя как статический либо как нестатический вложенный класс - в нестатическом контексте появляется окружающий его экземпляр.</p><p>Анонимные классы имеют несколько ограничений:</p><p>Их использование разрешено только в одном месте программы - месте его создания;</p><p>Применение возможно только в том случае, если после порождения экземпляра нет необходимости на него ссылаться;</p><p>Реализует лишь методы своего интерфейса или суперкласса, т.е. не может объявлять каких-либо новых методов, так как для доступа к ним нет поименованного типа.</p><p>Анонимные классы обычно применяются для:</p><p>создания объекта функции (function object), например, реализация интерфейса Comparator;</p><p>создания объекта процесса (process object), такого как экземпляры классов Thread, Runnable и подобных;</p><p>в статическом методе генерации;</p><p>инициализации открытого статического поля final, которое соответствует сложному перечислению типов, когда для каждого экземпляра в перечислении требуется отдельный подкласс.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Каким образом из вложенного класса получить доступ к полю внешнего класса?</div>
+  <div class="mat-a"><p>Статический вложенный класс имеет прямой доступ только к статическим полям обрамляющего класса.</p><p>Простой внутренний класс, может обратиться к любому полю внешнего класса напрямую. В случае, если у вложенного класса уже существует поле с таким же литералом, то обращаться к такому полю следует через ссылку на его экземпляр. Например: Outer.this.field.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего используется оператор assert?</div>
+  <div class="mat-a"><strong>Assert (Утверждение) — это специальная конструкция, позволяющая проверять предположения о значениях произвольных данных в произвольном месте программы. Утверждение может автоматически сигнализировать об обнаружении некорректных данных, что обычно приводит к аварийному завершению программы с указанием места обнаружения некорректных данных.</strong><p>Утверждения существенно упрощают локализацию ошибок в коде. Даже проверка результатов выполнения очевидного кода может оказаться полезной при последующем рефакторинге, после которого код может стать не настолько очевидным и в него может закрасться ошибка.</p><p>Обычно утверждения оставляют включенными во время разработки и тестирования программ, но отключают в релиз-версиях программ.</p><p>Т.к. утверждения могут быть удалены на этапе компиляции либо во время исполнения программы, они не должны менять поведение программы. Если в результате удаления утверждения поведение программы может измениться, то это явный признак неправильного использования assert. Таким образом, внутри assert нельзя вызывать методы, изменяющие состояние программы, либо внешнего окружения программы.</p><p>В Java проверка утверждений реализована с помощью оператора assert, который имеет форму:</p><p>assert [Выражение типа boolean]; или assert [Выражение типа boolean] : [Выражение любого типа, кроме void];</p><p>Во время выполнения программы в том случае, если поверка утверждений включена, вычисляется значение булевского выражения, и если его результат false, то генерируется исключение java.lang.AssertionError. В случае использования второй формы оператора assert выражение после двоеточия задаёт детальное сообщение о произошедшей ошибке (вычисленное выражение будет преобразовано в строку и передано конструктору AssertionError).</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое Heap и Stack память в Java? Какая разница между ними?</div>
+  <div class="mat-a"><strong>Heap (куча) используется Java Runtime для выделения памяти под объекты и классы. Создание нового объекта также происходит в куче. Это же является областью работы сборщика мусора. Любой объект, созданный в куче, имеет глобальный доступ и на него могут ссылаться из любой части приложения.</strong><strong>Stack (стек) это область хранения данных также находящееся в общей оперативной памяти (RAM). Всякий раз, когда вызывается метод, в памяти стека создается новый блок, который содержит примитивы и ссылки на другие объекты в методе. Как только метод заканчивает работу, блок также перестает использоваться, тем самым предоставляя доступ для следующего метода. Размер стековой памяти намного меньше объема памяти в куче. Стек в Java работает по схеме LIFO (Последний-зашел-Первый-вышел)</strong><p>Различия между Heap и Stack памятью:</p><p>Куча используется всеми частями приложения, в то время как стек используется только одним потоком исполнения программы.</p><p>Всякий раз, когда создается объект, он всегда хранится в куче, а в памяти стека содержится лишь ссылка на него. Память стека содержит только локальные переменные примитивных типов и ссылки на объекты в куче.</p><p>Объекты в куче доступны с любой точки программы, в то время как стековая память не может быть доступна для других потоков.</p><p>Стековая память существует лишь какое-то время работы программы, а память в куче живет с самого начала до конца работы программы.</p><p>Если память стека полностью занята, то Java Runtime бросает исключение java.lang.StackOverflowError. Если заполнена память кучи, то бросается исключение java.lang.OutOfMemoryError: Java Heap Space.</p><p>Размер памяти стека намного меньше памяти в куче.</p><p>Из-за простоты распределения памяти, стековая память работает намного быстрее кучи.</p><p>Для определения начального и максимального размера памяти в куче используются -Xms и -Xmx опции JVM. Для стека определить размер памяти можно с помощью опции -Xss.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Верно ли утверждение, что примитивные типы данных всегда хранятся в стеке, а экземпляры ссылочных типов данных в куче?</div>
+  <div class="mat-a"><p>Не совсем. Примитивное поле экземпляра класса хранится не в стеке, а в куче. Любой объект (всё, что явно или неявно создаётся при помощи оператора new) хранится в куче.</p><p>В стеке хранятся только те локальные примитивные переменные, которые вы создали внутри какого-либо метода (или получили в качестве аргументов метода) и которые исчезнут сразу после того, как метод завершит свою работу (выйдет через return).</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Каким образом передаются переменные в методы, по значению или по ссылке?</div>
+  <div class="mat-a"><p>В Java параметры всегда передаются только по значению, что определяется как «скопировать значение и передать копию». С примитивами это будет копия содержимого. Со ссылками - тоже копия содержимого, т.е. копия ссылки. При этом внутренние члены ссылочных типов через такую копию изменить возможно, а вот саму ссылку, указывающую на экземпляр – нет.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужен сборщик мусора?</div>
+  <div class="mat-a"><p>Сборщик мусора (Garbage Collector) должен делать всего две вещи:</p><p>Находить мусор - неиспользуемые объекты. (Объект считается неиспользуемым, если ни одна из сущностей в коде, выполняемом в данный момент, не содержит ссылок на него, либо цепочка ссылок, которая могла бы связать объект с некоторой сущностью приложения, обрывается);</p><p>Освобождать память от мусора.</p><p>Существует два подхода к обнаружению мусора:</p><p>Reference counting;</p><p>Tracing</p><strong>Reference counting (подсчёт ссылок). Суть этого подхода состоит в том, что каждый объект имеет счетчик. Счетчик хранит информацию о том, сколько ссылок указывает на объект. Когда ссылка уничтожается, счетчик уменьшается. Если значение счетчика равно нулю, - объект можно считать мусором. Главным минусом такого подхода является сложность обеспечения точности счетчика. Также при таком подходе сложно выявлять циклические зависимости (когда два объекта указывают друг на друга, но ни один живой объект на них не ссылается), что приводит к утечкам памяти.</strong><strong>Главная идея подхода Tracing (трассировка) состоит в утверждении, что живыми могут считаться только те объекты, до которых мы можем добраться из корневых точек (GC Root) и те объекты, которые доступны с живого объекта. Всё остальное - мусор.</strong><p>Существует 4 типа корневых точки:</p><p>Локальные переменные и параметры методов;</p><p>Потоки;</p><p>Статические переменные;</p><p>Ссылки из JNI.</p><p>Самое простое java приложение будет иметь корневые точки:</p><p>Локальные переменные внутри main() метода и параметры main() метода;</p><p>Поток который выполняет main();</p><p>Статические переменные класса, внутри которого находится main() метод.</p><p>Таким образом, если мы представим все объекты и ссылки между ними как дерево, то нам нужно будет пройти с корневых узлов (точек) по всем рёбрам. При этом узлы, до которых мы сможем добраться - не мусор, все остальные - мусор. При таком подходе циклические зависимости легко выявляются. HotSpot VM использует именно такой подход.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое «пул строк»?</div>
+  <div class="mat-a"><strong>Пул строк – это набор строк, хранящийся в Heap.</strong><p>Пул строк возможен благодаря неизменяемости строк в Java и реализации идеи интернирования строк;</p><p>Пул строк помогает экономить память, но по этой же причине создание строки занимает больше времени;</p><p>Когда для создания строки используются ", то сначала ищется строка в пуле с таким же значением, если находится, то просто возвращается ссылка, иначе создается новая строка в пуле, а затем возвращается ссылка на неё;</p><p>При использовании оператора new создаётся новый объект String. Затем при помощи метода intern() эту строку можно поместить в пул или же получить из пула ссылку на другой объект String с таким же значением;</p><p>Пул строк является примером паттерна «Приспособленец» (Flyweight).</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое finalize()? Зачем он нужен?</div>
+  <div class="mat-a"><p>Через вызов метода finalize() (который наследуется от Java.lang.Object) JVM реализуется функциональность аналогичная функциональности деструкторов в С++, используемых для очистки памяти перед возвращением управления операционной системе. Данный метод вызывается при уничтожении объекта сборщиком мусора (garbage collector) и переопределяя finalize() можно запрограммировать действия необходимые для корректного удаления экземпляра класса - например, закрытие сетевых соединений, соединений с базой данных, снятие блокировок на файлы и т.д.</p><p>После выполнения этого метода объект должен быть повторно собран сборщиком мусора (и это считается серьезной проблемой метода finalize() т.к. он мешает сборщику мусора освобождать память). Вызов этого метода не гарантируется, т.к. приложение может быть завершено до того, как будет запущена сборка мусора.</p><strong>Объект не обязательно будет доступен для сборки сразу же - метод finalize() может сохранить куда-нибудь ссылку на объект. Подобная ситуация называется «возрождением» объекта и считается антипаттерном. Главная проблема такого трюка - в том, что «возродить» объект можно только 1 раз. Далее обьект будет удаляться без finalize. JVM строго гарантирует: метод finalize() для любого объекта может быть вызван строго один раз за всю его жизнь.</strong><p>Пример:</p><p>public class MainClass {        public static void main(String args[]) {                TestClass a = new TestClass();                a.a();                a = null;                a = new TestClass();                a.a();                System.out.println("!!! done");        }}</p><p>public class TestClass {        public void a() {                System.out.println("!!! a() called");        }        @Override        protected void finalize() throws Throwable {                System.out.println("!!! finalize() called");                super.finalize();        }}</p><p>Так как в данном случае сборщик мусора может и не быть вызван (в силу простоты приложения), то результат выполнения программы с большой вероятностью будет следующий:</p><p>!!! a() called!!! a() called!!! done</p><p>Теперь несколько усложним программу, добавив принудительный вызов Garbage Collector:</p><p>public class MainClass {        public static void main(String args[]) {                TestClass a = new TestClass();                a.a();                a = null;                System.gc(); // Принудительно зовём сборщик мусора                a = new TestClass();                a.a();                System.out.println("!!! done");        }}</p><p>Как и было сказано ранее, Garbage Collector может в разное время отработать, поэтому результат выполнения может разниться от запуска к запуску: Вариант а:</p><p>!!! a() called!!! a() called!!! done!!! finalize() called</p><p>Вариант б:</p><p>!!! a() called!!! a() called!!! finalize() called!!! done</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что произойдет со сборщиком мусора, если выполнение метода finalize() требует ощутимо много времени, или в процессе выполнения будет выброшено исключение?</div>
+  <div class="mat-a"><p>Непосредственно вызов finalize() происходит в отдельном потоке Finalizer (java.lang.ref.Finalizer.FinalizerThread), который создаётся при запуске виртуальной машины (в статической секции при загрузке класса Finalizer). Методы finalize() вызываются последовательно в том порядке, в котором были добавлены в список сборщиком мусора. Соответственно, если какой-то finalize() зависнет, он подвесит поток Finalizer, но не сборщик мусора. Это в частности означает, что объекты, не имеющие метода finalize(), будут исправно удаляться, а вот имеющие будут добавляться в очередь, пока поток Finalizer не освободится, не завершится приложение или не кончится память.</p><p>То же самое применимо и выброшенным в процессе finalize() исключениям: метод runFinalizer() у потока Finalizer игнорирует все исключения выброшенные в момент выполнения finalize(). Таким образом возникновение исключительной ситуации никак не скажется на работоспособности сборщика мусора.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Чем отличаются final, finally и finalize()?</div>
+  <div class="mat-a"><p>Модификатор final:</p><p>Класс не может иметь наследников;</p><p>Метод не может быть переопределен в классах наследниках;</p><p>Поле не может изменить свое значение после инициализации;</p><p>Локальные переменные не могут быть изменены после присвоения им значения;</p><p>Параметры методов не могут изменять своё значение внутри метода.</p><p>Оператор finally гарантирует, что определенный в нём участок кода будет выполнен независимо от того, какие исключения были возбуждены и перехвачены в блоке try-catch.</p><p>Метод finalize() вызывается перед тем как сборщик мусора будет проводить удаление объекта.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Расскажите про приведение типов. Что такое понижение и повышение типа?</div>
+  <div class="mat-a"><p>Java является строго типизированным языком программирования, а это означает, то что каждое выражение и каждая переменная имеет строго определенный тип уже на момент компиляции. Однако определен механизм приведения типов (casting) - способ преобразования значения переменной одного типа в значение другого типа.</p><p>В Java существуют несколько разновидностей приведения:</p><strong>Тождественное (identity). Преобразование выражения любого типа к точно такому же типу всегда допустимо и происходит автоматически.</strong><strong>Расширение (повышение, upcasting) примитивного типа (widening primitive). Означает, что осуществляется переход от менее емкого типа к более ёмкому. Например, от типа byte (длина 1 байт) к типу int (длина 4 байта). Такие преобразование безопасны в том смысле, что новый тип всегда гарантировано вмещает в себя все данные, которые хранились в старом типе и таким образом не происходит потери данных. Этот тип приведения всегда допустим и происходит автоматически.</strong><strong>Сужение (понижение, downcasting) примитивного типа (narrowing primitive). Означает, что переход осуществляется от более емкого типа к менее емкому. При таком преобразовании есть риск потерять данные. Например, если число типа int было больше 127, то при приведении его к byte значения битов старше восьмого будут потеряны. В Java такое преобразование должно совершаться явным образом, при этом все старшие биты, не умещающиеся в новом типе, просто отбрасываются - никакого округления или других действий для получения более корректного результата не производится.</strong><strong>Расширение объектного типа (widening reference). Означает неявное восходящее приведение типов или переход от более конкретного типа к менее конкретному, т.е. переход от потомка к предку. Разрешено всегда и происходит автоматически.</strong><strong>Сужение объектного типа (narrowing reference). Означает нисходящее приведение, то есть приведение от предка к потомку (подтипу). Возможно только если исходная переменная является подтипом приводимого типа. При несоответствии типов в момент выполнения выбрасывается исключение ClassCastException. Требует явного указания типа.</strong><strong>Преобразование к строке (to String). Любой тип может быть приведен к строке, т.е. к экземпляру класса String.</strong><strong>Запрещенные преобразования (forbidden). Не все приведения между произвольными типами допустимы. Например, к запрещенным преобразованиям относятся приведения от любого ссылочного типа к примитивному и наоборот (кроме преобразования к строке). Кроме того, невозможно привести друг к другу классы, находящиеся на разных ветвях дерева наследования и т.п.</strong><p>При приведении ссылочных типов с самим объектом ничего не происходит, - меняется лишь тип ссылки, через которую происходит обращение к объекту.</p><p>Для проверки возможности приведения нужно воспользоваться оператором instanceof:</p><p>Parent parent = new Child();if (parent instanceof Child) {    Child child = (Child) parent;}</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Когда в приложении может быть выброшено исключение ClassCastException?</div>
+  <div class="mat-a"><p>ClassCastException (потомок RuntimeException) - исключение, которое будет выброшено при ошибке приведения типа.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое литералы?</div>
+  <div class="mat-a"><strong>Литералы — это явно заданные значения в коде программы — константы определенного типа, которые находятся в коде в момент запуска.</strong><p>class Test {   int a = 0b1101010110;   public static void main(String[] args) {       System.out.println("Hello world!");          }}</p><p>В этом классе “Hello world!” — литерал.</p><p>Переменная a - тоже литерал.</p><p>Литералы бывают разных типов, которые определяются их назначением и способом написания.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое autoboxing («автоупаковка») в Java и каковы правила упаковки примитивных типов в классы-обертки?</div>
+  <div class="mat-a"><strong>Автоупаковка - это механизм неявной инициализации объектов классов-оберток (Byte, Short, Integer, Long, Float, Double, Character, Boolean) значениями соответствующих им исходных примитивных типов (byte, short, int...), без явного использования конструктора класса.</strong><p>Вместо того чтобы писать длинный код Integer obj = Integer.valueOf(5);, ты пишешь просто: Integer obj = 5;. Java сама превратит примитив в объект.</p><strong>Автоупаковка происходит при прямом присваивании примитива классу-обертке (с помощью оператора =, например Double d = 4.5;), либо при передаче примитива в параметры метода (типа класса-обертки). (например если метод принимает Boolean, а ты передаешь туда примитив true)</strong><p>Автоупаковке в классы-обертки могут быть подвергнуты как переменные примитивных типов, так и константы времени компиляции (литералы и final-примитивы). При этом литералы должны быть синтаксически корректными для инициализации переменной исходного примитивного типа.</p><p>Автоупаковка переменных примитивных типов требует точного соответствия типа исходного примитива типу класса-обертки. Например, попытка упаковать переменную типа byte в Short, без предварительного явного приведения byte в short вызовет ошибку компиляции.</p><p>Автоупаковка констант примитивных типов допускает более широкие границы соответствия. В этом случае компилятор способен предварительно осуществлять неявное расширение/сужение типа примитивов:</p><p>неявное расширение/сужение исходного типа примитива до типа примитива, соответствующего классу-обертке (для преобразования int в Byte, сначала компилятор самостоятельно неявно сужает int к byte)</p><p>автоупаковку примитива в соответствующий класс-обертку. Однако, в этом случае существуют два дополнительных ограничения: a) присвоение примитива обертке может производится только оператором = (нельзя передать такой примитив в параметры метода без явного приведения типов) b) тип левого операнда не должен быть старше чем Character, тип правого не должен старше, чем int: допустимо расширение/сужение byte в/из short, byte в/из char, short в/из char и только сужение byte из int, short из int, char из int. Все остальные варианты требуют явного приведения типов).</p><p>Дополнительной особенностью целочисленных классов-оберток, созданных автоупаковкой констант в диапазоне -128 ... +127 является то, что они кэшируются JVM. Поэтому такие обертки с одинаковыми значениями будут являться ссылками на один объект.</p><p>Integer x = 100;</p><p>Integer y = 100;</p><strong>System.out.println(x == y); // Ссылки одинаковые, выведет true!</strong><p>Integer a = 200;</p><p>Integer b = 200;</p><strong>System.out.println(a == b); // Числа вне кэша! Создались два разных объекта. Выведет false!</strong></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие есть особенности класса String?</div>
+  <div class="mat-a"><p>Это неизменяемый (immutable) и финализированный тип данных;</p><p>Строки-литералы, интернированные объекты класса String JVM хранит в пуле строк;</p><p>Объект класса String можно получить, используя двойные кавычки;</p><p>Можно использовать оператор + для конкатенации строк;</p><p>Начиная с Java 7 строки можно использовать в конструкции switch.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Почему String неизменяемый и финализированный класс?</div>
+  <div class="mat-a"><p>Есть несколько преимуществ в неизменности строк:</p><p>Пул строк возможен только потому, что строка неизменяемая, таким образом виртуальная машина сохраняет больше свободного места в Heap, поскольку разные строковые переменные указывают на одну и ту же переменную в пуле. Если бы строка была изменяемой, то интернирование строк не было бы возможным, потому что изменение значения одной переменной отразилось бы также и на остальных переменных, ссылающихся на эту строку.</p><p>Если строка будет изменяемой, тогда это станет серьезной угрозой безопасности приложения. Например, имя пользователя базы данных и пароль передаются строкой для получения соединения с базой данных и в программировании сокетов реквизиты хоста и порта передаются строкой. Так как строка неизменяемая, её значение не может быть изменено, в противном случае злоумышленник может изменить значение ссылки и вызвать проблемы в безопасности приложения.</p><p>Неизменяемость позволяет избежать синхронизации: строки безопасны для многопоточности и один экземпляр строки может быть совместно использован различными потоками.</p><p>Строки используются classloader и неизменность обеспечивает правильность загрузки класса.</p><p>Поскольку строка неизменяемая, её hashCode() кэшируется в момент создания и нет необходимости рассчитывать его снова. Это делает строку отличным кандидатом для ключа в HashMap т.к. его обработка происходит быстрее.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Почему char[] предпочтительнее String для хранения пароля?</div>
+  <div class="mat-a"><p>С момента создания строка остаётся в пуле, до тех пор, пока не будет удалена сборщиком мусора. Поэтому, даже после окончания использования пароля, он некоторое время продолжает оставаться доступным в памяти и способа избежать этого не существует. Это представляет определённый риск для безопасности, поскольку кто-либо, имеющий доступ к памяти сможет найти пароль в виде текста. В случае использования массива символов для хранения пароля имеется возможность очистить его сразу по окончанию работы с паролем, позволяя избежать риска безопасности, свойственного строке.</p><strong>char[] password = {'S', 'u', 'p', 'e', 'r', '1', '2', '3'}; // ... проверили пароль, вошли в систему ... // ОЧИЩАЕМ ПАМЯТЬ СРАЗУ: заполняем весь массив нулями Arrays.fill(password, '0');</strong></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Почему строка является популярным ключом в HashMap в Java?</div>
+  <div class="mat-a"><p>Неизменяемость (Immutability): Строку нельзя случайно отредактировать после создания. Это гарантирует, что её хэш-код никогда не изменится, и объект не потеряется внутри карты.</p><p>Кэширование хэш-кода: Хэш-код вычисляется один раз при первом обращении и сохраняется внутри объекта. При последующих поисках в HashMap пересчет символов не требуется, что делает операции мгновенными.</p><p>Готовая логика сравнения: В классе String методы equals() и hashCode() уже идеально написаны разработчиками Java. Две разные строки с одинаковым текстом всегда гарантированно укажут на один и тот же элемент</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что делает метод intern() в классе String?.</div>
+  <div class="mat-a"><p>Метод intern() используется для сохранения строки в пуле строк или получения ссылки, если такая строка уже находится в пуле.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Можно ли использовать строки в конструкции switch?</div>
+  <div class="mat-a"><p>Да, начиная с Java 7 в операторе switch можно использовать строки, ранние версии Java не поддерживают этого. При этом:</p><p>участвующие строки чувствительны к регистру;</p><p>используется метод equals() для сравнения полученного значения со значениями case, поэтому во избежание NullPointerException стоит предусмотреть проверку на null.</p><p>согласно документации, Java 7 для строк в switch, компилятор Java формирует более эффективный байткод для строк в конструкции switch, чем для сцепленных условий if-else.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какая основная разница между String, StringBuffer, StringBuilder?</div>
+  <div class="mat-a"><p>Класс String является неизменяемым (immutable) - модифицировать объект такого класса нельзя, можно лишь заменить его созданием нового экземпляра.</p><p>Класс StringBuffer изменяемый - использовать StringBuffer следует тогда, когда необходимо часто модифицировать содержимое.</p><p>Класс StringBuilder был добавлен в Java 5 и он во всем идентичен классу StringBuffer за исключением того, что он не синхронизирован и поэтому его методы выполняются значительно быстрей.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое класс Object? Какие в нем есть методы?</div>
+  <div class="mat-a"><p>Object это базовый класс для всех остальных объектов в Java. Любой класс наследуется от Object и, соответственно, наследуют его методы:</p><p>public boolean equals(Object obj) – служит для сравнения объектов по значению;</p><p>int hashCode() – возвращает hash код для объекта;</p><p>String toString() – возвращает строковое представление объекта;</p><p>Class getClass() – возвращает класс объекта во время выполнения;</p><p>protected Object clone() – создает и возвращает копию объекта;</p><p>void notify() – возобновляет поток, ожидающий монитор;</p><p>void notifyAll() – возобновляет все потоки, ожидающие монитор;</p><p>void wait() – остановка вызвавшего метод потока до момента пока другой поток не вызовет метод notify() или notifyAll() для этого объекта;</p><p>void wait(long timeout) – остановка вызвавшего метод потока на определённое время или пока другой поток не вызовет метод notify() или notifyAll() для этого объекта;</p><p>void wait(long timeout, int nanos) – остановка вызвавшего метод потока на определённое время или пока другой поток не вызовет метод notify() или notifyAll() для этого объекта;</p><p>protected void finalize() (Deprecated и в последующем удален) – может вызываться сборщиком мусора в момент удаления объекта при сборке мусора .</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Дайте определение понятию «конструктор».</div>
+  <div class="mat-a"><strong>Конструктор — это специальный метод, у которого отсутствует возвращаемый тип и который имеет то же имя, что и класс, в котором он используется. Конструктор вызывается при создании нового объекта класса и определяет действия необходимые для его инициализации.</strong></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое «конструктор по умолчанию»?</div>
+  <div class="mat-a"><strong>Если у какого-либо класса не определить конструктор, то компилятор сгенерирует конструктор без аргументов - так называемый «конструктор по умолчанию».</strong><p>public ClassName() {}</p><p>Если у класса уже определен какой-либо конструктор, то конструктор по умолчанию создан не будет и, если он необходим, его нужно описывать явно.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Чем отличаются конструктор по-умолчанию, конструктор копирования и конструктор с параметрами?</div>
+  <div class="mat-a"><p>У конструктора по умолчанию отсутствуют какие-либо аргументы. Конструктор копирования принимает в качестве аргумента уже существующий объект класса для последующего создания его клона. Конструктор с параметрами имеет в своей сигнатуре аргументы (обычно необходимые для инициализации полей класса).</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Где и как вы можете использовать приватный конструктор?</div>
+  <div class="mat-a"><p>Приватный (помеченный ключевым словом private, скрытый) конструктор может использоваться публичным статическим методом генерации объектов данного класса. Также доступ к нему разрешён вложенным классам и может использоваться для их нужд.</p><p>Например для singleton, либо ограничивая вообще приватным конструктором создание экземпляров(служебный класс).</p><p>public class DatabaseConnection {</p><p>// 1. Создаем единственный экземпляр внутри класса</p><p>private static final DatabaseConnection INSTANCE = new DatabaseConnection();</p><p>// 2. Приватный конструктор — никто снаружи не сможет написать new DatabaseConnection()</p><p>private DatabaseConnection() {</p><p>System.out.println("Подключение к БД создано!");</p><p>}</p><p>// 3. Публичный статический метод для получения этого единственного экземпляра</p><p>public static DatabaseConnection getInstance() {</p><p>return INSTANCE;</p><p>}</p><p>}</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Расскажите про классы-загрузчики и про динамическую загрузку классов.</div>
+  <div class="mat-a"><p>Основа работы с классами в Java — классы-загрузчики, обычные Java-объекты, предоставляющие интерфейс для поиска и создания объекта класса по его имени во время работы приложения.</p><p>В начале работы программы создается 3 основных загрузчика классов:</p><strong>базовый загрузчик (bootstrap/primordial). Загружает основные системные и внутренние классы JDK (Core API - пакеты java.* (rt.jar и i18n.jar) . Важно заметить, что базовый загрузчик является «Изначальным» или «Корневым» и частью JVM, вследствие чего его нельзя создать внутри кода программы.</strong><strong>загрузчик расширений (extention). Загружает различные пакеты расширений, которые располагаются в директории &amp;lt;JAVA_HOME&amp;gt;/lib/ext или другой директории, описанной в системном параметре java.ext.dirs. Это позволяет обновлять и добавлять новые расширения без необходимости модифицировать настройки используемых приложений. Загрузчик расширений реализован классом sun.misc.Launcher$ExtClassLoader.</strong><strong>системный загрузчик (system/application). Загружает классы, пути к которым указаны в переменной окружения CLASSPATH или пути, которые указаны в командной строке запуска JVM после ключей -classpath или -cp. Системный загрузчик реализован классом sun.misc.Launcher$AppClassLoader.</strong><p>Загрузчики классов являются иерархическими: каждый из них (кроме базового) имеет родительский загрузчик и в большинстве случаев, перед тем как попробовать загрузить класс самостоятельно, он посылает вначале запрос родительскому загрузчику загрузить указанный класс. Такое делегирование позволяет загружать классы тем загрузчиком, который находится ближе всего к базовому в иерархии делегирования. Как следствие поиск классов будет происходить в источниках в порядке их доверия: сначала в библиотеке Core API, потом в папке расширений, потом в локальных файлах CLASSPATH.</p><p>Процесс загрузки класса состоит из трех частей:</p><p>Loading – на этой фазе происходит поиск и физическая загрузка файла класса в определенном источнике (в зависимости от загрузчика). Этот процесс определяет базовое представление класса в памяти. На этом этапе такие понятия как «методы», «поля» и т.д. пока не известны.</p><p>Linking – процесс, который может быть разбит на 3 части:</p><p>Bytecode verification – проверка байт-кода на соответствие требованиям, определенным в спецификации JVM.</p><p>Class preparation – создание и инициализация необходимых структур, используемых для представления полей, методов, реализованных интерфейсов и т.п., определенных в загружаемом классе.</p><p>Resolving – загрузка набора классов, на которые ссылается загружаемый класс.</p><p>Initialization – вызов статических блоков инициализации и присваивание полям класса значений по умолчанию.</p><p>Динамическая загрузка классов в Java имеет ряд особенностей:</p><p>отложенная (lazy) загрузка и связывание классов. Загрузка классов производится только при необходимости, что позволяет экономить ресурсы и распределять нагрузку.</p><p>проверка корректности загружаемого кода (type safeness). Все действия связанные с контролем использования типов производятся только во время загрузки класса, позволяя избежать дополнительной нагрузки во время выполнения кода.</p><p>программируемая загрузка. Пользовательский загрузчик полностью контролирует процесс получения запрошенного класса — самому ли искать байт-код и создавать класс или делегировать создание другому загрузчику. Дополнительно существует возможность выставлять различные атрибуты безопасности для загружаемых классов, позволяя таким образом работать с кодом из ненадежных источников.</p><p>множественные пространства имен. Каждый загрузчик имеет своё пространство имён для создаваемых классов. Соответственно, классы, загруженные двумя различными загрузчиками на основе общего байт-кода, в системе будут различаться.</p><p>Существует несколько способов инициировать загрузку требуемого класса:</p><p>явный: вызов ClassLoader.loadClass() или Class.forName() (по умолчанию используется загрузчик, создавший текущий класс, но есть возможность и явного указания загрузчика);</p><p>неявный: когда для дальнейшей работы приложения требуется ранее не использованный класс, JVM инициирует его загрузку.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое Reflection?</div>
+  <div class="mat-a"><strong>Рефлексия (Reflection) - это механизм получения данных о программе во время её выполнения (runtime). В Java Reflection осуществляется с помощью Java Reflection API, состоящего из классов пакетов java.lang и java.lang.reflect.</strong><p>Возможности Java Reflection API:</p><p>Определение класса объекта;</p><p>Получение информации о модификаторах класса, полях, методах, конструкторах и суперклассах;</p><p>Определение интерфейсов, реализуемых классом;</p><p>Создание экземпляра класса;</p><p>Получение и установка значений полей объекта;</p><p>Вызов методов объекта;</p><p>Создание нового массива.</p><strong>Пример из Spring (Внедрение зависимостей / DI):</strong><strong>Находит аннотацию @Autowired, взламывает private-защиту поля и самолично вставляет туда нужный объект:</strong><p>// 1. Вы пишете простой код с аннотацией:</p><p>class UserService {</p><p>@Autowired</p><p>private UserRepository repo;</p><p>}</p><p>// 2. Фреймворк под капотом выполняет рефлексию:</p><p>Field field = UserService.class.getDeclaredField("repo");</p><p>field.setAccessible(true); // Отключает private</p><p>field.set(userServiceObject, new UserRepository()); // Сам вставляет объект</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Зачем нужен equals(). Чем он отличается от операции ==?</div>
+  <div class="mat-a"><p>Метод equals() - определяет отношение эквивалентности объектов.</p><p>При сравнении объектов с помощью == сравнение происходит лишь между ссылками. При сравнении по переопределённому разработчиком equals() - по внутреннему состоянию объектов.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Если вы хотите переопределить equals(), какие условия должны выполняться?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какими свойствами обладает порождаемое equals() отношение эквивалентности?</div>
+  <div class="mat-a"><p>Рефлексивность: для любой ссылки на значение x, x.equals(x) вернет true;</p><p>Симметричность: для любых ссылок на значения x и y, x.equals(y) должно вернуть true, тогда и только тогда, когда y.equals(x) возвращает true.</p><p>Транзитивность: для любых ссылок на значения x, y и z, если x.equals(y) и y.equals(z) возвращают true, тогда и x.equals(z) вернёт true;</p><p>Непротиворечивость: для любых ссылок на значения х и у, если несколько раз вызвать х.equals(y), постоянно будет возвращаться значение true либо постоянно будет возвращаться значение false при условии, что никакая информация, используемая при сравнении объектов, не поменялась.</p><p>Для любой ненулевой ссылки на значение х выражение х.equals(null) должно возвращать false.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Правила переопределения метода Object.equals().</div>
+  <div class="mat-a"><p>Использование оператора == для проверки, является ли аргумент ссылкой на указанный объект. Если является, возвращается true. Если сравниваемый объект == null, должно вернуться false.</p><p>Использование вызова метода getClass() для проверки, имеет ли аргумент правильный тип. Если не имеет, возвращается false.</p><p>Приведение аргумента к правильному типу. Поскольку эта операция следует за проверкой instanceof она гарантированно будет выполнена.</p><p>Обход всех значимых полей класса и проверка того, что значение поля в текущем объекте и значение того же поля в проверяемом на эквивалентность аргументе соответствуют друг другу. Если проверки для всех полей прошли успешно, возвращается результат true, в противном случае - false.</p><p>По окончанию переопределения метода equals() следует проверить: является ли порождаемое отношение эквивалентности рефлексивным, симметричным, транзитивным и непротиворечивым? Если ответ отрицательный, метод подлежит соответствующей правке.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какая связь между hashCode() и equals()?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Если equals() переопределен, есть ли какие-либо другие методы, которые следует переопределить?</div>
+  <div class="mat-a"><p>Равные объекты должны возвращать одинаковые хэш коды. При переопределении equals() нужно обязательно переопределять и метод hashCode().</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что будет, если переопределить equals() не переопределяя hashCode()? Какие могут возникнуть проблемы?</div>
+  <div class="mat-a"><p>Классы и методы, которые используют правила этого контракта могут работать некорректно. Так для HashMap это может привести к тому, что пара «ключ-значение», которая была в неё помещена при использовании нового экземпляра ключа не будет в ней найдена.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Каким образом реализованы методы hashCode() и equals() в классе Object?</div>
+  <div class="mat-a"><p>Реализация метода Object.equals() сводится к проверке на равенство двух ссылок:</p><p>public boolean equals(Object obj) {  return (this == obj);}</p><p>Реализация метода Object.hashCode() описана как native, т.е. определенной не с помощью Java кода и в общем случае зависит от реализации JVM:</p><p>public native int hashCode();</p><p>В HotSpot JVM хэш код по умолчанию вычисляется с помощью алгоритма генерации простых чисел - Xorshift.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Для чего нужен метод hashCode()?</div>
+  <div class="mat-a"><p>Метод hashCode() необходим для вычисления хэш кода переданного в качестве входного параметра объекта. В Java это целое число, в более широком смысле - битовая строка фиксированной длины, полученная из массива произвольной длины. Этот метод реализован таким образом, что для одного и того же входного объекта, хэш код всегда будет одинаковым. Следует понимать, что в Java множество возможных хэш кодов ограничено типом int, а множество объектов ничем не ограничено. Из-за этого, вполне возможна ситуация, что хэш коды разных объектов могут совпасть:</p><p>если хэш коды разные, то и объекты гарантированно разные;</p><p>если хэш коды равны, то объекты не обязательно равны(могут быть разные).</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Каковы правила переопределения метода Object.hashCode()?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Есть ли какие-либо рекомендации о том, какие поля следует использовать при подсчете hashCode()?</div>
+  <div class="mat-a"><p>Общий совет: выбирать поля, которые с большой долью вероятности будут различаться. Для этого необходимо использовать уникальные, лучше всего примитивные поля, например, такие как id, uuid. При этом нужно следовать правилу, если поля задействованы при вычислении hashCode(), то они должны быть задействованы и при выполнении equals().</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Могут ли у разных объектов быть одинаковые hashCode()?</div>
+  <div class="mat-a"><p>Да, могут. Метод hashCode() не гарантирует уникальность возвращаемого значения. Ситуация, когда у разных объектов одинаковые хэш коды называется коллизией. Вероятность возникновения коллизии зависит от используемого алгоритма генерации хэш кода.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Если у класса Point{int x, y;} реализовать метод equals(Object that) {(return this.x == that.x &amp;amp;&amp;amp; this.y == that.y)}, но сделать хэш код в виде int hashCode() {return x;}, то будут ли корректно такие точки помещаться и извлекаться из HashSet?</div>
+  <div class="mat-a"><p>HashSet использует HashMap для хранения элементов. При добавлении элемента в HashMap вычисляется хэш код, по которому определяется позиция в массиве, куда будет вставлен новый элемент. У всех экземпляров класса Point хэш код будет одинаковым для всех объектов с одинаковым x, что приведёт к вырождению хэш таблицы в список.</p><p>При возникновении коллизии в HashMap осуществляется проверка на наличие элемента в списке: e.hash == hash &amp;amp;&amp;amp; ((k = e.key) == key || key.equals(k)). Если элемент найден, то его значение перезаписывается. В нашем случае для разных объектов метод equals() будет возвращать false. Соответственно новый элемент будет успешно добавлен в HashSet. Извлечение элемента также будет осуществляться успешно. Но производительность такого кода будет невысокой, из-за неэффективности хэш-функции, которая cпособна породить большое количество колизий.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Могут ли у разных объектов (ref0 != ref1) быть ref0.equals(ref1) == true?</div>
+  <div class="mat-a"><p>Да, могут. Для этого в классе этих объектов должен быть переопределен метод equals().</p><p>Если используется метод Object.equals(), то для двух ссылок x и y метод вернет true тогда и только тогда, когда обе ссылки указывают на один и тот же объект (т.е. x == y возвращает true).</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Могут ли у разных ссылок на один объект (ref0 == ref1) быть ref0.equals(ref1) == false?</div>
+  <div class="mat-a"><p>В общем случае - могут, если метод equals() реализован некорректно и не выполняет свойство рефлексивности: для любых ненулевых ссылок x метод x.equals(x) должен возвращать true.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Можно ли так реализовать метод equals(Object that) {return this.hashCode() == that.hashCode()}?</div>
+  <div class="mat-a"><p>Так реализовывать метод equals категорически нельзя. Хэш-код возвращает число типа int и принципиально не гарантирует уникальность из-за неизбежных коллизий, когда у разных объектов совпадают хэши (например, у строк Aa и BB). Даже дефолтный hashCode в классе Object по спецификации Java не обязан быть уникальным. Хэш-код служит лишь для быстрой предварительной сортировки в HashMap, а окончательную проверку на равенство всегда должен делать полноценный equals, сравнивающий сами поля объектов.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">В equals() требуется проверять, что аргумент equals(Object that) такого же типа что и сам объект. В чем разница между this.getClass() == that.getClass() и that instanceof MyClass?</div>
+  <div class="mat-a"><p>Оператор instanceof сравнивает объект и указанный тип. Его можно использовать для проверки является ли данный объект экземпляром некоторого класса, либо экземпляром его дочернего класса, либо экземпляром класса, который реализует указанный интерфейс.</p><p>this.getClass() == that.getClass() проверяет два класса на идентичность, поэтому для корректной реализации контракта метода equals() необходимо использовать точное сравнение с помощью метода getClass().</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Можно ли реализовать метод equals() класса MyClass вот так: class MyClass {public boolean equals(MyClass that) {return this == that;}}?</div>
+  <div class="mat-a"><p>Реализовать можно, но данный метод не переопределяет метод equals() класса Object, а перегружает его.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Есть класс Point{int x, y;}. Почему хэш код в виде 31 * x + y предпочтительнее чем x + y?</div>
+  <div class="mat-a"><p>Множитель создает зависимость значения хэш кода от очередности обработки полей, что в итоге порождает лучшую хэш функцию.</p><p>Point(1, 2) = 1 + 2 = 3</p><p>Point(2, 1) = 2 + 1 = 3</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Расскажите про клонирование объектов.</div>
+  <div class="mat-a"><p>Использование оператора присваивания не создает нового объекта, а лишь копирует ссылку на объект. Таким образом, две ссылки указывают на одну и ту же область памяти, на один и тот же объект. Для создания нового объекта с таким же состоянием используется клонирование объекта.</p><p>Класс Object содержит protected метод clone(), осуществляющий побитовое копирование объекта производного класса. Однако сначала необходимо переопределить метод clone() как public для обеспечения возможности его вызова. В переопределенном методе следует вызвать базовую версию метода super.clone(), которая и выполняет собственно клонирование.</p><p>Чтобы окончательно сделать объект клонируемым, класс должен реализовать интерфейс Cloneable. Интерфейс Cloneable не содержит методов относится к маркерным интерфейсам, а его реализация гарантирует, что метод clone() класса Object возвратит точную копию вызвавшего его объекта с воспроизведением значений всех его полей. В противном случае метод генерирует исключение CloneNotSupportedException. Следует отметить, что при использовании этого механизма объект создается без вызова конструктора.</p><p>Это решение эффективно только в случае, если поля клонируемого объекта представляют собой значения базовых типов и их обёрток или неизменяемых (immutable) объектных типов. Если же поле клонируемого типа является изменяемым ссылочным типом, то для корректного клонирования требуется другой подход. Причина заключается в том, что при создании копии поля оригинал и копия представляют собой ссылку на один и тот же объект. В этой ситуации следует также клонировать и сам объект поля класса.</p><p>Такое клонирование возможно только в случае, если тип атрибута класса также реализует интерфейс Cloneable и переопределяет метод clone(). Так как, если это будет иначе вызов метода невозможен из-за его недоступности. Отсюда следует, что если класс имеет суперкласс, то для реализации механизма клонирования текущего класса-потомка необходимо наличие корректной реализации такого механизма в суперклассе. При этом следует отказаться от использования объявлений final для полей объектных типов по причине невозможности изменения их значений при реализации клонирования.</p><p>class Engine implements Cloneable {</p><p>private int power;</p><p>public Engine(int power) { this.power = power; }</p><p>@Override</p><p>public Engine clone() {</p><p>try { return (Engine) super.clone(); }</p><p>catch (CloneNotSupportedException e) { throw new AssertionError(e); }</p><p>}</p><p>}</p><p>class Car implements Cloneable {</p><p>private String model;</p><p>private Engine engine;</p><p>public Car(String model, Engine engine) { this.model = model; this.engine = engine; }</p><p>@Override</p><p>public Car clone() {</p><p>try {</p><p>Car copy = (Car) super.clone();</p><p>copy.engine = this.engine.clone();</p><p>return copy;</p><p>} catch (CloneNotSupportedException e) { throw new AssertionError(e); }</p><p>}}</p><p>Помимо встроенного механизма клонирования в Java для клонирования объекта можно использовать:</p><strong>Специализированный конструктор копирования - в классе описывается конструктор, который принимает объект этого же класса и инициализирует поля создаваемого объекта значениями полей переданного.</strong><p>class Car {</p><p>private String model;</p><p>private Engine engine;</p><p>public Car(String model, Engine engine) { this.model = model; this.engine = engine; }</p><p>public Car(Car other) {</p><p>this.model = other.model;</p><p>this.engine = new Engine(other.engine.getPower());</p><p>}}</p><p>Car copy = new Car(original);</p><strong>Фабричный метод - (Factory method), который представляет собой статический метод, возвращающий экземпляр своего класса.</strong><p>class Car {</p><p>private String model;</p><p>private Engine engine;</p><p>private Car(String model, Engine engine) { this.model = model; this.engine = engine; }</p><p>public static Car copyOf(Car s) {</p><p>return new Car(s.model, new Engine(s.engine.getPower()));</p><p>}}</p><p>Car copy = Car.copyOf(original);</p><strong>Механизм сериализации - сохранение и последующее восстановление объекта в/из потока байтов.</strong><p>class Engine implements Serializable {</p><p>private int power;</p><p>public Engine(int power) { this.power = power; }</p><p>}</p><p>class Car implements Serializable {</p><p>private String model;</p><p>private Engine engine;</p><p>public Car(String model, Engine engine) { this.model = model; this.engine = engine; }</p><p>}</p><p>public static &amp;lt;T extends Serializable&amp;gt; T deepClone(T obj) {</p><p>try {</p><p>var baos = new ByteArrayOutputStream();</p><p>try (var oos = new ObjectOutputStream(baos)) { oos.writeObject(obj); }</p><p>try (var ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()))) {</p><p>return (T) ois.readObject();</p><p>}</p><p>} catch (IOException | ClassNotFoundException e) { throw new RuntimeException(e); }</p><p>}</p><p>Car copy = deepClone(original);</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">В чем отличие между поверхностным и глубоким клонированием?</div>
+  <div class="mat-a"><strong>Поверхностное копирование копирует настолько малую часть информации об объекте, насколько это возможно. По умолчанию, клонирование в Java является поверхностным, т.е. класс Object не знает о структуре класса, которого он копирует. Клонирование такого типа осуществляется JVM по следующим правилам:</strong><p>Если класс имеет только члены примитивных типов, то будет создана совершенно новая копия объекта и возвращена ссылка на этот объект.</p><p>Если класс помимо членов примитивных типов содержит члены ссылочных типов, то тогда копируются ссылки на объекты этих классов. Следовательно, оба объекта будут иметь одинаковые ссылки.</p><strong>Глубокое копирование дублирует абсолютно всю информацию объекта:</strong><p>Нет необходимости копировать отдельно примитивные данные;</p><p>Все члены ссылочного типа в оригинальном классе должны поддерживать клонирование. Для каждого такого члена при переопределении метода clone() должен вызываться super.clone();</p><p>Если какой-либо член класса не поддерживает клонирование, то в методе клонирования необходимо создать новый экземпляр этого класса и скопировать каждый его член со всеми атрибутами в новый объект класса, по одному.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какой способ клонирования предпочтительней?</div>
+  <div class="mat-a"><p>Наиболее безопасным и, следовательно, предпочтительным способом клонирования является использование специализированного конструктора копирования:</p><p>Отсутствие ошибок наследования (не нужно беспокоиться, что у наследников появятся новые поля, которые не будут склонированы через метод clone());</p><p>Поля для клонирования указываются явно;</p><p>Возможность клонировать даже final поля.</p><p>class Address {</p><p>String city;</p><p>public Address(String city) { this.city = city; }</p><p>// Конструктор копирования адреса</p><p>public Address(Address other) { this.city = other.city; }</p><p>}</p><p>class User {</p><p>private final String name;</p><p>private final Address address; // Копируем final поля</p><p>public User(String name, Address address) {</p><p>this.name = name;</p><p>this.address = address;</p><p>}</p><p>// Конструктор копирования пользователя</p><p>public User(User other) {</p><p>this.name = other.name;</p><p>this.address = new Address(other.address); // Глубокое копирование</p><p>}</p><p>public static void main(String[] args) {</p><p>User user1 = new User("Иван", new Address("Москва"));</p><p>// Клонирование через конструктор копирования</p><p>User user2 = new User(user1);</p><p>user2.address.city = "Питер"; // Изменение клона не трогает оригинал</p><p>System.out.println(user1.address.city); // Выведет: Москва</p><p>System.out.println(user2.address.city); // Выведет: Питер</p><p>}</p><p>}</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Почему метод clone() объявлен в классе Object, а не в интерфейсе Cloneable?</div>
+  <div class="mat-a"><p>Метод clone() объявлен в классе Object с указанием модификатора native, чтобы обеспечить доступ к стандартному механизму поверхностного копирования объектов. Одновременно он объявлен и как protected, чтобы нельзя было вызвать этот метод у не переопределивших его объектов. Непосредственно интерфейс Cloneable является маркерным (не содержит объявлений методов) и нужен только для обозначения самого факта, что данный объект готов к тому, чтобы быть клонированным. Вызов переопределённого метода clone() у не Cloneable объекта вызовет выбрасывание CloneNotSupportedException.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Опишите иерархию исключений.</div>
+  <div class="mat-a"><p>Исключения делятся на несколько классов, но все они имеют общего предка — класс Throwable, потомками которого являются классы Exception и Error.</p><strong>Ошибки (Errors) представляют собой более серьёзные проблемы, которые, согласно спецификации Java, не следует обрабатывать в собственной программе, поскольку они связаны с проблемами уровня JVM. Например, исключения такого рода возникают, если закончилась память доступная виртуальной машине.</strong><strong>Исключения (Exceptions) являются результатом проблем в программе, которые в принципе решаемы, предсказуемы и последствия которых возможно устранить внутри программы. Например, произошло деление целого числа на ноль.</strong></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие виды исключений в Java вы знаете, чем они отличаются?</div>
+  <div class="mat-a"></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое checked и unchecked exception?</div>
+  <div class="mat-a"><p>В Java все исключения делятся на два типа:</p><strong>checked (контролируемые/проверяемые исключения) должны обрабатываться блоком catch или описываться в заголовке метода (например, throws IOException). Наличие такого обработчика/модификатора в заголовке метода проверяется на этапе компиляции;</strong><strong>unchecked (неконтролируемые/непроверяемые исключения), к которым относятся ошибки Error (например, OutOfMemoryError), обрабатывать которые не рекомендуется и исключения времени выполнения, представленные классом RuntimeException и его наследниками (например, NullPointerException), которые могут не обрабатываться блоком catch и не быть описанными в заголовке метода. Те можно и обрабатывать, но красивый тон пофиксить, ибо это проблема самого программиста (плохой код).</strong></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какой оператор позволяет принудительно выбросить исключение?</div>
+  <div class="mat-a"><p>Это оператор throw:</p><p>throw new Exception();</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">О чем говорит ключевое слово throws?</div>
+  <div class="mat-a"><p>Модификатор throws прописывается в заголовке метода и указывает на то, что метод потенциально может выбросить исключение с указанным типом.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Как написать собственное («пользовательское») исключение?</div>
+  <div class="mat-a"><p>Необходимо унаследоваться от базового класса требуемого типа исключений (например, от Exception или RuntimeException).</p><p>class CustomException extends Exception {    public CustomException() {        super();    }    public CustomException(final String string) {        super(string + " is invalid");    }    public CustomException(final Throwable cause) {        super(cause);    }}</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Какие существуют unchecked exception?</div>
+  <div class="mat-a"><p>Наиболее часто встречающиеся: ArithmeticException, ClassCastException, ConcurrentModificationException,IllegalArgumentException, IllegalStateException, IndexOutOfBoundsException, NoSuchElementException, NullPointerException, UnsupportedOperationException.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что представляет из себя ошибки класса Error?</div>
+  <div class="mat-a"><p>Ошибки класса Error представляют собой наиболее серьёзные проблемы уровня JVM. Например, исключения такого рода возникают, если закончилась память доступная виртуальной машине. Обрабатывать такие ошибки не запрещается, но делать этого не рекомендуется.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что вы знаете о OutOfMemoryError?</div>
+  <div class="mat-a"><p>OutOfMemoryError выбрасывается, когда виртуальная машина Java не может создать (разместить) объект из-за нехватки памяти, а сборщик мусора не может высвободить достаточное её количество.</p><p>Область памяти, занимаемая java процессом, состоит из нескольких частей. Тип OutOfMemoryError зависит от того, в какой из них не хватило места:</p><p>java.lang.OutOfMemoryError: Java heap space: Не хватает места в куче, а именно, в области памяти в которую помещаются объекты, создаваемые в приложении программно. Обычно проблема кроется в утечке памяти. Размер задается параметрами -Xms и -Xmx.</p><p>java.lang.OutOfMemoryError: PermGen space: (до версии Java 8) Данная ошибка возникает при нехватке места в Permanent области, размер которой задается параметрами -XX:PermSize и -XX:MaxPermSize.</p><p>java.lang.OutOfMemoryError: GC overhead limit exceeded: Данная ошибка может возникнуть как при переполнении первой, так и второй областей. Связана она с тем, что памяти осталось мало и сборщик мусора постоянно работает, пытаясь высвободить немного места. Данную ошибку можно отключить с помощью параметра -XX:-UseGCOverheadLimit.</p><p>java.lang.OutOfMemoryError: unable to create new native thread: Выбрасывается, когда нет возможности создавать новые потоки.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Опишите работу блока try-catch-finally.</div>
+  <div class="mat-a"><p>try — данное ключевое слово используется для отметки начала блока кода, который потенциально может привести к ошибке. catch — ключевое слово для отметки начала блока кода, предназначенного для перехвата и обработки исключений в случае их возникновения. finally — ключевое слово для отметки начала блока кода, который является дополнительным. Этот блок помещается после последнего блока catch. Управление передаётся в блок finally в любом случае, было выброшено исключение или нет.</p><p>Общий вид конструкции для обработки исключительной ситуации выглядит следующим образом:</p><p>try {     //код, который потенциально может привести к исключительной ситуации } catch(SomeException e ) {</p><p>//в скобках указывается класс конкретной ожидаемой ошибки      //код обработки исключительной ситуации} finally {    //необязательный блок, код которого выполняется в любом случае}</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое механизм try-with-resources?</div>
+  <div class="mat-a"><p>Данная конструкция, которая появилась в Java 7, позволяет использовать блок try-catch не заботясь о закрытии ресурсов, используемых в данном сегменте кода. Ресурсы объявляются в скобках сразу после try, а компилятор уже сам неявно создаёт секцию finally, в которой и происходит освобождение занятых в блоке ресурсов. Под ресурсами подразумеваются сущности, реализующие интерфейс java.lang.Autocloseable.</p><p>Общий вид конструкции:</p><p>try(/*объявление ресурсов*/) {    //...} catch(Exception ex) {    //...} finally { //...}</p><p>Стоит заметить, что блоки catch и явный finally выполняются уже после того, как закрываются ресурсы в неявном finally.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Возможно ли использование блока try-finally (без catch)?</div>
+  <div class="mat-a"><p>Такая запись допустима, но смысла в такой записи не так много, всё же лучше иметь блок catch, в котором будет обрабатываться необходимое исключение.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Может ли один блок catch отлавливать сразу несколько исключений?</div>
+  <div class="mat-a"><p>В Java 7 стала доступна новая языковая конструкция, с помощью которой можно перехватывать несколько исключений одним блоком catch:</p><p>try {      //...} catch(IOException | SQLException ex) {  //...}</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Всегда ли исполняется блок finally?</div>
+  <div class="mat-a"><p>Код в блоке finally будет выполнен всегда, независимо от того, выброшено исключение или нет.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Существуют ли ситуации, когда блок finally не будет выполнен?</div>
+  <div class="mat-a"><p>Например, когда JVM «умирает» - в такой ситуации finally недостижим и не будет выполнен, так как происходит принудительный системный выход из программы:</p><p>try {     System.exit(0); } catch(Exception e) {     e.printStackTrace(); } finally { }</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Может ли метод main() выбросить исключение во вне и если да, то где будет происходить обработка данного исключения?</div>
+  <div class="mat-a"><p>Может и оно будет передано в виртуальную машину Java (JVM).</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Предположим, есть метод, который может выбросить IOException и FileNotFoundException в какой последовательности должны идти блоки catch? Сколько блоков catch будет выполнено?</div>
+  <div class="mat-a"><p>Общее правило: обрабатывать исключения нужно от «младшего» к старшему. Т.е. нельзя поставить в первый блок catch(Exception ex) {}, иначе все дальнейшие блоки catch() уже ничего не смогут обработать, т.к. любое исключение будет соответствовать обработчику catch(Exception ex).</p><p>Таким образом, исходя из факта, что FileNotFoundException extends IOException сначала нужно обработать FileNotFoundException, а затем уже IOException:</p><p>void method() {    try {        //...    } catch (FileNotFoundException ex) {        //...    } catch (IOException ex) {        //...    }}</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое generics?</div>
+  <div class="mat-a"><strong>Generics - это технический термин, обозначающий набор свойств языка позволяющих определять и использовать обобщенные типы и методы. Обобщенные типы или методы отличаются от обычных тем, что имеют типизированные параметры.</strong><p>Примером использования обобщенных типов может служить Java Collection Framework. Так, класс LinkedList&amp;lt;E&amp;gt; - типичный обобщенный тип. Он содержит параметр E, который представляет тип элементов, которые будут храниться в коллекции. Создание объектов обобщенных типов происходит посредством замены параметризированных типов реальными типами данных. Вместо того, чтобы просто использовать LinkedList, ничего не говоря о типе элемента в списке, предлагается использовать точное указание типа LinkedList&amp;lt;String&amp;gt;, LinkedList&amp;lt;Integer&amp;gt; и т.п.</p><p>// Классический учебный контейнер для пары любых связанных объектов</p><p>class Pair&amp;lt;K, V&amp;gt; {</p><p>private final K key;</p><p>private final V value;</p><p>public Pair(K key, V value) {</p><p>this.key = key;</p><p>this.value = value;</p><p>}</p><p>public K getKey() { return key; }</p><p>public V getValue() { return value; }</p><p>}</p><p>public class Main {</p><p>public static void main(String[] args) {</p><p>// КЛАССИКА 1: Пара "Товар и его Цена" (String и Integer)</p><p>Pair&amp;lt;String, Integer&amp;gt; product = new Pair&amp;lt;&amp;gt;("Телефон", 50000);</p><p>String name = product.getKey();   // Без кастинга, тип String</p><p>int price = product.getValue();  // Без кастинга, тип int (автораспаковка)</p><p>// КЛАССИКА 2: Пара "Координаты на карте" (Double и Double)</p><p>Pair&amp;lt;Double, Double&amp;gt; coordinates = new Pair&amp;lt;&amp;gt;(55.75, 37.61);</p><p>double lat = coordinates.getKey();</p><p>double lon = coordinates.getValue();</p><p>// КЛАССИКА 3: Пара "ID пользователя и его Объект-Профиль"</p><p>// Pair&amp;lt;Long, User&amp;gt; userSession = new Pair&amp;lt;&amp;gt;(1024L, new User("Алексей"));</p><p>// ПОЛЬЗА: Код класса Pair написан один раз, но работает со всеми</p><p>// типами данных в мире, сохраняя строгий контроль компилятора.</p><p>}</p><p>}</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое «интернационализация», «локализация»?</div>
+  <div class="mat-a"><strong>Интернационализация (internationalization) - способ создания приложений, при котором их можно легко адаптировать для разных аудиторий, говорящих на разных языках.</strong><strong>Локализация (localization) - адаптация интерфейса приложения под несколько языков. Добавление нового языка может внести определенные сложности в локализацию интерфейса.</strong></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое enum? Какие особенности использования enum в Java?</div>
+  <div class="mat-a"><p>enum — специальный тип, представляющий фиксированный набор именованных констант. Неявно наследуется от java.lang.Enum (поэтому не может наследовать другой класс, но может реализовывать интерфейсы), каждая константа — фактически public static final экземпляр класса-перечисления. Может иметь поля, конструкторы (только private/package-private) и методы, в том числе абстрактные — тогда каждая константа переопределяет их в своём теле. Даёт встроенные методы values(), valueOf(String), ordinal(), name(), поддерживает switch, безопасен для сравнения через == и корректно работает как ключ в EnumMap/EnumSet.</p><p>enum Role {</p><p>ADMIN(100), USER(10); // Константы-объекты</p><p>private final int accessLevel; // Поле</p><p>Role(int accessLevel) { this.accessLevel = accessLevel; } // Приватный конструктор</p><p>public int getAccessLevel() { return accessLevel; } // Метод</p><p>}</p><p>public class Main {</p><p>public static void main(String[] args) {</p><p>Role myRole = Role.ADMIN;</p><p>// 1. Безопасное сравнение через == и поддержка в switch</p><p>if (myRole == Role.ADMIN) { System.out.println("Доступ разрешен: " + myRole.getAccessLevel()); }</p><p>// 2. Встроенный метод values() (массив всех констант)</p><p>for (Role r : Role.values()) {</p><p>System.out.println(r.name() + " имеет индекс " + r.ordinal());</p><p>}</p><p>// 3. Получение из строки через valueOf()</p><p>Role userRole = Role.valueOf("USER");</p><p>}</p><p>}</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое varargs? Как они работают и какие есть ограничения?</div>
+  <div class="mat-a"><p>Varargs (...) позволяет передавать в метод произвольное количество аргументов одного типа, которые внутри метода доступны как обычный массив. На уровне байткода компилятор просто оборачивает переданные аргументы в массив. Ограничения: varargs-параметр может быть только один и должен быть последним в списке аргументов; при перегрузке методов varargs-версия имеет более низкий приоритет, чем точное совпадение или совпадение через autoboxing; смешивание с обычным массивом может приводить к предупреждениям о heap pollution из-за стирания дженериков.</p><strong>public static void printNumbers(String message, int... numbers) {</strong><strong>System.out.print(message + ": ");</strong><strong>for (int num : numbers) {</strong><strong>System.out.print(num + " "); }</strong><strong>System.out.println(); }</strong><strong>printNumbers("Три числа",10, 20, 30);</strong></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое оператор instanceof и как он используется?</div>
+  <div class="mat-a"><p>instanceof проверяет во время выполнения, является ли объект экземпляром указанного класса, его подкласса или реализацией интерфейса, возвращая boolean. Часто применяется перед явным приведением типов, чтобы избежать ClassCastException, а также при переопределении equals(). Начиная с Java 16 доступен pattern matching for instanceof — можно сразу объявить переменную нужного типа в самом условии (if (obj instanceof String s) {...}), без отдельного каста.</p></div>
+</div>
+<div class="mat-item">
+  <div class="mat-q">Что такое пакет (package) в Java? Для чего нужен import static?</div>
+  <div class="mat-a"><p>Пакет — механизм группировки логически связанных классов и интерфейсов, обеспечивающий уникальность имён и один из уровней инкапсуляции (package-private доступ). Объявляется директивой package первой строкой файла и должен соответствовать структуре каталогов. import подключает классы из других пакетов по полному имени, а import static позволяет обращаться к статическим полям и методам класса без указания имени класса (например, import static java.lang.Math.PI даёт доступ просто к PI), что удобно при частом использовании статических констант/методов, но может ухудшать читаемость кода при злоупотреблении.</p></div>
+</div>
+</div>
