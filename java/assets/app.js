@@ -407,8 +407,10 @@ function detectAndWrapCode(container) {
   }
 
   function paraText(el) {
-    // Do NOT trim — leading spaces are indentation in code blocks
-    return el.innerHTML.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').replace(/\r/g, '');
+    // Use a temp div so the browser decodes &lt; &gt; &amp; etc. while stripping tags
+    const div = document.createElement('div');
+    div.innerHTML = el.innerHTML.replace(/<br\s*\/?>/gi, '\n');
+    return div.textContent.replace(/\r/g, '');
   }
 
   const paras = Array.from(container.querySelectorAll('p'));
@@ -494,6 +496,26 @@ function detectAndWrapCode(container) {
 
     fetch(btn.dataset.docx + '?v=' + Date.now())
       .then(r => r.arrayBuffer())
+      .then(buf => {
+        // Patch empty separator paragraphs (pBdr bottom D1D9E0, no pStyle) → HRSeparator style
+        if (typeof fflate !== 'undefined') {
+          try {
+            const files = fflate.unzipSync(new Uint8Array(buf));
+            if (files['word/document.xml']) {
+              let xml = new TextDecoder().decode(files['word/document.xml']);
+              // Find empty separator paragraphs (no pStyle, has pBdr bottom D1D9E0)
+              // Inject a sentinel run so mammoth doesn't drop the paragraph
+              xml = xml.replace(
+                /(<pPr>)(\s*<pBdr>\s*<bottom color="D1D9E0")([\s\S]{0,900}?<\/pPr>)(\s*<\/p>)/g,
+                '$1$2$3<r><t>§HR§</t></r>$4'
+              );
+              files['word/document.xml'] = fflate.strToU8(xml);
+              buf = fflate.zipSync(files).buffer;
+            }
+          } catch (e) { /* fallback: use original buf */ }
+        }
+        return buf;
+      })
       .then(buf => mammoth.convertToHtml({
         arrayBuffer: buf,
         styleMap: [
@@ -509,6 +531,7 @@ function detectAndWrapCode(container) {
           "p[style-name='Содержание 2'] => p.word-toc:fresh",
           "p[style-name='Содержание 3'] => p.word-toc:fresh",
           "p[style-name='Содержание 4'] => p.word-toc:fresh",
+          "r[strike] => ",
         ]
       }))
       .then(result => {
@@ -530,6 +553,16 @@ function detectAndWrapCode(container) {
         // Remove Word built-in TOC entries (text + tab + page number)
         container.querySelectorAll('p').forEach(p => {
           if (/\t\d+\s*$/.test(p.textContent)) p.remove();
+        });
+        // Unwrap <s>/<del> strikethrough tags — preserve their text content
+        container.querySelectorAll('s, del, strike').forEach(el => {
+          el.replaceWith(...el.childNodes);
+        });
+        // Replace sentinel §HR§ paragraphs (injected for docx separators) with <hr>
+        container.querySelectorAll('p').forEach(p => {
+          if (p.textContent.trim() === '§HR§') {
+            p.replaceWith(document.createElement('hr'));
+          }
         });
         indentLeadingSpaceParas(container);
         stripWholeParagraphBold(container);
