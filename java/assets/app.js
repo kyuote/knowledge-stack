@@ -163,6 +163,54 @@ function linkifyInPage(container) {
   });
 }
 
+function wrapDocxImageRows(container) {
+  // Find first heading — images that belong "before content" go right after it
+  const firstHeading = container.querySelector('h1, h2, h3');
+
+  function makeRow(group) {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px';
+    group.forEach(gp => {
+      gp.style.cssText = 'flex:1;min-width:260px;margin:0';
+      const img = gp.querySelector('img');
+      if (img) img.style.cssText = 'max-width:100%;border-radius:8px;border:1px solid var(--border)';
+      row.appendChild(gp);
+    });
+    return row;
+  }
+
+  const paras = Array.from(container.querySelectorAll('p'));
+  let firstGroup = true;
+  let i = 0;
+  while (i < paras.length) {
+    const p = paras[i];
+    if (p.parentNode !== container) { i++; continue; }
+    const imgs = p.querySelectorAll('img');
+    if (imgs.length === 1 && p.textContent.trim() === '') {
+      const group = [p];
+      let j = i + 1;
+      while (j < paras.length && paras[j].parentNode === container) {
+        const pj = paras[j];
+        if (pj.querySelectorAll('img').length === 1 && pj.textContent.trim() === '') {
+          group.push(pj); j++;
+        } else break;
+      }
+      const parent = p.parentNode;
+      const anchor = paras[j] && paras[j].parentNode === parent ? paras[j] : null;
+      const row = makeRow(group);
+      if (firstGroup && firstHeading && group.length >= 1) {
+        firstHeading.insertAdjacentElement('afterend', row);
+        firstGroup = false;
+      } else {
+        parent.insertBefore(row, anchor);
+      }
+      i = j;
+    } else {
+      i++;
+    }
+  }
+}
+
 function cleanAnchorLeaks(container) {
   const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
   const nodes = [];
@@ -308,7 +356,7 @@ function detectAndWrapCode(container) {
     root.innerHTML = '<p style="color:var(--text-dim);padding:40px">Загрузка документа…</p>';
     window.scrollTo(0, 0);
 
-    fetch(btn.dataset.docx)
+    fetch(btn.dataset.docx + '?v=' + Date.now())
       .then(r => r.arrayBuffer())
       .then(buf => mammoth.convertToHtml({
         arrayBuffer: buf,
@@ -337,6 +385,7 @@ function detectAndWrapCode(container) {
         cleanAnchorLeaks(container);
         detectAndWrapCode(container);
         linkifyInPage(container);
+        wrapDocxImageRows(container);
         root.appendChild(container);
         window.scrollTo(0, 0);
       })
