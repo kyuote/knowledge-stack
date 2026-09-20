@@ -1,25 +1,57 @@
 function buildDocxToc(container) {
   const h2s = container.querySelectorAll('h2, h3');
-  if (h2s.length < 2) return; // not enough structure to bother
+  if (h2s.length < 2) return;
 
-  // Assign ids to all headings that need them
   let n = 0;
   container.querySelectorAll('h1, h2, h3, h4').forEach(h => {
     if (!h.id) h.id = 'jh' + (n++);
   });
 
-  // Build TOC from H2, H3, H4
+  // Groups defined by sentinel substrings that START a new group
+  const SENTINELS = [
+    ['Что такое «коллекция»',                    'Основы JCF'],
+    ['Что такое «fail-fast',                      'Итераторы'],
+    ['Какая коллекция реализует дисциплину обслуживания FIFO', 'List'],
+    ['Сравните интерфейсы Queue',                 'Queue / Deque'],
+    ['Зачем нужен HashMap',                       'Map'],
+    ['В чем отличия TreeSet',                     'Set'],
+    ['Какие существуют способы перебирать',       'Утилиты'],
+    ['Comparable vs Comparator',                  'Comparable / Comparator'],
+  ];
+
   const entries = Array.from(container.querySelectorAll('h2, h3, h4'));
 
   const nav = document.createElement('nav');
   nav.className = 'docx-toc';
-  const ul = document.createElement('ul');
+
+  let currentGroup = null;
+  let ul = null;
+
   entries.forEach(h => {
+    const text = h.textContent.trim();
+
+    if (h.tagName === 'H2') {
+      const normText = text.replace(/\s/g, ' ');
+      for (const [sentinel, label] of SENTINELS) {
+        if (normText.startsWith(sentinel) && label !== currentGroup) {
+          currentGroup = label;
+          if (!ul) ul = document.createElement('ul');
+          const groupLi = document.createElement('li');
+          groupLi.className = 'toc-group';
+          groupLi.textContent = label;
+          ul.appendChild(groupLi);
+          break;
+        }
+      }
+    }
+
+    if (!ul) ul = document.createElement('ul');
+
     const li = document.createElement('li');
     li.className = h.tagName === 'H4' ? 'toc-h4' : h.tagName === 'H3' ? 'toc-h3' : 'toc-h2';
     const a = document.createElement('a');
     a.href = '#' + h.id;
-    a.textContent = h.textContent.trim();
+    a.textContent = text;
     a.addEventListener('click', e => {
       e.preventDefault();
       h.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -27,9 +59,9 @@ function buildDocxToc(container) {
     li.appendChild(a);
     ul.appendChild(li);
   });
-  nav.appendChild(ul);
 
-  // Insert after H1 (or at start if no H1)
+  if (ul) nav.appendChild(ul);
+
   const h1 = container.querySelector('h1');
   if (h1) h1.insertAdjacentElement('afterend', nav);
   else container.prepend(nav);
@@ -98,8 +130,10 @@ function linkifyInPage(container) {
   toRemove.forEach(el => el.remove());
 
   // Add TOC entries for h1s in content that have no link yet (question headings only)
+  // Skip when buildDocxToc already built the nav (avoids duplicate TOC sections)
   const firstH1 = container.querySelector('h1, h2, h3');
-  if (firstH1) {
+  const hasDocxToc = !!container.querySelector('.docx-toc');
+  if (firstH1 && !hasDocxToc) {
     for (let i = contentStart; i < all.length; i++) {
       const el = all[i];
       if (/^H[123]$/.test(el.tagName) && !el.id && el.textContent.trim().endsWith('?')) {
@@ -436,9 +470,9 @@ function detectAndWrapCode(container) {
         });
         cleanAnchorLeaks(container);
         detectAndWrapCode(container);
+        buildDocxToc(container);
         linkifyInPage(container);
         wrapDocxImageRows(container);
-        buildDocxToc(container);
         root.appendChild(container);
         window.scrollTo(0, 0);
       })

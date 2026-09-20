@@ -591,6 +591,8 @@
 .docx-mammoth .docx-toc li.toc-h4 a { font-size: 11px; color: var(--text-dim); padding-left: 24px; display: block; opacity: 0.8; }
 .docx-mammoth .docx-toc a { text-decoration: none; }
 .docx-mammoth .docx-toc a:hover { color: var(--accent); }
+.docx-mammoth .docx-toc li.toc-group { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--accent); margin-top: 14px; padding-bottom: 2px; border-bottom: 1px solid var(--border); break-after: avoid; }
+.docx-mammoth .docx-toc li.toc-group:first-child { margin-top: 0; }
 @media (max-width: 600px) { .docx-mammoth .docx-toc ul { columns: 1; } }
 
 /* lightbox */
