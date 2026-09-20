@@ -77,6 +77,23 @@ function linkifyInPage(container) {
     }
   }
 
+  // Wrap remaining TOC paragraphs in a 2-column grid
+  const firstHeading = container.querySelector('h1, h2, h3');
+  if (firstHeading) {
+    const tocParas = [];
+    let node = container.firstElementChild;
+    while (node && node !== firstHeading) {
+      if (node.tagName === 'P' && node.querySelector('a[href^="#"]')) tocParas.push(node);
+      node = node.nextElementSibling;
+    }
+    if (tocParas.length > 1) {
+      const grid = document.createElement('div');
+      grid.className = 'toc-grid';
+      firstHeading.parentNode.insertBefore(grid, tocParas[0]);
+      tocParas.forEach(p => grid.appendChild(p));
+    }
+  }
+
   // Smooth scroll for all in-page links
   container.querySelectorAll('a[href^="#"]').forEach(a => {
     a.addEventListener('click', e => {

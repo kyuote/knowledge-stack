@@ -570,6 +570,9 @@
 .docx-mammoth pre { margin: 1rem 0; border-radius: 10px; overflow: hidden; border: 1px solid var(--surface-2-border); background: var(--code-bg); }
 .docx-mammoth pre code { display: block; padding: 14px 18px; background: transparent !important; font-size: 13px; line-height: 1.65; color: var(--code-text); overflow-x: auto; }
 .docx-mammoth img { max-width: 100%; height: auto; display: block; margin: .75rem auto; border-radius: 6px; }
+.docx-mammoth .toc-grid { columns: 2; column-gap: 2rem; margin-bottom: 2rem; }
+.docx-mammoth .toc-grid p { margin: 0; padding: 1px 0; break-inside: avoid; font-size: 13px; line-height: 1.5; }
+@media (max-width: 600px) { .docx-mammoth .toc-grid { columns: 1; } }
 
 /* lightbox */
 .lb-overlay {
