@@ -7,46 +7,14 @@ function buildDocxToc(container) {
     if (!h.id) h.id = 'jh' + (n++);
   });
 
-  // Groups defined by sentinel substrings that START a new group
-  const SENTINELS = [
-    ['Что такое «коллекция»',                    'Основы JCF'],
-    ['Что такое «fail-fast',                      'Итераторы'],
-    ['Какая коллекция реализует дисциплину обслуживания FIFO', 'List'],
-    ['Сравните интерфейсы Queue',                 'Queue / Deque'],
-    ['Зачем нужен HashMap',                       'Map'],
-    ['В чем отличия TreeSet',                     'Set'],
-    ['Какие существуют способы перебирать',       'Утилиты'],
-    ['Comparable vs Comparator',                  'Comparable / Comparator'],
-  ];
-
   const entries = Array.from(container.querySelectorAll('h2, h3, h4'));
 
   const nav = document.createElement('nav');
   nav.className = 'docx-toc';
 
-  let currentGroup = null;
-  let ul = null;
-
+  const ul = document.createElement('ul');
   entries.forEach(h => {
     const text = h.textContent.trim();
-
-    if (h.tagName === 'H2') {
-      const normText = text.replace(/\s/g, ' ');
-      for (const [sentinel, label] of SENTINELS) {
-        if (normText.startsWith(sentinel) && label !== currentGroup) {
-          currentGroup = label;
-          if (!ul) ul = document.createElement('ul');
-          const groupLi = document.createElement('li');
-          groupLi.className = 'toc-group';
-          groupLi.textContent = label;
-          ul.appendChild(groupLi);
-          break;
-        }
-      }
-    }
-
-    if (!ul) ul = document.createElement('ul');
-
     const li = document.createElement('li');
     li.className = h.tagName === 'H4' ? 'toc-h4' : h.tagName === 'H3' ? 'toc-h3' : 'toc-h2';
     const a = document.createElement('a');
@@ -60,7 +28,7 @@ function buildDocxToc(container) {
     ul.appendChild(li);
   });
 
-  if (ul) nav.appendChild(ul);
+  nav.appendChild(ul);
 
   const h1 = container.querySelector('h1');
   if (h1) h1.insertAdjacentElement('afterend', nav);
