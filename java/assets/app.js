@@ -77,47 +77,72 @@ function linkifyInPage(container) {
     }
   }
 
-  // Group TOC by content section, then 2-col grid per group
+  // Group TOC into named sections using text triggers, 2-col per group
   const firstHeading = container.querySelector('h1, h2, h3');
   if (firstHeading) {
-    const sectionMap = new Map();
-    let curSection = '';
-    for (const el of container.querySelectorAll('h1, h2, h3, p')) {
-      if (/^H[123]$/.test(el.tagName)) {
-        if (!el.id) { const t = el.textContent.trim(); if (t) curSection = t; }
-        else sectionMap.set(el.id, curSection);
-      } else if (el.tagName === 'P' && el.id) {
-        sectionMap.set(el.id, curSection);
-      }
-    }
+    // Each trigger fires when combined text of a TOC href contains the pattern
+    const TRIGGERS = [
+      ['«интерфейс»',                          'Интерфейсы и абстрактные классы'],
+      ['может ли объект получить доступ к члену', 'ООП, наследование, static'],
+      ['какие типы классов бывают',              'Вложенные классы'],
+      ['heap и stack',                           'Память, GC и типы'],
+      ['особенности класса string',              'String'],
+      ['класс object? какие',                    'Класс Object, ClassLoader, Reflection'],
+      ['зачем нужен equals',                     'equals() и hashCode()'],
+      ['клонирование объектов',                  'Клонирование'],
+      ['иерархию исключений',                    'Исключения'],
+      ['что такое generics',                     'Generics'],
+    ];
 
+    // Collect TOC paragraphs; combine texts per href so split-links merge
+    const hrefTexts = new Map();
     const tocParas = [];
     let node = container.firstElementChild;
     while (node && node !== firstHeading) {
       if (node.tagName === 'P') {
         const a = node.querySelector('a[href^="#"]');
-        if (a) tocParas.push({ el: node, section: sectionMap.get(a.getAttribute('href').slice(1)) || '' });
+        if (a) {
+          const id = a.getAttribute('href').slice(1);
+          hrefTexts.set(id, (hrefTexts.get(id) || '') + ' ' + node.textContent.toLowerCase());
+          tocParas.push({ el: node, id });
+        }
       }
       node = node.nextElementSibling;
     }
 
     if (tocParas.length > 0) {
-      const groups = new Map();
-      for (const { el, section } of tocParas) {
-        if (!groups.has(section)) groups.set(section, []);
-        groups.get(section).push(el);
+      // Walk unique ids in order; fire trigger → switch section
+      const seen = new Set();
+      const hrefSection = new Map();
+      let curSec = 'Базовый синтаксис и модификаторы';
+      for (const { id } of tocParas) {
+        if (seen.has(id)) continue;
+        seen.add(id);
+        const txt = hrefTexts.get(id) || '';
+        for (const [trigger, name] of TRIGGERS) {
+          if (txt.includes(trigger)) { curSec = name; break; }
+        }
+        hrefSection.set(id, curSec);
       }
+
+      // Build ordered groups
+      const groups = new Map();
+      for (const { el, id } of tocParas) {
+        const sec = hrefSection.get(id);
+        if (!groups.has(sec)) groups.set(sec, []);
+        groups.get(sec).push(el);
+      }
+
+      // Render
       const wrapper = document.createElement('div');
       wrapper.className = 'toc-sections';
-      for (const [section, paras] of groups) {
+      for (const [sec, paras] of groups) {
         const groupDiv = document.createElement('div');
         groupDiv.className = 'toc-group';
-        if (section) {
-          const hdr = document.createElement('div');
-          hdr.className = 'toc-group-header';
-          hdr.textContent = section;
-          groupDiv.appendChild(hdr);
-        }
+        const hdr = document.createElement('div');
+        hdr.className = 'toc-group-header';
+        hdr.textContent = sec;
+        groupDiv.appendChild(hdr);
         const grid = document.createElement('div');
         grid.className = 'toc-grid';
         paras.forEach(p => grid.appendChild(p));
