@@ -77,20 +77,54 @@ function linkifyInPage(container) {
     }
   }
 
-  // Wrap remaining TOC paragraphs in a 2-column grid
+  // Group TOC by content section, then 2-col grid per group
   const firstHeading = container.querySelector('h1, h2, h3');
   if (firstHeading) {
+    const sectionMap = new Map();
+    let curSection = '';
+    for (const el of container.querySelectorAll('h1, h2, h3, p')) {
+      if (/^H[123]$/.test(el.tagName)) {
+        if (!el.id) { const t = el.textContent.trim(); if (t) curSection = t; }
+        else sectionMap.set(el.id, curSection);
+      } else if (el.tagName === 'P' && el.id) {
+        sectionMap.set(el.id, curSection);
+      }
+    }
+
     const tocParas = [];
     let node = container.firstElementChild;
     while (node && node !== firstHeading) {
-      if (node.tagName === 'P' && node.querySelector('a[href^="#"]')) tocParas.push(node);
+      if (node.tagName === 'P') {
+        const a = node.querySelector('a[href^="#"]');
+        if (a) tocParas.push({ el: node, section: sectionMap.get(a.getAttribute('href').slice(1)) || '' });
+      }
       node = node.nextElementSibling;
     }
-    if (tocParas.length > 1) {
-      const grid = document.createElement('div');
-      grid.className = 'toc-grid';
-      firstHeading.parentNode.insertBefore(grid, tocParas[0]);
-      tocParas.forEach(p => grid.appendChild(p));
+
+    if (tocParas.length > 0) {
+      const groups = new Map();
+      for (const { el, section } of tocParas) {
+        if (!groups.has(section)) groups.set(section, []);
+        groups.get(section).push(el);
+      }
+      const wrapper = document.createElement('div');
+      wrapper.className = 'toc-sections';
+      for (const [section, paras] of groups) {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'toc-group';
+        if (section) {
+          const hdr = document.createElement('div');
+          hdr.className = 'toc-group-header';
+          hdr.textContent = section;
+          groupDiv.appendChild(hdr);
+        }
+        const grid = document.createElement('div');
+        grid.className = 'toc-grid';
+        paras.forEach(p => grid.appendChild(p));
+        groupDiv.appendChild(grid);
+        wrapper.appendChild(groupDiv);
+      }
+      firstHeading.parentNode.insertBefore(wrapper, firstHeading);
     }
   }
 
