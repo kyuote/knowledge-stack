@@ -314,6 +314,19 @@ function wrapDocxImageRows(container) {
   }
 }
 
+function stripWholeParagraphBold(container) {
+  const paras = Array.from(container.querySelectorAll('p'));
+  const boldOnes = paras.filter(p =>
+    p.children.length === 1 && p.firstElementChild.tagName === 'STRONG'
+  );
+  if (boldOnes.length < paras.length * 0.4) return;
+  boldOnes.forEach(p => {
+    const s = p.firstElementChild;
+    while (s.firstChild) p.insertBefore(s.firstChild, s);
+    s.remove();
+  });
+}
+
 function cleanAnchorLeaks(container) {
   const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
   const nodes = [];
@@ -498,6 +511,7 @@ function detectAndWrapCode(container) {
         container.querySelectorAll('p').forEach(p => {
           if (/\t\d+\s*$/.test(p.textContent)) p.remove();
         });
+        stripWholeParagraphBold(container);
         cleanAnchorLeaks(container);
         detectAndWrapCode(container);
         buildDocxToc(container);
