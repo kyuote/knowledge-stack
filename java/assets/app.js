@@ -1,3 +1,40 @@
+function buildDocxToc(container) {
+  const h2s = container.querySelectorAll('h2, h3');
+  if (h2s.length < 2) return; // not enough structure to bother
+
+  // Assign ids to all headings that need them
+  let n = 0;
+  container.querySelectorAll('h1, h2, h3, h4').forEach(h => {
+    if (!h.id) h.id = 'jh' + (n++);
+  });
+
+  // Build TOC only from H2 and H3 (H4 too granular)
+  const entries = Array.from(container.querySelectorAll('h2, h3'));
+
+  const nav = document.createElement('nav');
+  nav.className = 'docx-toc';
+  const ul = document.createElement('ul');
+  entries.forEach(h => {
+    const li = document.createElement('li');
+    li.className = h.tagName === 'H3' ? 'toc-h3' : 'toc-h2';
+    const a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent.trim();
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    li.appendChild(a);
+    ul.appendChild(li);
+  });
+  nav.appendChild(ul);
+
+  // Insert after H1 (or at start if no H1)
+  const h1 = container.querySelector('h1');
+  if (h1) h1.insertAdjacentElement('afterend', nav);
+  else container.prepend(nav);
+}
+
 function linkifyInPage(container) {
   const norm = t => t.toLowerCase().replace(/\s+/g, ' ').replace(/[?!.:]+$/, '').trim();
 
@@ -386,6 +423,7 @@ function detectAndWrapCode(container) {
         detectAndWrapCode(container);
         linkifyInPage(container);
         wrapDocxImageRows(container);
+        buildDocxToc(container);
         root.appendChild(container);
         window.scrollTo(0, 0);
       })
