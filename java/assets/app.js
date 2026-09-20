@@ -1,3 +1,44 @@
+function slugify(s) {
+  return s.toLowerCase().trim()
+    .replace(/[^a-zа-яё0-9\s]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function addHeadingAnchors(container) {
+  const counts = {};
+  container.querySelectorAll('h1,h2,h3').forEach(h => {
+    const base = slugify(h.textContent);
+    counts[base] = (counts[base] || 0) + 1;
+    h.dataset.anchor = counts[base] > 1 ? `${base}-${counts[base]}` : base;
+  });
+}
+
+function removeTocDuplicateList(container) {
+  const toc = container.querySelector('.docx-toc');
+  if (!toc) return;
+  const tocTexts = new Set(
+    Array.from(toc.querySelectorAll('a, li, p')).map(el => el.textContent.trim().toLowerCase().slice(0, 45))
+  );
+  if (tocTexts.size < 3) return;
+  // Remove any UL/OL before the first H2 whose items mostly match TOC entries
+  const firstH2 = container.querySelector('h2');
+  if (!firstH2) return;
+  let el = firstH2.previousElementSibling;
+  while (el) {
+    const prev = el.previousElementSibling;
+    if (el.tagName === 'UL' || el.tagName === 'OL') {
+      const items = Array.from(el.querySelectorAll('li'));
+      if (items.length >= 3) {
+        const matched = items.filter(li => tocTexts.has(li.textContent.trim().toLowerCase().slice(0, 45))).length;
+        if (matched / items.length > 0.5) el.remove();
+      }
+    }
+    el = prev;
+  }
+}
+
 function buildDocxToc(container) {
   const h2s = container.querySelectorAll('h2, h3');
   if (h2s.length < 2) return;
@@ -373,7 +414,7 @@ function detectAndWrapCode(container) {
   });
 
   // Post-process <p> elements: group consecutive code lines into <pre><code>
-  const JAVA_START = /^[\s\t]*(public|private|protected|static |final |abstract |class |interface |enum |import |package |@\w|\w[\w<>,\s]*\s+[a-z_]\w*\s*[=({\[]|return |throw |new |if\s*\(|for\s*\(|while\s*\(|try[\s{]|catch\s*\(|switch\s*\(|\}|\{|\/\/|\w[\w.<>]*\s*\()/;
+  const JAVA_START = /^[\s\t“”"]*(public|private|protected|static |final |abstract |class |interface |enum |import |package |@\w|\w[\w<>,\s]*\s+[a-z_]\w*\s*[=({\[]|return |throw |new |if\s*\(|for\s*\(|while\s*\(|try[\s{]|catch\s*\(|switch\s*\(|\}|\{|\/\/|\w[\w.<>]*\s*\()/;
 
   function stripStringsAndComments(text) {
     return text.replace(/"[^"\\]*(?:\\.[^"\\]*)*"/g, '""')
@@ -403,7 +444,10 @@ function detectAndWrapCode(container) {
     if (!first) return false;
     // Cyrillic outside strings/comments → not code
     if (/[а-яёА-ЯЁ]/.test(stripStringsAndComments(first))) return false;
-    return JAVA_START.test(first) || /[{};]/.test(first);
+    if (JAVA_START.test(first) || /[{};]/.test(text)) return true;
+    // Method chain: next non-empty line starts with .letter — e.g. "Stream\n.of(...)"
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    return lines.length > 1 && /^\.[a-zA-Z_]/.test(lines[1]);
   }
 
   function paraText(el) {
@@ -411,6 +455,16 @@ function detectAndWrapCode(container) {
     const div = document.createElement('div');
     div.innerHTML = el.innerHTML.replace(/<br\s*\/?>/gi, '\n');
     return div.textContent.replace(/\r/g, '');
+  }
+
+  function hasBlockBetween(p1, p2) {
+    if (!p1 || !p2 || p1.parentElement !== p2.parentElement) return true;
+    let cursor = p1.nextElementSibling;
+    while (cursor && cursor !== p2) {
+      if (/^(H[1-6]|UL|OL|HR|PRE)$/.test(cursor.tagName)) return true;
+      cursor = cursor.nextElementSibling;
+    }
+    return false;
   }
 
   const paras = Array.from(container.querySelectorAll('p'));
@@ -427,6 +481,7 @@ function detectAndWrapCode(container) {
       let j = i + 1;
 
       while (j < paras.length && container.contains(paras[j])) {
+        if (hasBlockBetween(paras[j - 1], paras[j])) break;
         const t = paraText(paras[j]);
         if (depth > 0 || isCodeStart(t)) {
           block.push(t);
@@ -437,7 +492,7 @@ function detectAndWrapCode(container) {
         }
       }
 
-      if (block.length > 1 || /[{};]/.test(text)) {
+      if (block.length > 1 || /[{};]/.test(text) || text.includes('\n')) {
         const pre = document.createElement('pre');
         const code = document.createElement('code');
         code.className = 'language-java';
@@ -476,6 +531,7 @@ function detectAndWrapCode(container) {
         root.innerHTML = html;
         root.dataset.chapter = btn.dataset.chapter;
         if (window.hljs) root.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+        if (btn.dataset.file && btn.dataset.file.includes('flashcards')) initFlashcards();
         root.scrollTop = 0;
         window.scrollTo(0, 0);
         const hash = location.hash;
@@ -489,6 +545,65 @@ function detectAndWrapCode(container) {
       });
   }
 
+  function renderDocxBuf(buf) {
+    let patchedBuf = buf;
+    if (typeof fflate !== 'undefined') {
+      try {
+        const files = fflate.unzipSync(new Uint8Array(buf));
+        if (files['word/document.xml']) {
+          let xml = new TextDecoder().decode(files['word/document.xml']);
+          xml = xml.replace(
+            /(<pPr>)(\s*<pBdr>\s*<bottom color="D1D9E0")([\s\S]{0,900}?<\/pPr>)(\s*<\/p>)/g,
+            '$1$2$3<r><t>§HR§</t></r>$4'
+          );
+          files['word/document.xml'] = fflate.strToU8(xml);
+          patchedBuf = fflate.zipSync(files).buffer;
+        }
+      } catch (e) { /* use original */ }
+    }
+    return mammoth.convertToHtml({
+      arrayBuffer: patchedBuf,
+      styleMap: [
+        "p[style-name='Preformatted Text'] => pre:fresh",
+        "p[style-name='Code'] => pre:fresh",
+        "p[style-name='code'] => pre:fresh",
+        "p[style-name='TOC 1'] => p.word-toc:fresh",
+        "p[style-name='TOC 2'] => p.word-toc:fresh",
+        "p[style-name='TOC 3'] => p.word-toc:fresh",
+        "p[style-name='TOC 4'] => p.word-toc:fresh",
+        "p[style-name='TOC 5'] => p.word-toc:fresh",
+        "p[style-name='Содержание 1'] => p.word-toc:fresh",
+        "p[style-name='Содержание 2'] => p.word-toc:fresh",
+        "p[style-name='Содержание 3'] => p.word-toc:fresh",
+        "p[style-name='Содержание 4'] => p.word-toc:fresh",
+        "r[strike] => ",
+      ]
+    }).then(result => {
+      const container = document.createElement('div');
+      container.className = 'docx-mammoth';
+      container.insertAdjacentHTML('beforeend', result.value);
+      container.querySelectorAll('p').forEach(p => {
+        if (/\t\d+\s*$/.test(p.textContent)) p.remove();
+      });
+      container.querySelectorAll('s, del, strike').forEach(el => {
+        el.replaceWith(...el.childNodes);
+      });
+      container.querySelectorAll('p').forEach(p => {
+        if (p.textContent.trim() === '§HR§') p.replaceWith(document.createElement('hr'));
+      });
+      indentLeadingSpaceParas(container);
+      stripWholeParagraphBold(container);
+      cleanAnchorLeaks(container);
+      detectAndWrapCode(container);
+      buildDocxToc(container);
+      removeTocDuplicateList(container);
+      linkifyInPage(container);
+      wrapDocxImageRows(container);
+      addHeadingAnchors(container);
+      return container;
+    });
+  }
+
   function loadDocx(btn) {
     setActive(btn);
     root.innerHTML = '<p style="color:var(--text-dim);padding:40px">Загрузка документа…</p>';
@@ -496,48 +611,8 @@ function detectAndWrapCode(container) {
 
     fetch(btn.dataset.docx + '?v=' + Date.now())
       .then(r => r.arrayBuffer())
-      .then(buf => {
-        // Patch empty separator paragraphs (pBdr bottom D1D9E0, no pStyle) → HRSeparator style
-        if (typeof fflate !== 'undefined') {
-          try {
-            const files = fflate.unzipSync(new Uint8Array(buf));
-            if (files['word/document.xml']) {
-              let xml = new TextDecoder().decode(files['word/document.xml']);
-              // Find empty separator paragraphs (no pStyle, has pBdr bottom D1D9E0)
-              // Inject a sentinel run so mammoth doesn't drop the paragraph
-              xml = xml.replace(
-                /(<pPr>)(\s*<pBdr>\s*<bottom color="D1D9E0")([\s\S]{0,900}?<\/pPr>)(\s*<\/p>)/g,
-                '$1$2$3<r><t>§HR§</t></r>$4'
-              );
-              files['word/document.xml'] = fflate.strToU8(xml);
-              buf = fflate.zipSync(files).buffer;
-            }
-          } catch (e) { /* fallback: use original buf */ }
-        }
-        return buf;
-      })
-      .then(buf => mammoth.convertToHtml({
-        arrayBuffer: buf,
-        styleMap: [
-          "p[style-name='Preformatted Text'] => pre:fresh",
-          "p[style-name='Code'] => pre:fresh",
-          "p[style-name='code'] => pre:fresh",
-          "p[style-name='TOC 1'] => p.word-toc:fresh",
-          "p[style-name='TOC 2'] => p.word-toc:fresh",
-          "p[style-name='TOC 3'] => p.word-toc:fresh",
-          "p[style-name='TOC 4'] => p.word-toc:fresh",
-          "p[style-name='TOC 5'] => p.word-toc:fresh",
-          "p[style-name='Содержание 1'] => p.word-toc:fresh",
-          "p[style-name='Содержание 2'] => p.word-toc:fresh",
-          "p[style-name='Содержание 3'] => p.word-toc:fresh",
-          "p[style-name='Содержание 4'] => p.word-toc:fresh",
-          "r[strike] => ",
-        ]
-      }))
-      .then(result => {
-        root.innerHTML = '';
-        const container = document.createElement('div');
-        container.className = 'docx-mammoth';
+      .then(buf => renderDocxBuf(buf))
+      .then(container => {
         if (btn.dataset.images) {
           const imgWrap = document.createElement('div');
           imgWrap.style.cssText = 'display:flex;gap:16px;flex-wrap:wrap;margin-bottom:28px';
@@ -547,36 +622,235 @@ function detectAndWrapCode(container) {
             img.style.cssText = 'flex:1;min-width:260px;max-width:100%;border-radius:8px;border:1px solid var(--border)';
             imgWrap.appendChild(img);
           });
-          container.appendChild(imgWrap);
+          container.prepend(imgWrap);
         }
-        container.insertAdjacentHTML('beforeend', result.value);
-        // Remove Word built-in TOC entries (text + tab + page number)
-        container.querySelectorAll('p').forEach(p => {
-          if (/\t\d+\s*$/.test(p.textContent)) p.remove();
-        });
-        // Unwrap <s>/<del> strikethrough tags — preserve their text content
-        container.querySelectorAll('s, del, strike').forEach(el => {
-          el.replaceWith(...el.childNodes);
-        });
-        // Replace sentinel §HR§ paragraphs (injected for docx separators) with <hr>
-        container.querySelectorAll('p').forEach(p => {
-          if (p.textContent.trim() === '§HR§') {
-            p.replaceWith(document.createElement('hr'));
-          }
-        });
-        indentLeadingSpaceParas(container);
-        stripWholeParagraphBold(container);
-        cleanAnchorLeaks(container);
-        detectAndWrapCode(container);
-        buildDocxToc(container);
-        linkifyInPage(container);
-        wrapDocxImageRows(container);
+        root.innerHTML = '';
         root.appendChild(container);
         window.scrollTo(0, 0);
       })
       .catch(e => {
         root.innerHTML = `<p style="color:var(--text-dim);padding:40px">Ошибка загрузки: ${e.message}</p>`;
       });
+  }
+
+  function initFlashcards() {
+    fetch('assets/flashcards.json')
+      .then(r => r.json())
+      .then(DATA => runFlashcards(DATA))
+      .catch(() => {});
+  }
+
+  function runFlashcards(DATA) {
+    if (!DATA || !DATA.length) return;
+    DATA.forEach((d, i) => { d.id = i; });
+    const CHAPTERS = [...new Set(DATA.map(d => d.ch))];
+
+    function loadJ(key, fb) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fb; } catch(e) { return fb; } }
+    function saveJ(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {} }
+
+    let progress = loadJ('javanotes-fc-progress-v1', {});
+    let activeChapters = loadJ('javanotes-fc-filters-v1', CHAPTERS.slice());
+    let deck = [], pos = 0;
+
+    const CHAPTER_DOCX = {
+      'Collections': 'java-file/JavaCollectionsFramework.docx',
+      'Java Core': 'java-file/java-core.docx',
+      'JVM': 'java-file/JVM-DOC.docx',
+      'Java IO / NIO': 'java-file/JavaIO.docx',
+      'Java 8': 'java-file/java8 (1).docx',
+    };
+    const containerCache = {};
+
+    function getChapterContainer(ch) {
+      if (containerCache[ch]) return containerCache[ch];
+      const path = CHAPTER_DOCX[ch];
+      if (!path) return Promise.resolve(null);
+      containerCache[ch] = fetch(path + '?cb=' + Date.now())
+        .then(r => r.arrayBuffer())
+        .then(buf => renderDocxBuf(buf))
+        .catch(() => null);
+      return containerCache[ch];
+    }
+
+    function normQ(s) {
+      return s.toLowerCase().replace(/[\s ​]+/g, ' ').replace(/[.,;:!?«»""''*]+/g, '').trim();
+    }
+
+    function extractSection(container, questionText) {
+      const qn = normQ(questionText);
+      const headings = [...container.querySelectorAll('h1,h2,h3')];
+      let target = null;
+
+      // 1. exact normalised match
+      for (const h of headings) {
+        if (normQ(h.textContent) === qn) { target = h; break; }
+      }
+      // 2. 50-char prefix
+      if (!target) {
+        const p50 = qn.slice(0, 50);
+        for (const h of headings) {
+          if (normQ(h.textContent).slice(0, 50) === p50) { target = h; break; }
+        }
+      }
+      // 3. first 6 words
+      if (!target) {
+        const w6 = qn.split(' ').slice(0, 6).join(' ');
+        for (const h of headings) {
+          if (normQ(h.textContent).split(' ').slice(0, 6).join(' ') === w6) { target = h; break; }
+        }
+      }
+      if (!target) return null;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'docx-mammoth';
+      // skip the H2 itself — already shown in fcModalQ above the divider
+      let el = target.nextElementSibling;
+      while (el && !/^H[123]$/.test(el.tagName)) {
+        wrap.appendChild(el.cloneNode(true));
+        el = el.nextElementSibling;
+      }
+      return wrap;
+    }
+
+    const els = {
+      filters: document.getElementById('fcFilters'),
+      card: document.getElementById('fcCard'),
+      qEl: document.getElementById('fcQuestion'),
+      chEl: document.getElementById('fcChapter'),
+      posEl: document.getElementById('fcPos'),
+      empty: document.getElementById('fcEmpty'),
+      progressText: document.getElementById('fcProgressText'),
+      progressFill: document.getElementById('fcProgressFill'),
+      deckCount: document.getElementById('fcDeckCount'),
+      prev: document.getElementById('fcPrev'),
+      next: document.getElementById('fcNext'),
+      shuffle: document.getElementById('fcShuffle'),
+      reset: document.getElementById('fcReset'),
+      good: document.getElementById('fcGood'),
+      bad: document.getElementById('fcBad'),
+    };
+    if (!els.card) return;
+
+    function rebuildDeck() {
+      deck = DATA.filter(d => activeChapters.includes(d.ch)).map(d => d.id);
+      pos = 0; render();
+    }
+
+    function renderFilters() {
+      els.filters.innerHTML = '';
+      const allBtn = document.createElement('button');
+      allBtn.type = 'button';
+      allBtn.className = 'fc-chip' + (activeChapters.length === CHAPTERS.length ? ' is-active' : '');
+      allBtn.innerHTML = `Все <span class="fc-chip-n">${DATA.length}</span>`;
+      allBtn.addEventListener('click', () => {
+        activeChapters = CHAPTERS.slice();
+        saveJ('javanotes-fc-filters-v1', activeChapters);
+        renderFilters(); rebuildDeck();
+      });
+      els.filters.appendChild(allBtn);
+      CHAPTERS.forEach(ch => {
+        const n = DATA.filter(d => d.ch === ch).length;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        const isOn = activeChapters.includes(ch) && activeChapters.length !== CHAPTERS.length;
+        btn.className = 'fc-chip' + (isOn ? ' is-active' : '');
+        btn.innerHTML = `${ch} <span class="fc-chip-n">${n}</span>`;
+        btn.addEventListener('click', () => {
+          if (activeChapters.length === CHAPTERS.length) {
+            activeChapters = [ch];
+          } else if (activeChapters.includes(ch)) {
+            if (activeChapters.length > 1) activeChapters = activeChapters.filter(c => c !== ch);
+          } else {
+            activeChapters = [...activeChapters, ch];
+          }
+          saveJ('javanotes-fc-filters-v1', activeChapters);
+          renderFilters(); rebuildDeck();
+        });
+        els.filters.appendChild(btn);
+      });
+    }
+
+    function updateProgressUI() {
+      const known = Object.values(progress).filter(v => v === 'good').length;
+      els.progressText.textContent = `${known} / ${DATA.length} выучено`;
+      els.progressFill.style.width = (DATA.length ? known / DATA.length * 100 : 0) + '%';
+      els.deckCount.textContent = `в подборке: ${deck.length}`;
+    }
+
+    function render() {
+      updateProgressUI();
+      if (!deck.length) { els.card.hidden = true; els.empty.hidden = false; return; }
+      els.card.hidden = false; els.empty.hidden = true;
+      const d = DATA[deck[pos]];
+      els.qEl.textContent = d.q;
+      els.chEl.textContent = d.ch;
+      els.posEl.textContent = `${pos + 1} / ${deck.length}`;
+    }
+
+    function openInDrawer() {
+      if (!deck.length) return;
+      const d = DATA[deck[pos]];
+      const drawer = document.getElementById('mat-drawer');
+      const drawerBody = document.getElementById('mat-drawer-body');
+      const drawerTitle = document.getElementById('mat-drawer-title');
+      const backdrop = document.getElementById('mat-drawer-backdrop');
+      if (!drawer) return;
+
+      drawerTitle.textContent = d.ch;
+      drawerBody.innerHTML = '<p style="color:var(--text-dim);padding:16px 0">Загрузка…</p>';
+      drawer.classList.add('is-open');
+      backdrop.classList.add('is-open');
+
+      getChapterContainer(d.ch).then(container => {
+        if (!drawer.classList.contains('is-open')) return;
+        drawerBody.innerHTML = '';
+        const clone = container.cloneNode(true);
+        drawerBody.appendChild(clone);
+        const target = d.anchor ? clone.querySelector(`[data-anchor="${d.anchor}"]`) : null;
+        if (target) {
+          setTimeout(() => {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 60);
+        }
+      });
+    }
+
+    function goTo(n) {
+      if (!deck.length) return;
+      pos = ((n % deck.length) + deck.length) % deck.length;
+      render();
+    }
+    function mark(status) {
+      if (!deck.length) return;
+      progress[deck[pos]] = status;
+      saveJ('javanotes-fc-progress-v1', progress);
+      goTo(pos + 1);
+    }
+
+    els.card.addEventListener('click', openInDrawer);
+    els.good.addEventListener('click', () => mark('good'));
+    els.bad.addEventListener('click', () => mark('bad'));
+    els.prev.addEventListener('click', () => goTo(pos - 1));
+    els.next.addEventListener('click', () => goTo(pos + 1));
+    els.shuffle.addEventListener('click', () => {
+      for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; }
+      pos = 0; render();
+    });
+    els.reset.addEventListener('click', () => {
+      if (!confirm('Сбросить весь прогресс по флеш-картам?')) return;
+      progress = {}; saveJ('javanotes-fc-progress-v1', progress); render();
+    });
+    document.addEventListener('keydown', e => {
+      if (!document.getElementById('fcCard')) return;
+      if (e.target && /input|textarea/i.test(e.target.tagName)) return;
+      if (e.code === 'Space') { e.preventDefault(); openInDrawer(); }
+      else if (e.key === 'ArrowRight') goTo(pos + 1);
+      else if (e.key === 'ArrowLeft') goTo(pos - 1);
+    });
+
+    activeChapters = activeChapters.filter(c => CHAPTERS.includes(c));
+    if (!activeChapters.length) activeChapters = CHAPTERS.slice();
+    renderFilters(); rebuildDeck();
   }
 
   chBtns.forEach(btn => btn.addEventListener('click', () => loadChapter(btn)));
@@ -628,4 +902,18 @@ function detectAndWrapCode(container) {
   lbOverlay.addEventListener('click', closeLb);
   lbClose.addEventListener('click', e => { e.stopPropagation(); closeLb(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLb(); });
+
+  // Material drawer
+  const matDrawer    = document.getElementById('mat-drawer');
+  const matDrawerClose  = document.getElementById('mat-drawer-close');
+  const matDrawerBackdrop = document.getElementById('mat-drawer-backdrop');
+
+  function closeDrawer() {
+    matDrawer.classList.remove('is-open');
+    matDrawerBackdrop.classList.remove('is-open');
+  }
+
+  matDrawerClose.addEventListener('click', closeDrawer);
+  matDrawerBackdrop.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
 })();

@@ -1,0 +1,32 @@
+<div class="kicker"><span class="line"></span>Практика</div>
+<h1 class="title">Флеш-карты</h1>
+<p class="lede">288 вопросов из 5 материалов. Нажми на карточку чтобы открыть ответ в материале.</p>
+
+<section class="topic" id="flashcards">
+  <div class="fc-toolbar">
+    <div class="fc-progress-wrap">
+      <div class="fc-progress-label"><span id="fcProgressText">0 / 0 выучено</span><span id="fcDeckCount">в подборке: 0</span></div>
+      <div class="fc-progress-track"><div class="fc-progress-fill" id="fcProgressFill" style="width:0%"></div></div>
+    </div>
+    <button type="button" class="fc-reset" id="fcReset">сбросить прогресс</button>
+  </div>
+
+  <div class="fc-filters" id="fcFilters"></div>
+
+  <div class="fc-stage">
+    <div class="fc-card" id="fcCard">
+      <div class="fc-card-meta"><span id="fcChapter">—</span><span class="fc-face-label">вопрос <span id="fcPos"></span></span></div>
+      <p class="fc-q" id="fcQuestion">…</p>
+      <div class="fc-hint">👆 нажми, чтобы открыть ответ в материале</div>
+    </div>
+    <div class="fc-empty" id="fcEmpty" hidden>Нет карточек по выбранным темам.</div>
+  </div>
+
+  <div class="fc-controls">
+    <button type="button" class="fc-btn fc-btn-icon" id="fcPrev" title="Предыдущая">◀</button>
+    <button type="button" class="fc-btn fc-btn-bad" id="fcBad">✕ не знаю</button>
+    <button type="button" class="fc-btn fc-btn-icon" id="fcShuffle" title="Перемешать">🔀</button>
+    <button type="button" class="fc-btn fc-btn-good" id="fcGood">✓ знаю</button>
+    <button type="button" class="fc-btn fc-btn-icon" id="fcNext" title="Следующая">▶</button>
+  </div>
+</section>

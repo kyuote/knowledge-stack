@@ -6,7 +6,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/java.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
-<link rel="stylesheet" href="../go/assets/style.css?v=12">
+<link rel="stylesheet" href="../go/assets/style.css?v=17">
 
 <div class="shell">
   <aside class="sidebar">
@@ -99,6 +99,11 @@
       </ol>
     </div>
 
+    <div class="toc-label" style="margin-top:24px">Практика</div>
+    <div class="chapters">
+      <button class="ch" data-chapter="fc" data-file="chapters/flashcards.html">🃏 Флеш-карты</button>
+    </div>
+
     <div class="toc-label" style="margin-top:24px">Материалы</div>
     <div class="chapters">
       <button class="ch mat-btn" data-chapter="m1" data-docx="java-file/java-core.docx">📄 Java Core</button>
@@ -120,4 +125,14 @@
   <span class="lb-close" id="lb-close">✕</span>
   <img id="lb-img" src="" alt="">
 </div>
-<script src="assets/app.js?v=45"></script>
+
+<div class="mat-drawer-backdrop" id="mat-drawer-backdrop"></div>
+<aside class="mat-drawer" id="mat-drawer" aria-label="Материал">
+  <div class="mat-drawer-header">
+    <span class="mat-drawer-title" id="mat-drawer-title">Материал</span>
+    <button class="mat-drawer-close" id="mat-drawer-close" aria-label="Закрыть">✕</button>
+  </div>
+  <div class="mat-drawer-body docx-mammoth" id="mat-drawer-body"></div>
+</aside>
+
+<script src="assets/app.js?v=66"></script>
