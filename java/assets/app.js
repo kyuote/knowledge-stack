@@ -1,3 +1,106 @@
+function linkifyInPage(container) {
+  const norm = t => t.toLowerCase().replace(/\s+/g, ' ').replace(/[?!.:]+$/, '').trim();
+
+  const all = Array.from(container.querySelectorAll('p, h1, h2, h3'));
+  const contentStart = all.findIndex(el => /^H[123]$/.test(el.tagName));
+  if (contentStart === -1) return;
+
+  // Build index from content-section headings + bold-? paragraphs
+  const index = new Map();
+  function addToIndex(key, el) { if (key && !index.has(key)) index.set(key, el); }
+  for (let i = contentStart; i < all.length; i++) {
+    const el = all[i];
+    const key = norm(el.textContent);
+    if (/^H[123]$/.test(el.tagName)) {
+      addToIndex(key, el);
+      addToIndex(key.substring(0, 35), el);
+    } else if (el.tagName === 'P' && el.querySelector('strong') && el.textContent.trim().endsWith('?')) {
+      addToIndex(key, el);
+    }
+  }
+
+  function bestMatch(text) {
+    const key = norm(text);
+    if (index.has(key)) return index.get(key);
+    const pre = key.substring(0, 35);
+    if (index.has(pre)) return index.get(pre);
+    for (const [k, v] of index) { if (k.startsWith(pre) || pre.startsWith(k.substring(0, 35))) return v; }
+    return null;
+  }
+
+  let idN = 0;
+  const toRemove = [];
+
+  // Process each TOC paragraph (before first heading)
+  all.slice(0, contentStart).filter(el => el.tagName === 'P').forEach(para => {
+    const githubLinks = Array.from(para.querySelectorAll('a[href*="github"]'));
+    if (githubLinks.length > 0) {
+      const target = bestMatch(para.textContent);
+      if (target) {
+        if (!target.id) target.id = 'q' + (idN++);
+        githubLinks.forEach(a => a.setAttribute('href', '#' + target.id));
+      } else {
+        toRemove.push(para); // no matching heading → remove from TOC
+      }
+    } else if (!para.querySelector('a') && para.textContent.trim().endsWith('?')) {
+      const target = bestMatch(para.textContent);
+      if (target) {
+        if (!target.id) target.id = 'q' + (idN++);
+        const a = document.createElement('a');
+        a.href = '#' + target.id;
+        a.textContent = para.textContent;
+        para.textContent = '';
+        para.appendChild(a);
+      } else {
+        toRemove.push(para); // no matching heading → remove from TOC
+      }
+    }
+  });
+
+  // Remove unmatched TOC entries
+  toRemove.forEach(el => el.remove());
+
+  // Add TOC entries for h1s in content that have no link yet (question headings only)
+  const firstH1 = container.querySelector('h1, h2, h3');
+  if (firstH1) {
+    for (let i = contentStart; i < all.length; i++) {
+      const el = all[i];
+      if (/^H[123]$/.test(el.tagName) && !el.id && el.textContent.trim().endsWith('?')) {
+        el.id = 'q' + (idN++);
+        const p = document.createElement('p');
+        const a = document.createElement('a');
+        a.href = '#' + el.id;
+        a.textContent = el.textContent.trim();
+        p.appendChild(a);
+        firstH1.parentNode.insertBefore(p, firstH1);
+      }
+    }
+  }
+
+  // Smooth scroll for all in-page links
+  container.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const el = document.getElementById(a.getAttribute('href').slice(1));
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+}
+
+function cleanAnchorLeaks(container) {
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(node => {
+    let t = node.textContent;
+    // Strip URL-encoded Word anchor slugs (2+ %XX sequences) leaked as text
+    t = t.replace(/[A-Za-z0-9_-]*(?:%[A-Fa-f0-9]{2}[A-Za-z0-9_-]*){2,}"/g, '');
+    // Strip pure kebab-slug anchors with double hyphens
+    t = t.replace(/[a-z][a-z0-9]*(?:--[a-z][a-z0-9]*)+"/g, '');
+    if (t !== node.textContent) node.textContent = t;
+  });
+}
+
 function detectAndWrapCode(container) {
   // Highlight <pre> blocks already mapped by mammoth styleMap
   container.querySelectorAll('pre').forEach(pre => {
@@ -9,14 +112,43 @@ function detectAndWrapCode(container) {
     if (window.hljs) hljs.highlightElement(code);
   });
 
-  // Post-process <p> elements: group consecutive pure-code lines into <pre><code>
-  const JAVA_LINE = /^[\s\t]*(public|private|protected|static |final |abstract |class |interface |enum |import |package |@\w|\w[\w<>[\],\s]*\s+\w+\s*[=({\[]|return |throw |new |\/\/|if\s*\(|for\s*\(|while\s*\(|try\s*\{|catch\s*\(|\}|\{|.*[;{]$)/;
-  const HAS_CYRILLIC = /[а-яёА-ЯЁ]/;
+  // Post-process <p> elements: group consecutive code lines into <pre><code>
+  const JAVA_START = /^[\s\t]*(public|private|protected|static |final |abstract |class |interface |enum |import |package |@\w|\w[\w<>,\s]*\s+\w+\s*[=({\[]|return |throw |new |if\s*\(|for\s*\(|while\s*\(|try[\s{]|catch\s*\(|switch\s*\(|\}|\{|\/\/|\w[\w.<>]*\s*\()/;
 
-  function isCodeLine(text) {
-    if (!text.trim()) return false;
-    if (HAS_CYRILLIC.test(text)) return false;
-    return JAVA_LINE.test(text.trim()) || /[{};]/.test(text);
+  function stripStringsAndComments(text) {
+    return text.replace(/"[^"\\]*(?:\\.[^"\\]*)*"/g, '""')
+               .replace(/'[^'\\]*(?:\\.[^'\\]*)*'/g, "''")
+               .replace(/\/\/.*$/gm, '//');
+  }
+
+  function normalizeIndent(code) {
+    const IND = '    ';
+    let depth = 0;
+    return code.split('\n').map(line => {
+      const s = line.trim();
+      if (!s) return '';
+      const bare = stripStringsAndComments(s).replace(/\/\/.*$/, '');
+      const leading = (s.match(/^\}+/) || [''])[0];
+      depth = Math.max(0, depth - leading.length);
+      const out = IND.repeat(depth) + s;
+      const rest = bare.slice(leading.length);
+      depth += (rest.match(/\{/g) || []).length - (rest.match(/\}/g) || []).length;
+      depth = Math.max(0, depth);
+      return out;
+    }).join('\n');
+  }
+
+  function isCodeStart(text) {
+    const first = text.split('\n')[0].trim();
+    if (!first) return false;
+    // Cyrillic outside strings/comments → not code
+    if (/[а-яёА-ЯЁ]/.test(stripStringsAndComments(first))) return false;
+    return JAVA_START.test(first) || /[{};]/.test(first);
+  }
+
+  function paraText(el) {
+    // Do NOT trim — leading spaces are indentation in code blocks
+    return el.innerHTML.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').replace(/\r/g, '');
   }
 
   const paras = Array.from(container.querySelectorAll('p'));
@@ -24,20 +156,30 @@ function detectAndWrapCode(container) {
   while (i < paras.length) {
     const el = paras[i];
     if (!container.contains(el)) { i++; continue; }
-    const text = el.textContent;
-    if (isCodeLine(text)) {
+    const text = paraText(el);
+
+    if (isCodeStart(text)) {
       const block = [text];
+      // Track brace depth — stay in block while unbalanced
+      let depth = (text.match(/\{/g) || []).length - (text.match(/\}/g) || []).length;
       let j = i + 1;
-      while (j < paras.length && container.contains(paras[j]) && isCodeLine(paras[j].textContent)) {
-        block.push(paras[j].textContent);
-        j++;
+
+      while (j < paras.length && container.contains(paras[j])) {
+        const t = paraText(paras[j]);
+        if (depth > 0 || isCodeStart(t)) {
+          block.push(t);
+          depth += (t.match(/\{/g) || []).length - (t.match(/\}/g) || []).length;
+          j++;
+        } else {
+          break;
+        }
       }
-      // Only wrap multi-line blocks or single lines with clear Java syntax
+
       if (block.length > 1 || /[{};]/.test(text)) {
         const pre = document.createElement('pre');
         const code = document.createElement('code');
         code.className = 'language-java';
-        code.textContent = block.join('\n');
+        code.textContent = normalizeIndent(block.join('\n'));
         pre.appendChild(code);
         el.parentNode.insertBefore(pre, el);
         for (let k = i; k < j; k++) paras[k].remove();
@@ -116,7 +258,9 @@ function detectAndWrapCode(container) {
           container.appendChild(imgWrap);
         }
         container.insertAdjacentHTML('beforeend', result.value);
+        cleanAnchorLeaks(container);
         detectAndWrapCode(container);
+        linkifyInPage(container);
         root.appendChild(container);
         window.scrollTo(0, 0);
       })
