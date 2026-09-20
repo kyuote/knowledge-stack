@@ -8,31 +8,84 @@ function buildDocxToc(container) {
   });
 
   const entries = Array.from(container.querySelectorAll('h2, h3, h4'));
+  const h2Count = entries.filter(h => h.tagName === 'H2').length;
 
-  const nav = document.createElement('nav');
-  nav.className = 'docx-toc';
+  let tocEl;
 
-  const ul = document.createElement('ul');
-  entries.forEach(h => {
-    const text = h.textContent.trim();
-    const li = document.createElement('li');
-    li.className = h.tagName === 'H4' ? 'toc-h4' : h.tagName === 'H3' ? 'toc-h3' : 'toc-h2';
-    const a = document.createElement('a');
-    a.href = '#' + h.id;
-    a.textContent = text;
-    a.addEventListener('click', e => {
-      e.preventDefault();
-      h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (h2Count > 50) {
+    // Many Q&A questions: group by topic using text triggers
+    const TRIGGERS = [
+      ['fail-fast',            'Iterator и Iterable'],
+      ['arraylist от vector',  'List: ArrayList и LinkedList'],
+      ['queue и deque',        'Queue, Deque, Stack'],
+      ['зачем нужен hashmap',  'Map: HashMap и другие'],
+      ['отличия treeset',      'Set'],
+      ['способы перебирать',   'Практические вопросы'],
+    ];
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'docx-toc toc-sections';
+    const groups = new Map();
+    let curSec = 'Общее о JCF';
+
+    entries.filter(h => h.tagName === 'H2').forEach(h => {
+      const txt = h.textContent.toLowerCase().replace(/\s/g, ' ');
+      for (const [trigger, name] of TRIGGERS) {
+        if (txt.includes(trigger)) { curSec = name; break; }
+      }
+      if (!groups.has(curSec)) groups.set(curSec, []);
+      groups.get(curSec).push(h);
     });
-    li.appendChild(a);
-    ul.appendChild(li);
-  });
 
-  nav.appendChild(ul);
+    for (const [sec, headings] of groups) {
+      const groupDiv = document.createElement('div');
+      groupDiv.className = 'toc-group';
+      const hdr = document.createElement('div');
+      hdr.className = 'toc-group-header';
+      hdr.textContent = sec;
+      groupDiv.appendChild(hdr);
+      const grid = document.createElement('div');
+      grid.className = 'toc-grid';
+      headings.forEach(h => {
+        const p = document.createElement('p');
+        const a = document.createElement('a');
+        a.href = '#' + h.id;
+        a.textContent = h.textContent.trim();
+        a.addEventListener('click', e => {
+          e.preventDefault();
+          h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+        p.appendChild(a);
+        grid.appendChild(p);
+      });
+      groupDiv.appendChild(grid);
+      wrapper.appendChild(groupDiv);
+    }
+    tocEl = wrapper;
+  } else {
+    // Hierarchical structure: flat nav with h2/h3/h4 indent levels
+    const nav = document.createElement('nav');
+    nav.className = 'docx-toc';
+    const ul = document.createElement('ul');
+    entries.forEach(h => {
+      const text = h.textContent.trim();
+      const li = document.createElement('li');
+      li.className = h.tagName === 'H4' ? 'toc-h4' : h.tagName === 'H3' ? 'toc-h3' : 'toc-h2';
+      const a = document.createElement('a');
+      a.href = '#' + h.id;
+      a.textContent = text;
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      li.appendChild(a);
+      ul.appendChild(li);
+    });
+    nav.appendChild(ul);
+    tocEl = nav;
+  }
 
-  const h1 = container.querySelector('h1');
-  if (h1) h1.insertAdjacentElement('afterend', nav);
-  else container.prepend(nav);
+  container.prepend(tocEl);
 }
 
 function linkifyInPage(container) {
