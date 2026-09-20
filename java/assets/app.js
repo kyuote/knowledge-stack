@@ -237,7 +237,7 @@ function detectAndWrapCode(container) {
   });
 
   // Post-process <p> elements: group consecutive code lines into <pre><code>
-  const JAVA_START = /^[\s\t]*(public|private|protected|static |final |abstract |class |interface |enum |import |package |@\w|\w[\w<>,\s]*\s+\w+\s*[=({\[]|return |throw |new |if\s*\(|for\s*\(|while\s*\(|try[\s{]|catch\s*\(|switch\s*\(|\}|\{|\/\/|\w[\w.<>]*\s*\()/;
+  const JAVA_START = /^[\s\t]*(public|private|protected|static |final |abstract |class |interface |enum |import |package |@\w|\w[\w<>,\s]*\s+[a-z_]\w*\s*[=({\[]|return |throw |new |if\s*\(|for\s*\(|while\s*\(|try[\s{]|catch\s*\(|switch\s*\(|\}|\{|\/\/|\w[\w.<>]*\s*\()/;
 
   function stripStringsAndComments(text) {
     return text.replace(/"[^"\\]*(?:\\.[^"\\]*)*"/g, '""')
