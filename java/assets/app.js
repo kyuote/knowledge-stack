@@ -314,6 +314,23 @@ function wrapDocxImageRows(container) {
   }
 }
 
+function indentLeadingSpaceParas(container) {
+  const paras = Array.from(container.querySelectorAll('p')).filter(p => !p.closest('.toc-sections,.docx-toc'));
+  const indented = paras.filter(p => {
+    const fc = p.textContent.charCodeAt(0);
+    return fc === 32 || fc === 160;
+  });
+  if (indented.length < 8) return;
+  indented.forEach(p => {
+    const fc = p.textContent.charCodeAt(0);
+    // strip leading whitespace from first text node (may be inside <em>/<strong>)
+    const walker = document.createTreeWalker(p, NodeFilter.SHOW_TEXT);
+    const first = walker.nextNode();
+    if (first) first.textContent = first.textContent.replace(/^[\s ]+/, '');
+    p.classList.add(fc === 160 ? 'list-item-deep' : 'list-item');
+  });
+}
+
 function stripWholeParagraphBold(container) {
   const paras = Array.from(container.querySelectorAll('p'));
   const boldOnes = paras.filter(p =>
@@ -511,6 +528,7 @@ function detectAndWrapCode(container) {
         container.querySelectorAll('p').forEach(p => {
           if (/\t\d+\s*$/.test(p.textContent)) p.remove();
         });
+        indentLeadingSpaceParas(container);
         stripWholeParagraphBold(container);
         cleanAnchorLeaks(container);
         detectAndWrapCode(container);
