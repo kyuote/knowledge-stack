@@ -8,15 +8,15 @@ function buildDocxToc(container) {
     if (!h.id) h.id = 'jh' + (n++);
   });
 
-  // Build TOC only from H2 and H3 (H4 too granular)
-  const entries = Array.from(container.querySelectorAll('h2, h3'));
+  // Build TOC from H2, H3, H4
+  const entries = Array.from(container.querySelectorAll('h2, h3, h4'));
 
   const nav = document.createElement('nav');
   nav.className = 'docx-toc';
   const ul = document.createElement('ul');
   entries.forEach(h => {
     const li = document.createElement('li');
-    li.className = h.tagName === 'H3' ? 'toc-h3' : 'toc-h2';
+    li.className = h.tagName === 'H4' ? 'toc-h4' : h.tagName === 'H3' ? 'toc-h3' : 'toc-h2';
     const a = document.createElement('a');
     a.href = '#' + h.id;
     a.textContent = h.textContent.trim();
