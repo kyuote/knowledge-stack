@@ -323,11 +323,14 @@ function indentLeadingSpaceParas(container) {
   if (indented.length < 8) return;
   indented.forEach(p => {
     const fc = p.textContent.charCodeAt(0);
+    const preview = p.textContent.slice(1, 110);
     // strip leading whitespace from first text node (may be inside <em>/<strong>)
     const walker = document.createTreeWalker(p, NodeFilter.SHOW_TEXT);
     const first = walker.nextNode();
     if (first) first.textContent = first.textContent.replace(/^[\s ]+/, '');
-    p.classList.add(fc === 160 ? 'list-item-deep' : 'list-item');
+    // NBSP → always deep; space → deep if has "word — desc" pattern (implementation), else top-level
+    const isDeep = fc === 160 || /\s[-–—]\s/.test(preview);
+    p.classList.add(isDeep ? 'list-item-deep' : 'list-item');
   });
 }
 
