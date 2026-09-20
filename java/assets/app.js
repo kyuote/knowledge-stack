@@ -232,14 +232,16 @@ function wrapDocxImageRows(container) {
           group.push(pj); j++;
         } else break;
       }
-      const parent = p.parentNode;
-      const anchor = paras[j] && paras[j].parentNode === parent ? paras[j] : null;
-      const row = makeRow(group);
       if (firstGroup && firstHeading && group.length >= 1) {
+        const row = makeRow(group);
         firstHeading.insertAdjacentElement('afterend', row);
         firstGroup = false;
       } else {
-        parent.insertBefore(row, anchor);
+        // For all other images — just style them individually, no flex row
+        group.forEach(gp => {
+          const img = gp.querySelector('img');
+          if (img) img.style.cssText = 'max-width:100%;border-radius:8px;border:1px solid var(--border)';
+        });
       }
       i = j;
     } else {
