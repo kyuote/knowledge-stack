@@ -401,6 +401,15 @@ function detectAndWrapCode(container) {
           "p[style-name='Preformatted Text'] => pre:fresh",
           "p[style-name='Code'] => pre:fresh",
           "p[style-name='code'] => pre:fresh",
+          "p[style-name='TOC 1'] => p.word-toc:fresh",
+          "p[style-name='TOC 2'] => p.word-toc:fresh",
+          "p[style-name='TOC 3'] => p.word-toc:fresh",
+          "p[style-name='TOC 4'] => p.word-toc:fresh",
+          "p[style-name='TOC 5'] => p.word-toc:fresh",
+          "p[style-name='Содержание 1'] => p.word-toc:fresh",
+          "p[style-name='Содержание 2'] => p.word-toc:fresh",
+          "p[style-name='Содержание 3'] => p.word-toc:fresh",
+          "p[style-name='Содержание 4'] => p.word-toc:fresh",
         ]
       }))
       .then(result => {
@@ -419,6 +428,10 @@ function detectAndWrapCode(container) {
           container.appendChild(imgWrap);
         }
         container.insertAdjacentHTML('beforeend', result.value);
+        // Remove Word built-in TOC entries (text + tab + page number)
+        container.querySelectorAll('p').forEach(p => {
+          if (/\t\d+\s*$/.test(p.textContent)) p.remove();
+        });
         cleanAnchorLeaks(container);
         detectAndWrapCode(container);
         linkifyInPage(container);

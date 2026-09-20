@@ -577,6 +577,9 @@
 .docx-mammoth .toc-grid p { margin: 0; padding: 1px 0; break-inside: avoid; font-size: 13px; line-height: 1.45; }
 @media (max-width: 600px) { .docx-mammoth .toc-grid { columns: 1; } }
 
+/* Hide Word built-in TOC (page numbers) — replaced by our auto-TOC */
+.docx-mammoth .word-toc { display: none; }
+
 /* Docx auto-TOC (H2/H3 nav) */
 .docx-mammoth .docx-toc { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; margin: 16px 0 28px; }
 .docx-mammoth .docx-toc ul { list-style: none; margin: 0; padding: 0; columns: 2; column-gap: 2rem; }
