@@ -356,6 +356,12 @@
     background:var(--surface-2); border:1px solid var(--border); color:var(--text-dim);
   }
   .fc-q{ font-family:"Sora"; font-size:19px; line-height:1.4; margin:0; flex:1; }
+  .fc-breadcrumb{
+    font-size:11px; color:var(--text-dim); margin-bottom:6px;
+    display:flex; flex-wrap:wrap; gap:2px; align-items:center;
+    opacity:.75; letter-spacing:.01em;
+  }
+
   .fc-hint{
     margin-top:auto; padding-top:14px; font-size:12px; color:var(--text-dim);
     display:flex; align-items:center; gap:6px;

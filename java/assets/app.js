@@ -725,6 +725,7 @@ function detectAndWrapCode(container) {
       qEl: document.getElementById('fcQuestion'),
       chEl: document.getElementById('fcChapter'),
       posEl: document.getElementById('fcPos'),
+      breadcrumb: document.getElementById('fcBreadcrumb'),
       empty: document.getElementById('fcEmpty'),
       progressText: document.getElementById('fcProgressText'),
       progressFill: document.getElementById('fcProgressFill'),
@@ -848,6 +849,20 @@ function detectAndWrapCode(container) {
       els.deckCount.textContent = `в подборке: ${deck.length}`;
     }
 
+    function getBreadcrumb(d) {
+      if (!d.level || d.level <= 2) return [];
+      const chCards = DATA.filter(x => x.ch === d.ch && x.level);
+      const myIdx = chCards.indexOf(d);
+      if (myIdx === -1) return [];
+      const parts = [];
+      for (let targetLevel = 2; targetLevel < d.level; targetLevel++) {
+        for (let i = myIdx - 1; i >= 0; i--) {
+          if (chCards[i].level === targetLevel) { parts.push(chCards[i].q); break; }
+        }
+      }
+      return parts;
+    }
+
     function render() {
       updateProgressUI();
       if (!deck.length) { els.card.hidden = true; els.empty.hidden = false; return; }
@@ -856,6 +871,15 @@ function detectAndWrapCode(container) {
       els.qEl.textContent = d.q;
       els.chEl.textContent = d.ch;
       els.posEl.textContent = `${pos + 1} / ${deck.length}`;
+      if (els.breadcrumb) {
+        const crumbs = getBreadcrumb(d);
+        if (crumbs.length) {
+          els.breadcrumb.textContent = crumbs.join(' › ');
+          els.breadcrumb.hidden = false;
+        } else {
+          els.breadcrumb.hidden = true;
+        }
+      }
     }
 
     function openInDrawer() {
