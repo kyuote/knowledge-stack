@@ -725,7 +725,6 @@ function detectAndWrapCode(container) {
       qEl: document.getElementById('fcQuestion'),
       chEl: document.getElementById('fcChapter'),
       posEl: document.getElementById('fcPos'),
-      breadcrumb: document.getElementById('fcBreadcrumb'),
       empty: document.getElementById('fcEmpty'),
       progressText: document.getElementById('fcProgressText'),
       progressFill: document.getElementById('fcProgressFill'),
@@ -869,17 +868,9 @@ function detectAndWrapCode(container) {
       els.card.hidden = false; els.empty.hidden = true;
       const d = DATA[deck[pos]];
       els.qEl.textContent = d.q;
-      els.chEl.textContent = d.ch;
+      const crumbs = getBreadcrumb(d);
+      els.chEl.textContent = crumbs.length ? [d.ch, ...crumbs].join(' › ') : d.ch;
       els.posEl.textContent = `${pos + 1} / ${deck.length}`;
-      if (els.breadcrumb) {
-        const crumbs = getBreadcrumb(d);
-        if (crumbs.length) {
-          els.breadcrumb.textContent = crumbs.join(' › ');
-          els.breadcrumb.hidden = false;
-        } else {
-          els.breadcrumb.hidden = true;
-        }
-      }
     }
 
     function openInDrawer() {
