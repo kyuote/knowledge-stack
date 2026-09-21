@@ -8,7 +8,7 @@ function slugify(s) {
 
 function addHeadingAnchors(container) {
   const counts = {};
-  container.querySelectorAll('h1,h2,h3').forEach(h => {
+  container.querySelectorAll('h1,h2,h3,h4,h5').forEach(h => {
     const base = slugify(h.textContent);
     counts[base] = (counts[base] || 0) + 1;
     h.dataset.anchor = counts[base] > 1 ? `${base}-${counts[base]}` : base;
