@@ -650,7 +650,14 @@ function detectAndWrapCode(container) {
 
     let progress = loadJ('javanotes-fc-progress-v1', {});
     let activeChapters = loadJ('javanotes-fc-filters-v1', CHAPTERS.slice());
+    let activeSections = loadJ('javanotes-fc-sections-v1', []);
     let deck = [], pos = 0;
+
+    // chapters that have multi-level section data
+    const SECTIONED_CHAPTERS = [...new Set(DATA.filter(d => d.section).map(d => d.ch))];
+    function getSections(ch) {
+      return [...new Set(DATA.filter(d => d.ch === ch && d.section).map(d => d.section))];
+    }
 
     const CHAPTER_DOCX = {
       'Collections': 'java-file/JavaCollectionsFramework.docx',
@@ -731,23 +738,41 @@ function detectAndWrapCode(container) {
     };
     if (!els.card) return;
 
+    // Single chapter selected with sections → show section sub-filters
+    function activeSectionedChapter() {
+      if (activeChapters.length !== 1) return null;
+      const ch = activeChapters[0];
+      return SECTIONED_CHAPTERS.includes(ch) ? ch : null;
+    }
+
     function rebuildDeck() {
-      deck = DATA.filter(d => activeChapters.includes(d.ch)).map(d => d.id);
+      const secCh = activeSectionedChapter();
+      deck = DATA.filter(d => {
+        if (!activeChapters.includes(d.ch)) return false;
+        if (secCh && activeSections.length && d.section)
+          return activeSections.includes(d.section);
+        return true;
+      }).map(d => d.id);
       pos = 0; render();
     }
 
     function renderFilters() {
       els.filters.innerHTML = '';
+
+      // ── Chapter chips ──
       const allBtn = document.createElement('button');
       allBtn.type = 'button';
       allBtn.className = 'fc-chip' + (activeChapters.length === CHAPTERS.length ? ' is-active' : '');
       allBtn.innerHTML = `Все <span class="fc-chip-n">${DATA.length}</span>`;
       allBtn.addEventListener('click', () => {
         activeChapters = CHAPTERS.slice();
+        activeSections = [];
         saveJ('javanotes-fc-filters-v1', activeChapters);
+        saveJ('javanotes-fc-sections-v1', activeSections);
         renderFilters(); rebuildDeck();
       });
       els.filters.appendChild(allBtn);
+
       CHAPTERS.forEach(ch => {
         const n = DATA.filter(d => d.ch === ch).length;
         const btn = document.createElement('button');
@@ -763,11 +788,57 @@ function detectAndWrapCode(container) {
           } else {
             activeChapters = [...activeChapters, ch];
           }
+          activeSections = [];
           saveJ('javanotes-fc-filters-v1', activeChapters);
+          saveJ('javanotes-fc-sections-v1', activeSections);
           renderFilters(); rebuildDeck();
         });
         els.filters.appendChild(btn);
       });
+
+      // ── Section chips (only when single sectioned chapter selected) ──
+      const secCh = activeSectionedChapter();
+      if (secCh) {
+        const sections = getSections(secCh);
+        if (sections.length > 1) {
+          const row = document.createElement('div');
+          row.className = 'fc-section-row';
+
+          const allSecBtn = document.createElement('button');
+          allSecBtn.type = 'button';
+          allSecBtn.className = 'fc-chip fc-chip-sec' + (!activeSections.length ? ' is-active' : '');
+          const totalSec = DATA.filter(d => d.ch === secCh).length;
+          allSecBtn.innerHTML = `Все разделы <span class="fc-chip-n">${totalSec}</span>`;
+          allSecBtn.addEventListener('click', () => {
+            activeSections = [];
+            saveJ('javanotes-fc-sections-v1', activeSections);
+            renderFilters(); rebuildDeck();
+          });
+          row.appendChild(allSecBtn);
+
+          sections.forEach(sec => {
+            const n = DATA.filter(d => d.ch === secCh && d.section === sec).length;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            const isOn = activeSections.includes(sec);
+            btn.className = 'fc-chip fc-chip-sec' + (isOn ? ' is-active' : '');
+            btn.innerHTML = `${sec} <span class="fc-chip-n">${n}</span>`;
+            btn.addEventListener('click', () => {
+              if (!activeSections.length) {
+                activeSections = [sec];
+              } else if (activeSections.includes(sec)) {
+                activeSections = activeSections.filter(s => s !== sec);
+              } else {
+                activeSections = [...activeSections, sec];
+              }
+              saveJ('javanotes-fc-sections-v1', activeSections);
+              renderFilters(); rebuildDeck();
+            });
+            row.appendChild(btn);
+          });
+          els.filters.appendChild(row);
+        }
+      }
     }
 
     function updateProgressUI() {

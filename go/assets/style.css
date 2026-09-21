@@ -693,6 +693,23 @@
 }
 .lb-close:hover { opacity: 1; }
 
+/* ── Flashcard section chips ── */
+.fc-section-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+  width: 100%;
+}
+.fc-chip-sec {
+  font-size: .72rem;
+  padding: 3px 10px;
+  opacity: .85;
+}
+.fc-chip-sec.is-active { opacity: 1; }
+
 /* ── Material drawer ── */
 .mat-drawer-backdrop {
   position: fixed;
