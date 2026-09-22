@@ -779,6 +779,15 @@
 }
 @media (max-width: 600px) {
   .mat-drawer { width: 100vw; }
-  .mat-drawer-body { padding: 20px 18px 32px; }
+  .mat-drawer-body {
+    padding: 20px 18px 32px;
+    overflow-x: hidden;
+    word-break: break-word;
+  }
+  .mat-drawer-body pre, .mat-drawer-body table {
+    max-width: 100%;
+    overflow-x: auto;
+    display: block;
+  }
 }
 #chapter-root img, .docx-mammoth img { cursor: zoom-in; }

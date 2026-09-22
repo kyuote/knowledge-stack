@@ -913,7 +913,23 @@ function detectAndWrapCode(container) {
       goTo(pos + 1);
     }
 
-    els.card.addEventListener('click', openInDrawer);
+    // swipe left/right to navigate, tap to open drawer
+    let _tx = 0, _ty = 0, _touchHandled = false;
+    els.card.addEventListener('touchstart', e => {
+      _tx = e.touches[0].clientX; _ty = e.touches[0].clientY; _touchHandled = false;
+    }, { passive: true });
+    els.card.addEventListener('touchend', e => {
+      const dx = e.changedTouches[0].clientX - _tx;
+      const dy = e.changedTouches[0].clientY - _ty;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        _touchHandled = true;
+        dx < 0 ? goTo(pos + 1) : goTo(pos - 1);
+      } else if (Math.abs(dx) < 12 && Math.abs(dy) < 12) {
+        _touchHandled = true;
+        openInDrawer();
+      }
+    }, { passive: true });
+    els.card.addEventListener('click', () => { if (!_touchHandled) openInDrawer(); });
     els.good.addEventListener('click', () => mark('good'));
     els.bad.addEventListener('click', () => mark('bad'));
     els.prev.addEventListener('click', () => goTo(pos - 1));
