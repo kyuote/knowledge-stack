@@ -634,7 +634,7 @@ function detectAndWrapCode(container) {
   }
 
   function initFlashcards() {
-    fetch('assets/flashcards.json')
+    fetch('assets/flashcards.json?v=' + Date.now())
       .then(r => r.json())
       .then(DATA => runFlashcards(DATA))
       .catch(() => {});
@@ -666,10 +666,28 @@ function detectAndWrapCode(container) {
       'Java IO / NIO': 'java-file/JavaIO.docx',
       'Java 8': 'java-file/java8 (1).docx',
     };
+
+    const CHAPTER_HTML = {
+      'Сериализация': 'materials/serialization.html',
+    };
     const containerCache = {};
 
     function getChapterContainer(ch) {
       if (containerCache[ch]) return containerCache[ch];
+      const htmlPath = CHAPTER_HTML[ch];
+      if (htmlPath) {
+        containerCache[ch] = fetch(htmlPath + '?cb=' + Date.now())
+          .then(r => r.text())
+          .then(html => {
+            const container = document.createElement('div');
+            container.className = 'docx-mammoth';
+            container.innerHTML = html;
+            if (window.hljs) container.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+            return container;
+          })
+          .catch(() => null);
+        return containerCache[ch];
+      }
       const path = CHAPTER_DOCX[ch];
       if (!path) return Promise.resolve(null);
       containerCache[ch] = fetch(path + '?cb=' + Date.now())
@@ -892,7 +910,9 @@ function detectAndWrapCode(container) {
         drawerBody.innerHTML = '';
         const clone = container.cloneNode(true);
         drawerBody.appendChild(clone);
-        const target = d.anchor ? clone.querySelector(`[data-anchor="${d.anchor}"]`) : null;
+        const target = d.anchor
+          ? (clone.querySelector(`[data-anchor="${d.anchor}"]`) || clone.querySelector(`#${d.anchor}`))
+          : null;
         if (target) {
           setTimeout(() => {
             target.scrollIntoView({ behavior: 'smooth', block: 'start' });
