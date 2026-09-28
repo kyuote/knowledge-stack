@@ -6,7 +6,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/java.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
-<link rel="stylesheet" href="../go/assets/style.css?v=29">
+<link rel="stylesheet" href="../go/assets/style.css?v=30">
 
 <div class="shell">
   <aside class="sidebar">
@@ -127,6 +127,23 @@
   <img id="lb-img" src="" alt="">
 </div>
 
+<div class="audio-player" id="audioPlayer" hidden>
+  <audio id="audioEl" preload="none"></audio>
+  <div class="audio-sections" id="audioSections"></div>
+  <div class="audio-bar">
+    <button class="audio-btn" id="audioPlay" title="Играть">▶</button>
+    <span class="audio-time" id="audioTime">0:00</span>
+    <input class="audio-seek" type="range" id="audioSeek" min="0" step="1" value="0">
+    <span class="audio-time" id="audioDur">0:00</span>
+    <div class="audio-speeds">
+      <button class="spd-btn" data-rate="0.75">0.75×</button>
+      <button class="spd-btn" data-rate="1">1×</button>
+      <button class="spd-btn is-active" data-rate="1.5">1.5×</button>
+      <button class="spd-btn" data-rate="2">2×</button>
+    </div>
+  </div>
+</div>
+
 <div class="mat-drawer-backdrop" id="mat-drawer-backdrop"></div>
 <aside class="mat-drawer" id="mat-drawer" aria-label="Материал">
   <div class="mat-drawer-header">
@@ -136,4 +153,4 @@
   <div class="mat-drawer-body" id="mat-drawer-body"></div>
 </aside>
 
-<script src="assets/app.js?v=70"></script>
+<script src="assets/app.js?v=71"></script>

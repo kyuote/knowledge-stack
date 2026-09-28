@@ -1,0 +1,37 @@
+[
+  {
+    "title": "Структура JVM",
+    "start": 0.0,
+    "duration": 59.66
+  },
+  {
+    "title": "Процесс работы с кодом",
+    "start": 59.66,
+    "duration": 32.04
+  },
+  {
+    "title": "Class Loader",
+    "start": 91.7,
+    "duration": 203.95
+  },
+  {
+    "title": "Runtime Data Area",
+    "start": 295.66,
+    "duration": 444.29
+  },
+  {
+    "title": "Execution Engine",
+    "start": 739.94,
+    "duration": 1955.66
+  },
+  {
+    "title": "Типы ссылок в Java",
+    "start": 2695.61,
+    "duration": 123.91
+  },
+  {
+    "title": "Native Method Interface (JNI) / Native Method Libraries",
+    "start": 2819.52,
+    "duration": 80.98
+  }
+]
