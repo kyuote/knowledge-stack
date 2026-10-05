@@ -3,6 +3,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Karla:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/java.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
@@ -111,6 +112,8 @@
       <button class="ch mat-btn" data-chapter="m3" data-docx="java-file/JavaCollectionsFramework.docx">📄 Collections</button>
       <button class="ch mat-btn" data-chapter="m4" data-docx="java-file/JavaIO.docx">📄 Java IO / NIO</button>
       <button class="ch mat-btn" data-chapter="m5" data-docx="java-file/java8 (1).docx">📄 Java 8</button>
+      <button class="ch" data-chapter="m6" data-md="java-file/Java Multithreading.md" data-imgs-base="java-file/imgs/">📄 Multithreading</button>
+      <button class="ch" data-chapter="m7" data-md="java-file/concurrency.md" data-skip-toc="1">📄 Concurrency Q&amp;A</button>
       <button class="ch" data-chapter="m6" data-file="materials/serialization.html">📄 Сериализация</button>
     </div>
   </aside>
@@ -128,7 +131,7 @@
 </div>
 
 <div class="audio-player" id="audioPlayer" hidden>
-  <audio id="audioEl" preload="none"></audio>
+  <audio id="audioEl"></audio>
   <div class="audio-sections" id="audioSections"></div>
   <div class="audio-bar">
     <button class="audio-btn" id="audioPlay" title="Играть">▶</button>
@@ -153,4 +156,4 @@
   <div class="mat-drawer-body" id="mat-drawer-body"></div>
 </aside>
 
-<script src="assets/app.js?v=71"></script>
+<script src="assets/app.js?v=80"></script>

@@ -39,6 +39,52 @@ function removeTocDuplicateList(container) {
   }
 }
 
+function buildMdToc(container) {
+  const h1s = Array.from(container.querySelectorAll('h1'));
+  if (h1s.length < 1) return;
+
+  let n = 0;
+  container.querySelectorAll('h1,h2,h3,h4').forEach(h => { if (!h.id) h.id = 'jh' + (n++); });
+
+  const allHeadings = Array.from(container.querySelectorAll('h1,h2'));
+  const nav = document.createElement('nav');
+  nav.className = 'docx-toc';
+  const ul = document.createElement('ul');
+
+  h1s.forEach(h1 => {
+    const li = document.createElement('li');
+    li.className = 'toc-h2';
+    const a = document.createElement('a');
+    a.href = '#' + h1.id;
+    a.textContent = h1.textContent.trim();
+    a.addEventListener('click', e => { e.preventDefault(); h1.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+    li.appendChild(a);
+
+    if (!/вопрос|собеседован/i.test(h1.textContent)) {
+      const h1Idx = allHeadings.indexOf(h1);
+      const childUl = document.createElement('ul');
+      for (let i = h1Idx + 1; i < allHeadings.length; i++) {
+        if (allHeadings[i].tagName === 'H1') break;
+        const h2 = allHeadings[i];
+        const childLi = document.createElement('li');
+        childLi.className = 'toc-h3';
+        const childA = document.createElement('a');
+        childA.href = '#' + h2.id;
+        childA.textContent = h2.textContent.trim();
+        childA.addEventListener('click', e => { e.preventDefault(); h2.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+        childLi.appendChild(childA);
+        childUl.appendChild(childLi);
+      }
+      if (childUl.children.length > 0) li.appendChild(childUl);
+    }
+
+    ul.appendChild(li);
+  });
+
+  nav.appendChild(ul);
+  container.prepend(nav);
+}
+
 function buildDocxToc(container) {
   const h2s = container.querySelectorAll('h2, h3');
   if (h2s.length < 2) return;
@@ -633,6 +679,59 @@ function detectAndWrapCode(container) {
       });
   }
 
+  function fixInternalLinks(container) {
+    container.querySelectorAll('a[href$=".md"]').forEach(a => a.replaceWith(...a.childNodes));
+    const hashLinks = Array.from(container.querySelectorAll('a[href^="#"]'));
+    if (!hashLinks.length) return;
+    container.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(h => {
+      if (!h.id) {
+        h.id = h.textContent.trim().toLowerCase()
+          .replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-');
+      }
+    });
+    hashLinks.forEach(a => {
+      const hash = decodeURIComponent(a.getAttribute('href').slice(1));
+      let target = container.querySelector('#' + CSS.escape(hash));
+      if (!target) target = container.querySelector('#' + CSS.escape(hash.toLowerCase()));
+      if (target) {
+        a.setAttribute('href', '#' + target.id);
+        a.addEventListener('click', e => { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+      }
+    });
+  }
+
+  function loadMarkdown(btn) {
+    setActive(btn);
+    root.innerHTML = '<p style="color:var(--text-dim);padding:40px">Загрузка…</p>';
+    window.scrollTo(0, 0);
+    const imgsBase = btn.dataset.imgsBase || '';
+    fetch(btn.dataset.md + '?v=' + Date.now())
+      .then(r => r.text())
+      .then(md => {
+        // convert Obsidian wikilinks ![[img]] → standard markdown with encoded path
+        md = md.replace(/!\[\[([^\]]+)\]\]/g, (_, name) => `![](${imgsBase}${encodeURIComponent(name)})`);
+        const container = document.createElement('div');
+        container.className = 'docx-mammoth';
+        container.innerHTML = marked.parse(md);
+        // syntax highlight code blocks
+        if (window.hljs) container.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+        // zoom on images
+        container.querySelectorAll('img').forEach(img => {
+          img.style.maxWidth = '100%';
+          img.style.cursor = 'zoom-in';
+        });
+        addHeadingAnchors(container);
+        if (!btn.dataset.skipToc) buildMdToc(container);
+        fixInternalLinks(container);
+        root.innerHTML = '';
+        root.appendChild(container);
+        window.scrollTo(0, 0);
+      })
+      .catch(e => {
+        root.innerHTML = `<p style="color:var(--text-dim);padding:40px">Ошибка загрузки: ${e.message}</p>`;
+      });
+  }
+
   function initFlashcards() {
     fetch('assets/flashcards.json?v=' + Date.now())
       .then(r => r.json())
@@ -961,6 +1060,7 @@ function detectAndWrapCode(container) {
 
   chBtns.forEach(btn => btn.addEventListener('click', () => loadChapter(btn)));
   matBtns.forEach(btn => btn.addEventListener('click', () => loadDocx(btn)));
+  document.querySelectorAll('.ch[data-md]').forEach(btn => btn.addEventListener('click', () => loadMarkdown(btn)));
 
   // subnav anchor clicks
   document.querySelectorAll('.subnav a').forEach(a => {
@@ -1071,8 +1171,16 @@ function detectAndWrapCode(container) {
       btn.className = 'audio-sec-btn';
       btn.textContent = tc.title;
       btn.addEventListener('click', () => {
-        audioEl.currentTime = tc.start;
-        if (audioEl.paused) audioEl.play();
+        if (audioEl.readyState >= 1) {
+          audioEl.currentTime = tc.start;
+          audioEl.play();
+        } else {
+          audioEl.addEventListener('loadedmetadata', () => {
+            audioEl.currentTime = tc.start;
+            audioEl.play();
+          }, { once: true });
+          audioEl.load();
+        }
       });
       secWrap.appendChild(btn);
     });
@@ -1085,6 +1193,7 @@ function detectAndWrapCode(container) {
       .then(r => r.json())
       .then(data => {
         timecodes = data;
+        audioEl.preload = 'metadata';
         audioEl.src = entry.mp3;
         audioEl.load();
         seekEl.value = 0;
