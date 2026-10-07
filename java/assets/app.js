@@ -710,6 +710,11 @@ function detectAndWrapCode(container) {
       .then(md => {
         // convert Obsidian wikilinks ![[img]] → standard markdown with encoded path
         md = md.replace(/!\[\[([^\]]+)\]\]/g, (_, name) => `![](${imgsBase}${encodeURIComponent(name)})`);
+        // convert Obsidian internal links [[#Heading|Display]] and [[#Heading]] → [Display](#slug)
+        // slug logic must match fixInternalLinks ID assignment
+        const wikiSlug = s => s.trim().toLowerCase().replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-');
+        md = md.replace(/\[\[#([^\]|]+)\|([^\]]+)\]\]/g, (_, anchor, display) => `[${display}](#${wikiSlug(anchor)})`);
+        md = md.replace(/\[\[#([^\]]+)\]\]/g, (_, anchor) => `[${anchor}](#${wikiSlug(anchor)})`);
         const container = document.createElement('div');
         container.className = 'docx-mammoth';
         container.innerHTML = marked.parse(md);
@@ -769,6 +774,9 @@ function detectAndWrapCode(container) {
     const CHAPTER_HTML = {
       'Сериализация': 'materials/serialization.html',
     };
+    const CHAPTER_MD = {
+      'Concurrency': 'java-file/Java Concurrency.md',
+    };
     const containerCache = {};
 
     function getChapterContainer(ch) {
@@ -782,6 +790,26 @@ function detectAndWrapCode(container) {
             container.className = 'docx-mammoth';
             container.innerHTML = html;
             if (window.hljs) container.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+            return container;
+          })
+          .catch(() => null);
+        return containerCache[ch];
+      }
+      const mdPath = CHAPTER_MD[ch];
+      if (mdPath) {
+        containerCache[ch] = fetch(mdPath + '?cb=' + Date.now())
+          .then(r => r.text())
+          .then(md => {
+            md = md.replace(/!\[\[([^\]]+)\]\]/g, (_, name) => `![](java-file/imgs/${encodeURIComponent(name)})`);
+            const wikiSlug = s => s.trim().toLowerCase().replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-');
+            md = md.replace(/\[\[#([^\]|]+)\|([^\]]+)\]\]/g, (_, anchor, display) => `[${display}](#${wikiSlug(anchor)})`);
+            md = md.replace(/\[\[#([^\]]+)\]\]/g, (_, anchor) => `[${anchor}](#${wikiSlug(anchor)})`);
+            const container = document.createElement('div');
+            container.className = 'docx-mammoth';
+            container.innerHTML = marked.parse(md);
+            if (window.hljs) container.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+            addHeadingAnchors(container);
+            fixInternalLinks(container);
             return container;
           })
           .catch(() => null);
