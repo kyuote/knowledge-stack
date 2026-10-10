@@ -1,0 +1,12 @@
+#!/bin/sh
+# Обёртка над Kafka CLI внутри контейнера kafka.
+# Использование: ./kafka <команда> [флаги]
+#   ./kafka topics --list
+#   ./kafka topics --create --topic test --partitions 3
+#   ./kafka console-producer --topic test
+#   ./kafka console-consumer --topic test --from-beginning
+#   ./kafka consumer-groups --list
+# --bootstrap-server localhost:9092 подставляется автоматически.
+
+cmd="$1"; shift
+exec docker exec -it kafka /opt/kafka/bin/kafka-"$cmd".sh --bootstrap-server localhost:9092 "$@"

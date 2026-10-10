@@ -776,6 +776,7 @@ function detectAndWrapCode(container) {
     };
     const CHAPTER_MD = {
       'Concurrency': 'java-file/Java Concurrency.md',
+      'Kafka': 'java-file/Kafka.md',
     };
     const containerCache = {};
 

@@ -3138,5 +3138,617 @@
     "src": "Java Concurrency",
     "section": "Паттерны и принципы",
     "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Какую проблему интеграций решает Kafka?",
+    "a": "Прямые связи «каждый с каждым» растут как источники × цели (4 × 6 = 24), и у каждой свой протокол, формат, схема и нагрузка на источник. Между ними ставят посредника: источники пишут в него, потребители читают и друг о друге не знают. Это decoupling.",
+    "anchor": "проблема-интеграций-и-decoupling",
+    "src": "Kafka",
+    "section": "Kafka — что это и зачем",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Что такое Apache Kafka и где её применяют?",
+    "a": "Распределённая платформа потоковой передачи данных: отказоустойчивая, горизонтально масштабируемая, задержка < 10 мс. Применение: messaging и pub/sub между микросервисами, activity tracking, метрики и логи, потоковая обработка, decoupling, интеграция с Big Data. Kafka только транспорт, логику считают приложения.",
+    "anchor": "apache-kafka-определение-и-применение",
+    "src": "Kafka",
+    "section": "Kafka — что это и зачем",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Какова иерархия данных в Kafka?",
+    "a": "Cluster → Topic → Partition → Message (offset). Кластер состоит из брокеров, которые хранят партиции.",
+    "anchor": "модель-данных-топики-партиции-offsets",
+    "src": "Kafka",
+    "section": "Модель данных — топики, партиции, offsets",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Что такое топик и чем он отличается от таблицы БД?",
+    "a": "Именованная логическая категория сообщений одного вида. Реален как объект метаданных. Формат любой, для Kafka это байты; нет схемы, связей и SELECT: пишут producers, читают consumers.",
+    "anchor": "topic",
+    "src": "Kafka",
+    "section": "Модель данных — топики, партиции, offsets",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Что такое партиция и offset?",
+    "a": "Партиция — упорядоченный неизменяемый append-only лог на диске брокера. Offset — номер сообщения внутри партиции, с 0. Порядок гарантирован только внутри партиции, данные удаляются по retention.ms (7 дней), а не после чтения.",
+    "anchor": "partition-и-offset",
+    "src": "Kafka",
+    "section": "Модель данных — топики, партиции, offsets",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Как выбирается партиция для сообщения и зачем партиции нужны?",
+    "a": "Без ключа — любая партиция, с ключом — hash(key) % число_партиций: один ключ → одна партиция → сохранённый порядок. Партиции дают параллелизм: распределены по брокерам и читаются одновременно.",
+    "anchor": "partition-и-offset",
+    "src": "Kafka",
+    "section": "Модель данных — топики, партиции, offsets",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Как устроен пример с топиком trucks_gps?",
+    "a": "Грузовики раз в 20 с шлют {truck_id, широта, долгота} в один топик с 10 партициями. Его независимо читают Location Dashboard и Notification Service.",
+    "anchor": "пример-топик-trucksgps",
+    "src": "Kafka",
+    "section": "Модель данных — топики, партиции, offsets",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Из чего состоит сообщение Kafka?",
+    "a": "Key (может быть null), Value (может быть null), compression type (none/gzip/snappy/lz4/zstd), headers, partition + offset (offset назначает брокер), timestamp.",
+    "anchor": "анатомия-сообщения",
+    "src": "Kafka",
+    "section": "Модель данных — топики, партиции, offsets",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Как работают сериализация и десериализация в Kafka?",
+    "a": "Kafka принимает и отдаёт только байты. Ключ и значение (де)сериализуются отдельно. Десериализатор consumer должен соответствовать сериализатору producer, иначе мусор или SerializationException. Формат за время жизни топика не меняют — для нового формата новый топик.",
+    "anchor": "сериализация-и-десериализация",
+    "src": "Kafka",
+    "section": "Модель данных — топики, партиции, offsets",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Что такое брокер, кластер, bootstrap server и metadata?",
+    "a": "Брокер — сервер Kafka, хранит партиции и обслуживает клиентов; идентифицируется целым ID. Кластер — группа брокеров. Bootstrap server — любой брокер, к которому клиент подключается первым. Metadata — брокеры, топики, партиции и их размещение.",
+    "anchor": "брокеры-и-кластер",
+    "src": "Kafka",
+    "section": "Кластер — брокеры, репликация, координация",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Как партиции распределяются по брокерам?",
+    "a": "Каждый брокер хранит только часть партиций. На брокере может не быть данных какого-то топика — это нормально: данные и нагрузка делятся между серверами.",
+    "anchor": "распределение-партиций",
+    "src": "Kafka",
+    "section": "Кластер — брокеры, репликация, координация",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Как клиент находит нужные брокеры (broker discovery)?",
+    "a": "Каждый брокер знает метаданные всего кластера. Клиент подключается к bootstrap-брокеру, шлёт Metadata Request, получает список брокеров и сам идёт к нужным. В bootstrap.servers достаточно пары адресов.",
+    "anchor": "broker-discovery",
+    "src": "Kafka",
+    "section": "Кластер — брокеры, репликация, координация",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Что такое replication factor, реплика, leader и ISR?",
+    "a": "RF — сколько копий партиции на разных брокерах. Реплика — одна копия. Leader — реплика, через которую идёт запись, ровно одна. ISR — реплики, успевающие копировать с лидера.",
+    "anchor": "репликация-replication-factor-leader-isr",
+    "src": "Kafka",
+    "section": "Кластер — брокеры, репликация, координация",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Какой replication factor выбирать и какие у него ограничения?",
+    "a": "RF > 1, обычно 2–3, в продакшене RF = 3; RF ≤ числа брокеров. При падении брокера данные доступны на других репликах.",
+    "anchor": "replication-factor",
+    "src": "Kafka",
+    "section": "Кластер — брокеры, репликация, координация",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Что происходит при падении лидера партиции и когда реплика выпадает из ISR?",
+    "a": "Producer пишет только в лидера, consumer по умолчанию читает из лидера. Упал лидер → controller выбирает нового из ISR, клиенты узнают из метаданных. Реплика выпадает из ISR, если отстаёт дольше replica.lag.time.max.ms (30 с).",
+    "anchor": "leader-и-isr",
+    "src": "Kafka",
+    "section": "Кластер — брокеры, репликация, координация",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Что такое replica fetching (чтение из ближайшей реплики)?",
+    "a": "С Kafka 2.4 consumer может читать из ближайшей реплики: broker.rack + RackAwareReplicaSelector на брокере, client.rack на консьюмере. Ниже задержка и межзонный трафик; запись по-прежнему в лидера.",
+    "anchor": "replica-fetching-kafka-24",
+    "src": "Kafka",
+    "section": "Кластер — брокеры, репликация, координация",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Чем отличаются acks=0, acks=1 и acks=all?",
+    "a": "0 — не ждёт подтверждения, возможна потеря. 1 — ждёт лидера, потеря если лидер упал до репликации. all (-1) — лидер + все ISR, без потери. С Kafka 3.0 по умолчанию acks=all и enable.idempotence=true.",
+    "anchor": "acks",
+    "src": "Kafka",
+    "section": "Кластер — брокеры, репликация, координация",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Зачем нужен min.insync.replicas вместе с acks=all?",
+    "a": "acks=all ждёт текущие ISR: если ISR сжался до лидера, это фактически acks=1. min.insync.replicas — минимум ISR для записи, меньше → NotEnoughReplicasException. Надёжная связка: RF=3, acks=all, min.insync.replicas=2.",
+    "anchor": "acksall-mininsyncreplicas",
+    "src": "Kafka",
+    "section": "Кластер — брокеры, репликация, координация",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Сколько брокеров можно потерять при RF = N?",
+    "a": "До N − 1 с сохранением данных. Чтобы ещё и писать с acks=all, живых ISR должно быть ≥ min.insync.replicas.",
+    "anchor": "durability-топика",
+    "src": "Kafka",
+    "section": "Кластер — брокеры, репликация, координация",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Что такое Zookeeper, KRaft и quorum controller?",
+    "a": "Zookeeper — внешняя система метаданных и координации для старых версий Kafka. KRaft — режим без Zookeeper (KIP-500): метаданные согласуют сами контроллеры Kafka по Raft. Quorum controller — группа контроллеров, quorum leader принимает изменения.",
+    "anchor": "zookeeper-и-kraft-кто-управляет-кластером",
+    "src": "Kafka",
+    "section": "Кластер — брокеры, репликация, координация",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Что делал Zookeeper и почему в ансамбле нечётное число серверов?",
+    "a": "Хранил список брокеров, помогал с leader election, уведомлял об изменениях. Ансамбль: leader + followers, нечётное число из-за кворума (3 переживают потерю 1, 5 — 2). Offsets с Kafka 0.10 в Zookeeper не хранятся.",
+    "anchor": "что-делал-zookeeper",
+    "src": "Kafka",
+    "section": "Кластер — брокеры, репликация, координация",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "В каких версиях Kafka нужен Zookeeper?",
+    "a": "2.x — обязателен; 3.x — опционален, KRaft production-ready с 3.3; 4.x (март 2025) — удалён, только KRaft.",
+    "anchor": "версии",
+    "src": "Kafka",
+    "section": "Кластер — брокеры, репликация, координация",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Почему клиентам Kafka не нужен Zookeeper?",
+    "a": "Клиенты и CLI ходят в брокеры: offsets в Kafka с 0.10, --bootstrap-server с 2.2, --zookeeper удалён в 3.0. Порты Zookeeper открыты только брокерам; в конфиг клиентов его не указывают.",
+    "anchor": "zookeeper-и-клиенты",
+    "src": "Kafka",
+    "section": "Кластер — брокеры, репликация, координация",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Зачем Kafka перешла на KRaft?",
+    "a": "Zookeeper плохо масштабируется при > 100 000 партиций. KRaft: миллионы партиций, проще мониторинг и администрирование, единая модель безопасности, один процесс, быстрее shutdown и recovery.",
+    "anchor": "зачем-kraft",
+    "src": "Kafka",
+    "section": "Кластер — брокеры, репликация, координация",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Как устроена архитектура KRaft?",
+    "a": "Контроллеры — сами узлы Kafka, один quorum leader. Метаданные во внутреннем топике __cluster_metadata, каждый контроллер держит их у себя. Роли задаёт process.roles (broker, controller или оба).",
+    "anchor": "архитектура-kraft",
+    "src": "Kafka",
+    "section": "Кластер — брокеры, репликация, координация",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Насколько KRaft быстрее Zookeeper на 2 млн партиций?",
+    "a": "Controlled shutdown ≈ 135 с → ≈ 30 с, recovery после аварии ≈ 500 с → ≈ 35 с.",
+    "anchor": "производительность-2-млн-партиций",
+    "src": "Kafka",
+    "section": "Кластер — брокеры, репликация, координация",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Что нужно для локальной разработки с Kafka?",
+    "a": "Запустить Kafka + поставить CLI tools. Хватает одного брокера на localhost (RF только 1). Mac/Linux — бинарники, brew или Conduktor; Windows — через WSL2.",
+    "anchor": "установка-kafka",
+    "src": "Kafka",
+    "section": "Окружение — установка, CLI, Java-проект",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Как быстрее всего запустить Kafka 4.x?",
+    "a": "docker run -d --name kafka -p 9092:9092 apache/kafka:latest (сразу KRaft). Или бинарники: kafka-storage.sh random-uuid → format --standalone → kafka-server-start.sh.",
+    "anchor": "быстрый-старт-сейчас",
+    "src": "Kafka",
+    "section": "Окружение — установка, CLI, Java-проект",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Что такое Kafka UI (kafbat)?",
+    "a": "Бесплатный open-source веб-интерфейс: топики, сообщения, consumer groups, lag. Альтернатива Conduktor, открывается на localhost:8080.",
+    "anchor": "kafka-ui",
+    "src": "Kafka",
+    "section": "Окружение — установка, CLI, Java-проект",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Как вызывать Kafka CLI и что делать при command not found?",
+    "a": "Скрипты kafka-*.sh (на Windows .bat, в brew/apt без .sh); адрес брокера всегда через --bootstrap-server. command not found → не настроен PATH, вызывать по полному пути.",
+    "anchor": "kafka-cli-как-вызывать",
+    "src": "Kafka",
+    "section": "Окружение — установка, CLI, Java-проект",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Как вызывать Kafka CLI внутри Docker-контейнера?",
+    "a": "Скрипты в /opt/kafka/bin: docker exec -it kafka /opt/kafka/bin/kafka-topics.sh … Удобно сделать скрипт-обёртку ./kafka, которая подставляет --bootstrap-server.",
+    "anchor": "cli-в-docker",
+    "src": "Kafka",
+    "section": "Окружение — установка, CLI, Java-проект",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Какие основные команды kafka-topics.sh и их ограничения?",
+    "a": "--list, --create (--partitions, --replication-factor), --describe, --alter --partitions, --delete. RF не больше числа брокеров. Партиции можно только увеличить, и тогда ключи переезжают в другие партиции.",
+    "anchor": "kafkatopicssh-управление-топиками",
+    "src": "Kafka",
+    "section": "Окружение — установка, CLI, Java-проект",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Почему официальный клиент Kafka только на Java?",
+    "a": "Kafka написана на JVM-языках, Java-клиент живёт в одном репозитории с брокером, фичи появляются в нём первыми; Streams и Connect только JVM. Другие языки — сообщество, часто обёртки над librdkafka. В Java-проектах обычно Spring for Apache Kafka.",
+    "anchor": "sdk",
+    "src": "Kafka",
+    "section": "Окружение — установка, CLI, Java-проект",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Какие зависимости нужны Java-проекту с Kafka?",
+    "a": "kafka-clients (версия как у брокера) + реализация SLF4J, например slf4j-simple, иначе клиент не пишет логи. Минимум для клиентов 4.x — Java 11.",
+    "anchor": "настройка-проекта",
+    "src": "Kafka",
+    "section": "Окружение — установка, CLI, Java-проект",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Что такое producer, ключ сообщения и partitioner?",
+    "a": "Producer пишет сообщения в партиции топика, сразу знает нужную партицию и брокер, при отказе брокера восстанавливается сам. Ключ — необязательное поле для выбора партиции. Partitioner выбирает партицию, key hashing сопоставляет ключ с партицией.",
+    "anchor": "как-producer-пишет-данные-партиции-и-ключи",
+    "src": "Kafka",
+    "section": "Producer",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Куда попадают сообщения с ключом и без ключа?",
+    "a": "key = null — распределяются по партициям (sticky). key != null — всегда в одну партицию по хешу. Ключ задают, когда нужен порядок по полю (например truck_id).",
+    "anchor": "ключи",
+    "src": "Kafka",
+    "section": "Producer",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Чем sticky partitioner отличается от round robin?",
+    "a": "Round robin кладёт сообщения по одному по кругу. Sticky (с 2.4, по умолчанию для key = null) набивает батч в одну партицию и потом переключается — меньше запросов. С 3.3 (KIP-794) переключение после ~batch.size байт.",
+    "anchor": "round-robin-vs-sticky-partitioner",
+    "src": "Kafka",
+    "section": "Producer",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Как партиция вычисляется по ключу?",
+    "a": "Utils.toPositive(Utils.murmur2(keyBytes)) % numPartitions. Изменил число партиций → тот же ключ может попасть в другую партицию, порядок по ключу нарушается.",
+    "anchor": "хеширование-ключа",
+    "src": "Kafka",
+    "section": "Producer",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Как отправлять сообщения через kafka-console-producer.sh, в том числе с ключами?",
+    "a": "Каждая строка — сообщение. Ключи: --property parse.key=true --property key.separator=:. Настройки: --producer-property acks=all. Для демо распределения — RoundRobinPartitioner.",
+    "anchor": "kafkaconsoleproducersh",
+    "src": "Kafka",
+    "section": "Producer",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Что будет при записи в несуществующий топик?",
+    "a": "Он создастся автоматически с num.partitions брокера (по умолчанию 1), если auto.create.topics.enable=true (по умолчанию). В продакшене выключают, топики создают заранее.",
+    "anchor": "kafkaconsoleproducersh",
+    "src": "Kafka",
+    "section": "Producer",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Каков жизненный цикл KafkaProducer?",
+    "a": "Config (bootstrap.servers + сериализаторы) → new KafkaProducer → send(record) асинхронно кладёт в буфер → flush() синхронно ждёт отправки → close() = flush + закрытие. Без flush/close программа может завершиться до отправки.",
+    "anchor": "java-producer-базовый",
+    "src": "Kafka",
+    "section": "Producer",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Как получить результат отправки через Callback?",
+    "a": "Второй аргумент send(): onCompletion(RecordMetadata, Exception) — topic, partition, offset, timestamp или ошибка. Выполняется в kafka-producer-network-thread, тяжёлую работу в нём не делают. send().get() — синхронная отправка.",
+    "anchor": "callback-и-sticky-partitioner",
+    "src": "Kafka",
+    "section": "Producer",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Почему в демо с callback пачки сообщений уходят в одну партицию?",
+    "a": "Sticky partitioner: пачка целиком уходит в одну партицию, переключение не после каждой пачки → на коротком отрезке распределение неравномерное. Дефолты 4.x: acks=-1, enable.idempotence=true, linger.ms=5.",
+    "anchor": "результат",
+    "src": "Kafka",
+    "section": "Producer",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Как ведут себя сообщения с одинаковыми ключами в Java producer?",
+    "a": "new ProducerRecord<>(topic, key, value): один ключ → всегда одна партиция, меняется только offset. Распределение на малом числе ключей неравномерное; murmur2 детерминирован, результат одинаков на любой машине.",
+    "anchor": "producer-с-ключами",
+    "src": "Kafka",
+    "section": "Producer",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Как consumer читает данные из Kafka?",
+    "a": "Pull-модель: сам запрашивает данные через poll() в своём темпе. Читает каждую партицию у лидера, при падении брокера перезапрашивает метаданные. Порядок от меньшего offset к большему только внутри партиции.",
+    "anchor": "как-consumer-читает-данные",
+    "src": "Kafka",
+    "section": "Consumer",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Как читать через kafka-console-consumer.sh?",
+    "a": "По умолчанию только новые сообщения; --from-beginning — с начала. print.key / print.partition / print.timestamp показывают метаданные. Сообщения разных партиций идут вперемешку.",
+    "anchor": "kafkaconsoleconsumersh",
+    "src": "Kafka",
+    "section": "Consumer",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Что обязательно для KafkaConsumer и как работает poll()?",
+    "a": "Адрес брокера, group.id, десериализаторы. subscribe(topics), затем poll(timeout): возвращает сразу, если данные есть, иначе ждёт timeout и отдаёт пустой результат. ConsumerRecord: key, value, partition, offset, timestamp.",
+    "anchor": "java-consumer-базовый",
+    "src": "Kafka",
+    "section": "Consumer",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Что делает auto.offset.reset?",
+    "a": "Откуда читать, если у группы нет закоммиченных offsets: earliest — с начала, latest — только новые (по умолчанию), none — ошибка. Повторный запуск группы продолжает с закоммиченного offset.",
+    "anchor": "java-consumer-базовый",
+    "src": "Kafka",
+    "section": "Consumer",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Что даёт graceful shutdown consumer и что будет без него?",
+    "a": "Дочитать poll, закоммитить offsets, выйти из группы. Без него последние offsets могут не закоммититься (повторные сообщения), а группа ждёт session.timeout.ms (45 с), и партиции никто не читает.",
+    "anchor": "graceful-shutdown",
+    "src": "Kafka",
+    "section": "Consumer",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Как реализовать graceful shutdown через wakeup()?",
+    "a": "Shutdown hook вызывает consumer.wakeup() (единственный потокобезопасный метод) → poll() в main бросает WakeupException → выход из цикла → close() коммитит и шлёт LeaveGroup. Hook ждёт mainThread.join().",
+    "anchor": "graceful-shutdown",
+    "src": "Kafka",
+    "section": "Consumer",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Что такое consumer group, group coordinator и rebalance?",
+    "a": "Группа — консьюмеры с одинаковым group.id, читающие топик как одно приложение. Coordinator — брокер, распределяющий партиции. Rebalance — перераспределение при входе/выходе консьюмера или изменении числа партиций.",
+    "anchor": "consumer-group-как-группа-делит-топик",
+    "src": "Kafka",
+    "section": "Consumer Groups и rebalance",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Как партиции распределяются внутри consumer group?",
+    "a": "Каждую партицию читает ровно один консьюмер группы, один консьюмер может читать несколько. Консьюмеров больше, чем партиций → лишние простаивают. Максимальный параллелизм = число партиций.",
+    "anchor": "правила-распределения",
+    "src": "Kafka",
+    "section": "Consumer Groups и rebalance",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Что происходит, когда топик читают несколько групп?",
+    "a": "Каждая группа получает все сообщения топика и ведёт свои offsets. Например, orders читают billing-service и notification-service со своими group.id.",
+    "anchor": "несколько-групп-на-одном-топике",
+    "src": "Kafka",
+    "section": "Consumer Groups и rebalance",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Как работают группы в kafka-console-consumer.sh?",
+    "a": "--group: консьюмеры одной группы делят партиции. --from-beginning работает, только пока у группы нет закоммиченных offsets. Без --group каждый запуск — новая случайная группа console-consumer-XXXXX.",
+    "anchor": "cli-group",
+    "src": "Kafka",
+    "section": "Consumer Groups и rebalance",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Что показывает kafka-consumer-groups.sh --describe?",
+    "a": "По партициям: CURRENT-OFFSET (закоммиченный), LOG-END-OFFSET (последний), LAG = разница (сколько не прочитано), CONSUMER-ID / HOST. Есть --members и --state.",
+    "anchor": "cli-kafkaconsumergroupssh",
+    "src": "Kafka",
+    "section": "Consumer Groups и rebalance",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Как RangeAssignor делит 3 партиции между 1–4 консьюмерами?",
+    "a": "1: все три; 2: P0, P1 и P2; 3: по одной; 4: четвёртый простаивает. Каждое сообщение читает только владелец партиции. При eager rebalance все отдают партиции (Revoke) и получают новые.",
+    "anchor": "java-несколько-экземпляров",
+    "src": "Kafka",
+    "section": "Consumer Groups и rebalance",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Когда происходит rebalance?",
+    "a": "Консьюмер входит или выходит из группы, администратор добавляет партиции.",
+    "anchor": "rebalance-eager-cooperative-static-membership",
+    "src": "Kafka",
+    "section": "Consumer Groups и rebalance",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Чем eager rebalance отличается от cooperative?",
+    "a": "Eager: все отдают все партиции, группа стоит (stop the world), одна итерация. Cooperative (incremental): переназначается только часть партиций, остальные читают дальше, может быть несколько итераций.",
+    "anchor": "eager-vs-cooperative",
+    "src": "Kafka",
+    "section": "Consumer Groups и rebalance",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Какие есть partition assignors и какой используется по умолчанию?",
+    "a": "Range (по топику, возможен перекос), RoundRobin, Sticky — eager; CooperativeSticky — cooperative. По умолчанию [Range, CooperativeSticky] → используется Range; переход одним rolling restart, убрав Range.",
+    "anchor": "стратегии-назначения",
+    "src": "Kafka",
+    "section": "Consumer Groups и rebalance",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Что такое static group membership?",
+    "a": "group.instance.id: вернувшийся в пределах session.timeout.ms консьюмер получает свои партиции без rebalance; при close() не шлёт LeaveGroup. Дубль id → FencedInstanceIdException. Полезно при локальном состоянии/кэше.",
+    "anchor": "static-group-membership",
+    "src": "Kafka",
+    "section": "Consumer Groups и rebalance",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Что меняет новый протокол групп KIP-848?",
+    "a": "group.protocol=consumer, production-ready с Kafka 4.0. Распределение считает брокер, rebalance всегда инкрементальный, partition.assignment.strategy заменён на серверный group.remote.assignor.",
+    "anchor": "новый-протокол-групп-kip848",
+    "src": "Kafka",
+    "section": "Consumer Groups и rebalance",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Что такое committed offset и где он хранится?",
+    "a": "Позиция, до которой группа обработала партицию, для каждой пары «группа + партиция» в топике __consumer_offsets. Коммитится offset следующего сообщения (последний + 1). После падения группа продолжает с него.",
+    "anchor": "consumer-offsets-где-группа-остановилась",
+    "src": "Kafka",
+    "section": "Offsets и семантики доставки",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Как работает авто-коммит offsets?",
+    "a": "enable.auto.commit=true, интервал auto.commit.interval.ms=5000. Коммит внутри poll(), если прошёл интервал; коммитятся offsets записей предыдущего poll(). Также при close() и перед rebalance.",
+    "anchor": "как-работает-автокоммит",
+    "src": "Kafka",
+    "section": "Offsets и семантики доставки",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Какое условие нужно для at least once при авто-коммите?",
+    "a": "Все записи из poll() обработаны до следующего poll(). Иначе (асинхронная обработка) закоммитится необработанное. Тогда enable.auto.commit=false и commitSync() после обработки.",
+    "anchor": "условие-at-least-once",
+    "src": "Kafka",
+    "section": "Offsets и семантики доставки",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Как сбросить offsets группы?",
+    "a": "kafka-consumer-groups.sh --reset-offsets --to-earliest / --to-latest / --to-offset / --shift-by N / --to-datetime / --by-duration + --topic или --all-topics. Без --execute — dry run. Сдвиг к каждой партиции; группа должна быть неактивна.",
+    "anchor": "сброс-offsets-resetoffsets",
+    "src": "Kafka",
+    "section": "Offsets и семантики доставки",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Чем отличаются at most once, at least once и exactly once?",
+    "a": "At most once — коммит до обработки, при сбое потеря. At least once — коммит после, дубли → нужна идемпотентная обработка (обычный выбор). Exactly once — коммит атомарно с результатом: транзакции или идемпотентный приёмник.",
+    "anchor": "delivery-semantics-at-most-at-least-exactly-once",
+    "src": "Kafka",
+    "section": "Offsets и семантики доставки",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Как получить exactly once в сценарии Kafka → Kafka?",
+    "a": "Transactional API: transactional.id, beginTransaction → send в топик B → sendOffsetsToTransaction → commitTransaction; при ошибке abort. Consumer: enable.auto.commit=false, isolation.level=read_committed. В Kafka Streams — processing.guarantee=exactly_once_v2.",
+    "anchor": "exactly-once-kafka-kafka-transactional-api",
+    "src": "Kafka",
+    "section": "Offsets и семантики доставки",
+    "level": 3
+  },
+  {
+    "ch": "Kafka",
+    "q": "Как получить exactly once при записи во внешнюю систему?",
+    "a": "At least once + идемпотентная обработка: запись по уникальному ID (бизнес-ID или topic+partition+offset) с ON CONFLICT DO NOTHING / upsert. Или offset хранится в той же БД и транзакции, при старте consumer.seek().",
+    "anchor": "exactly-once-kafka-внешняя-система-идемпотентный-consumer",
+    "src": "Kafka",
+    "section": "Offsets и семантики доставки",
+    "level": 3
   }
 ]
