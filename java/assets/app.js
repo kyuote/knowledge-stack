@@ -752,9 +752,14 @@ function detectAndWrapCode(container) {
     function loadJ(key, fb) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fb; } catch(e) { return fb; } }
     function saveJ(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {} }
 
-    let progress = loadJ('javanotes-fc-progress-v1', {});
-    let activeChapters = loadJ('javanotes-fc-filters-v1', CHAPTERS.slice());
-    let activeSections = loadJ('javanotes-fc-sections-v1', []);
+    // per-site localStorage namespace: card ids are indexes, so each flashcards.json needs its own keys
+    const NS = document.documentElement.dataset.fcNs || 'javanotes';
+    const K_PROGRESS = NS + '-fc-progress-v1';
+    const K_FILTERS  = NS + '-fc-filters-v1';
+    const K_SECTIONS = NS + '-fc-sections-v1';
+    let progress = loadJ(K_PROGRESS, {});
+    let activeChapters = loadJ(K_FILTERS, CHAPTERS.slice());
+    let activeSections = loadJ(K_SECTIONS, []);
     let deck = [], pos = 0;
 
     // chapters that have multi-level section data
@@ -776,7 +781,6 @@ function detectAndWrapCode(container) {
     };
     const CHAPTER_MD = {
       'Concurrency': 'java-file/Java Concurrency.md',
-      'Kafka': 'java-file/Kafka.md',
     };
     const containerCache = {};
 
@@ -796,12 +800,15 @@ function detectAndWrapCode(container) {
           .catch(() => null);
         return containerCache[ch];
       }
-      const mdPath = CHAPTER_MD[ch];
+      // sidebar button with data-fc-ch="<ch>" overrides: its data-md / data-imgs-base
+      const mdBtn = document.querySelector(`.ch[data-md][data-fc-ch="${ch}"]`);
+      const mdPath = mdBtn ? mdBtn.dataset.md : CHAPTER_MD[ch];
+      const mdImgs = mdBtn ? (mdBtn.dataset.imgsBase || '') : 'java-file/imgs/';
       if (mdPath) {
         containerCache[ch] = fetch(mdPath + '?cb=' + Date.now())
           .then(r => r.text())
           .then(md => {
-            md = md.replace(/!\[\[([^\]]+)\]\]/g, (_, name) => `![](java-file/imgs/${encodeURIComponent(name)})`);
+            md = md.replace(/!\[\[([^\]]+)\]\]/g, (_, name) => `![](${mdImgs}${encodeURIComponent(name)})`);
             const wikiSlug = s => s.trim().toLowerCase().replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-');
             md = md.replace(/\[\[#([^\]|]+)\|([^\]]+)\]\]/g, (_, anchor, display) => `[${display}](#${wikiSlug(anchor)})`);
             md = md.replace(/\[\[#([^\]]+)\]\]/g, (_, anchor) => `[${anchor}](#${wikiSlug(anchor)})`);
@@ -913,8 +920,8 @@ function detectAndWrapCode(container) {
       allBtn.addEventListener('click', () => {
         activeChapters = CHAPTERS.slice();
         activeSections = [];
-        saveJ('javanotes-fc-filters-v1', activeChapters);
-        saveJ('javanotes-fc-sections-v1', activeSections);
+        saveJ(K_FILTERS, activeChapters);
+        saveJ(K_SECTIONS, activeSections);
         renderFilters(); rebuildDeck();
       });
       els.filters.appendChild(allBtn);
@@ -935,8 +942,8 @@ function detectAndWrapCode(container) {
             activeChapters = [...activeChapters, ch];
           }
           activeSections = [];
-          saveJ('javanotes-fc-filters-v1', activeChapters);
-          saveJ('javanotes-fc-sections-v1', activeSections);
+          saveJ(K_FILTERS, activeChapters);
+          saveJ(K_SECTIONS, activeSections);
           renderFilters(); rebuildDeck();
         });
         els.filters.appendChild(btn);
@@ -957,7 +964,7 @@ function detectAndWrapCode(container) {
           allSecBtn.innerHTML = `Все разделы <span class="fc-chip-n">${totalSec}</span>`;
           allSecBtn.addEventListener('click', () => {
             activeSections = [];
-            saveJ('javanotes-fc-sections-v1', activeSections);
+            saveJ(K_SECTIONS, activeSections);
             renderFilters(); rebuildDeck();
           });
           row.appendChild(allSecBtn);
@@ -977,7 +984,7 @@ function detectAndWrapCode(container) {
               } else {
                 activeSections = [...activeSections, sec];
               }
-              saveJ('javanotes-fc-sections-v1', activeSections);
+              saveJ(K_SECTIONS, activeSections);
               renderFilters(); rebuildDeck();
             });
             row.appendChild(btn);
@@ -1057,7 +1064,7 @@ function detectAndWrapCode(container) {
     function mark(status) {
       if (!deck.length) return;
       progress[deck[pos]] = status;
-      saveJ('javanotes-fc-progress-v1', progress);
+      saveJ(K_PROGRESS, progress);
       goTo(pos + 1);
     }
 
@@ -1072,7 +1079,7 @@ function detectAndWrapCode(container) {
     });
     els.reset.addEventListener('click', () => {
       if (!confirm('Сбросить весь прогресс по флеш-картам?')) return;
-      progress = {}; saveJ('javanotes-fc-progress-v1', progress); render();
+      progress = {}; saveJ(K_PROGRESS, progress); render();
     });
     document.addEventListener('keydown', e => {
       if (!document.getElementById('fcCard')) return;
@@ -1101,9 +1108,10 @@ function detectAndWrapCode(container) {
     });
   });
 
-  // load first chapter on start
-  const first = chBtns[0];
-  if (first) loadChapter(first);
+  // load first chapter on start (or the button marked is-active)
+  const first = document.querySelector('.ch.is-active') || chBtns[0];
+  if (first && first.dataset.md) loadMarkdown(first);
+  else if (first) loadChapter(first);
 
   // lightbox
   const lbOverlay = document.getElementById('lb-overlay');
@@ -1163,6 +1171,7 @@ function detectAndWrapCode(container) {
   };
 
   const player   = document.getElementById('audioPlayer');
+  if (!player) return;
   const audioEl  = document.getElementById('audioEl');
   const playBtn  = document.getElementById('audioPlay');
   const seekEl   = document.getElementById('audioSeek');
