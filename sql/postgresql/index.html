@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ru" data-fc-ns="pgnotes">
+<title>Заметки по PostgreSQL</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Karla:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/sql.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/pgsql.min.js"></script>
+<link rel="stylesheet" href="../../go/assets/style.css?v=30">
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark" style="background:var(--pg,#336791);color:#fff">Pg</div>
+      <div class="brand-name">Заметки по PostgreSQL</div>
+    </div>
+    <div class="brand-tag">SQL, DDL/DML, JOIN, окна, индексы, транзакции</div>
+
+    <div class="toc-label">Материалы</div>
+    <div class="chapters">
+      <button class="ch is-active" data-chapter="m1" data-md="materials/SQL_PostgreSQL.md" data-imgs-base="materials/imgs/" data-skip-toc="1" data-fc-ch="PostgreSQL">📄 SQL и PostgreSQL</button>
+    </div>
+
+    <div class="toc-label" style="margin-top:24px">Практика</div>
+    <div class="chapters">
+      <button class="ch" data-chapter="fc" data-file="chapters/flashcards.html">🃏 Флеш-карты</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page">
+      <div id="chapter-root" class="chapter" data-chapter="m1"></div>
+    </div>
+  </main>
+</div>
+
+<div class="lb-overlay" id="lb-overlay">
+  <span class="lb-close" id="lb-close">✕</span>
+  <img id="lb-img" src="" alt="">
+</div>
+
+<div class="mat-drawer-backdrop" id="mat-drawer-backdrop"></div>
+<aside class="mat-drawer" id="mat-drawer" aria-label="Материал">
+  <div class="mat-drawer-header">
+    <span class="mat-drawer-title" id="mat-drawer-title">Материал</span>
+    <button class="mat-drawer-close" id="mat-drawer-close" aria-label="Закрыть">✕</button>
+  </div>
+  <div class="mat-drawer-body" id="mat-drawer-body"></div>
+</aside>
+
+<script src="../../java/assets/app.js?v=85"></script>

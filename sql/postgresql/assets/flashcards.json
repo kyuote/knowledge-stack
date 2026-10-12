@@ -1,0 +1,947 @@
+[
+  {
+    "ch": "PostgreSQL",
+    "q": "Что такое SQL, БД и СУБД?",
+    "a": "SQL — стандартный язык работы с реляционными БД. БД — набор взаимосвязанных данных. СУБД — программы для хранения, извлечения и оптимизации данных; бывают файл-серверные, клиент-серверные (PostgreSQL, MySQL, Oracle) и встраиваемые.",
+    "anchor": "введение-в-sql",
+    "src": "PostgreSQL",
+    "section": "1. Основы",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что такое реляционная база данных?",
+    "a": "БД на реляционной модели: данные в таблицах (отношениях) из строк-записей и столбцов-атрибутов, связи между таблицами задаются ключами.",
+    "anchor": "реляционная-бд",
+    "src": "PostgreSQL",
+    "section": "1. Основы",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "На какие категории делятся SQL-команды?",
+    "a": "DDL — структура (CREATE, ALTER, DROP, TRUNCATE). DML — данные (SELECT, INSERT, UPDATE, DELETE). DCL — права (GRANT, REVOKE). TCL — транзакции (COMMIT, ROLLBACK, SAVEPOINT).",
+    "anchor": "категории-sql-команд",
+    "src": "PostgreSQL",
+    "section": "1. Основы",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Какие основные команды psql?",
+    "a": "\\c db — подключиться, \\l — базы, \\dn — схемы, \\dt — таблицы, \\d table — структура, \\dv — представления, \\df — функции, \\du — роли, \\i file — выполнить файл, \\q — выход.",
+    "anchor": "основные-команды-psql",
+    "src": "PostgreSQL",
+    "section": "1. Основы",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Какие целочисленные типы есть в PostgreSQL?",
+    "a": "smallint (2 байта), integer (4 байта, стандартный выбор), bigint (8 байт), serial / bigserial — автоинкрементные integer / bigint.",
+    "anchor": "целочисленные-типы",
+    "src": "PostgreSQL",
+    "section": "2. Типы данных",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Чем real и double precision отличаются от numeric?",
+    "a": "real (4 байта, ~6 знаков) и double precision (8 байт, ~15 знаков) — приближённые. numeric/decimal — точные значения с заданной точностью, переменный размер; для денег.",
+    "anchor": "числовые-с-плавающей-запятой",
+    "src": "PostgreSQL",
+    "section": "2. Типы данных",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Чем отличаются char, varchar и text?",
+    "a": "char — фиксированная длина, varchar — переменная длина (с лимитом), text — переменная длина без ограничения.",
+    "anchor": "символьные-типы",
+    "src": "PostgreSQL",
+    "section": "2. Типы данных",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Какие временные типы есть в PostgreSQL?",
+    "a": "date (дата), time (время), timestamp (дата и время), timestamptz (с часовым поясом), interval (разница между метками времени).",
+    "anchor": "временные-типы",
+    "src": "PostgreSQL",
+    "section": "2. Типы данных",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как привести тип в PostgreSQL?",
+    "a": "Неявно — для совместимых типов. Явно — CAST(expr AS type) или expr::type. '123.45'::int упадёт: сначала ::numeric, потом ::int.",
+    "anchor": "приведение-типов-данных-в-sql",
+    "src": "PostgreSQL",
+    "section": "2. Типы данных",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как создать, изменить и удалить базу данных?",
+    "a": "CREATE DATABASE name WITH OWNER / ENCODING / LC_COLLATE / CONNECTION LIMIT. ALTER DATABASE … RENAME TO / OWNER TO / SET. DROP DATABASE [IF EXISTS] name [FORCE].",
+    "anchor": "команды-для-работы-с-бд",
+    "src": "PostgreSQL",
+    "section": "3. Структура БД (DDL)",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Какие команды DDL для таблиц и чем TRUNCATE отличается от DROP?",
+    "a": "CREATE TABLE, ALTER TABLE (ADD/DROP/RENAME COLUMN, ALTER COLUMN SET DATA TYPE, RENAME TO), DROP TABLE. TRUNCATE удаляет все строки, сохраняя структуру; DROP удаляет таблицу целиком.",
+    "anchor": "команды-для-работы-с-таблицами",
+    "src": "PostgreSQL",
+    "section": "3. Структура БД (DDL)",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что такое первичный ключ?",
+    "a": "Уникальный идентификатор строки: уникален, не допускает NULL, один на таблицу, может быть составным. Автоматически создаётся индекс.",
+    "anchor": "первичный-ключ-primary-key",
+    "src": "PostgreSQL",
+    "section": "3. Структура БД (DDL)",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что такое внешний ключ и ON DELETE CASCADE?",
+    "a": "Ограничение, ссылающееся на PK/UNIQUE другой таблицы — ссылочная целостность: нельзя сослаться на несуществующую запись. ON DELETE CASCADE удаляет зависимые строки вместе с родительской.",
+    "anchor": "внешний-ключ-foreign-key",
+    "src": "PostgreSQL",
+    "section": "3. Структура БД (DDL)",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Какие ограничения (constraints) бывают?",
+    "a": "PRIMARY KEY, UNIQUE (допускает NULL без NOT NULL), NOT NULL, FOREIGN KEY, CHECK, DEFAULT.",
+    "anchor": "ограничения-constraints",
+    "src": "PostgreSQL",
+    "section": "3. Структура БД (DDL)",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что делает ограничение CHECK?",
+    "a": "Проверяет значения на условие при вставке и обновлении — бизнес-правила на уровне БД, например age INT CHECK (age >= 18 AND age <= 65).",
+    "anchor": "check",
+    "src": "PostgreSQL",
+    "section": "3. Структура БД (DDL)",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что делает DEFAULT?",
+    "a": "Подставляет значение по умолчанию, если столбец не указан при вставке, например quantity INT DEFAULT 0.",
+    "anchor": "default",
+    "src": "PostgreSQL",
+    "section": "3. Структура БД (DDL)",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что такое последовательность и какие у неё функции?",
+    "a": "Объект для генерации уникальных чисел (обычно для PK). CREATE SEQUENCE … INCREMENT / START; nextval() — следующее, currval() — текущее, setval() — установить; ALTER / DROP SEQUENCE.",
+    "anchor": "последовательности",
+    "src": "PostgreSQL",
+    "section": "3. Структура БД (DDL)",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как работает serial и в чём его проблема?",
+    "a": "serial создаёт последовательность и ставит DEFAULT nextval(...). Если вставить id вручную, последовательность не сдвигается → позже ошибка уникальности.",
+    "anchor": "автоинкремент-через-serial-в-postgresql",
+    "src": "PostgreSQL",
+    "section": "3. Структура БД (DDL)",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Чем GENERATED AS IDENTITY лучше serial?",
+    "a": "Стандартный способ с PG 10. ALWAYS запрещает ручную вставку (обход — OVERRIDING SYSTEM VALUE), BY DEFAULT разрешает. Сброс: ALTER COLUMN … RESTART WITH n.",
+    "anchor": "generated-as-identity",
+    "src": "PostgreSQL",
+    "section": "3. Структура БД (DDL)",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Из каких этапов состоит проектирование БД?",
+    "a": "Анализ требований (концептуальная схема) → логическое проектирование (ключи, типы, ограничения) → физическое (СУБД, индексы, доступ). Нормализуют для устранения избыточности, иногда денормализуют ради производительности.",
+    "anchor": "процесс-проектирования",
+    "src": "PostgreSQL",
+    "section": "4. Проектирование БД",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что требуют 1НФ, 2НФ и 3НФ?",
+    "a": "1НФ — нет дублей строк, значения атомарные. 2НФ — 1НФ + каждый неключевой атрибут полностью зависит от всего PK. 3НФ — 2НФ + неключевые атрибуты не зависят друг от друга, только от PK.",
+    "anchor": "нормальные-формы",
+    "src": "PostgreSQL",
+    "section": "4. Проектирование БД",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что делает DISTINCT?",
+    "a": "Убирает дубликаты, оставляя уникальные значения (по одному или нескольким столбцам).",
+    "anchor": "distinct",
+    "src": "PostgreSQL",
+    "section": "5. Запросы — основы",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Какие операторы используются в WHERE?",
+    "a": "Сравнение (=, !=, <, >, <=, >=), логические AND / OR / NOT и специальные: LIKE, BETWEEN, IN, IS NULL.",
+    "anchor": "where-andor",
+    "src": "PostgreSQL",
+    "section": "5. Запросы — основы",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что делает BETWEEN?",
+    "a": "Отбирает строки, где значение в диапазоне value1 AND value2 включительно.",
+    "anchor": "between",
+    "src": "PostgreSQL",
+    "section": "5. Запросы — основы",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что делают IN и NOT IN?",
+    "a": "Проверяют, входит ли значение в список (или результат подзапроса).",
+    "anchor": "in-not-in",
+    "src": "PostgreSQL",
+    "section": "5. Запросы — основы",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Какие шаблоны есть в LIKE?",
+    "a": "% — любое число символов (в том числе 0), _ — ровно один символ.",
+    "anchor": "like",
+    "src": "PostgreSQL",
+    "section": "5. Запросы — основы",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как сортировать результат запроса?",
+    "a": "ORDER BY col1 [ASC|DESC], col2 [ASC|DESC] — по одному или нескольким столбцам, по умолчанию ASC.",
+    "anchor": "order-by",
+    "src": "PostgreSQL",
+    "section": "5. Запросы — основы",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как проверить значение на NULL?",
+    "a": "Только IS NULL / IS NOT NULL: сравнение = NULL всегда даёт NULL, а не true.",
+    "anchor": "check-on-null",
+    "src": "PostgreSQL",
+    "section": "5. Запросы — основы",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как работает CASE WHEN?",
+    "a": "Проверяет условия по порядку и возвращает результат первого истинного; если ни одно не подошло — ELSE (без ELSE — NULL).",
+    "anchor": "case-when",
+    "src": "PostgreSQL",
+    "section": "5. Запросы — основы",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что делают COALESCE и NULLIF?",
+    "a": "COALESCE(a, b, …) — первый не-NULL аргумент (значение по умолчанию). NULLIF(a, b) — NULL, если a = b, иначе a. Вместе: COALESCE(NULLIF(city, ''), 'Unknown').",
+    "anchor": "coalesce-и-nullif",
+    "src": "PostgreSQL",
+    "section": "5. Запросы — основы",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как вставить несколько строк одним INSERT?",
+    "a": "INSERT INTO t (c1, c2) VALUES (v1, v2), (v3, v4), …;",
+    "anchor": "insert",
+    "src": "PostgreSQL",
+    "section": "6. Изменение данных (DML)",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как сделать UPSERT в PostgreSQL?",
+    "a": "INSERT … ON CONFLICT (key) DO UPDATE SET col = EXCLUDED.col (EXCLUDED — строка, которую пытались вставить) или DO NOTHING — пропустить.",
+    "anchor": "on-conflict-upsert",
+    "src": "PostgreSQL",
+    "section": "6. Изменение данных (DML)",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как создать таблицу из результата запроса?",
+    "a": "SELECT * INTO new_table FROM t, но рекомендуется CREATE TABLE new_table AS SELECT … FROM t.",
+    "anchor": "select-into-create-table-as",
+    "src": "PostgreSQL",
+    "section": "6. Изменение данных (DML)",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Чем опасен UPDATE или DELETE без WHERE?",
+    "a": "Изменятся или удалятся все строки таблицы.",
+    "anchor": "update",
+    "src": "PostgreSQL",
+    "section": "6. Изменение данных (DML)",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что делает RETURNING?",
+    "a": "Возвращает изменённые, вставленные или удалённые строки прямо из INSERT / UPDATE / DELETE, например RETURNING *.",
+    "anchor": "returning",
+    "src": "PostgreSQL",
+    "section": "6. Изменение данных (DML)",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как импортировать CSV и чем \\copy отличается от COPY?",
+    "a": "\\copy t(c1, c2) FROM 'file.csv' DELIMITER ',' CSV HEADER. \\copy читает файл на клиенте (psql), COPY — на сервере и требует прав на файловую систему сервера.",
+    "anchor": "импорт-данных-csv-в-postgresql",
+    "src": "PostgreSQL",
+    "section": "6. Изменение данных (DML)",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как объявить массив и обратиться к элементам?",
+    "a": "int[] (размер в int[8] только для документации), литерал '{1,2,3}' или ARRAY[…]. Индексация с 1, срезы arr[1:3], arr[:4], arr[2:]; array_dims, array_length(arr, dim).",
+    "anchor": "массивы",
+    "src": "PostgreSQL",
+    "section": "7. Массивы и пользовательские типы",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как найти элемент в массиве и обновить массив?",
+    "a": "Поиск: 'value' = ANY(arr). Обновление: SET arr = ARRAY[…] целиком или SET arr[i] = 'new' по элементу. Частый поиск по массиву — повод вынести элементы в отдельную таблицу.",
+    "anchor": "работа-с-массивами",
+    "src": "PostgreSQL",
+    "section": "7. Массивы и пользовательские типы",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что делают операторы @>, <@ и && для массивов?",
+    "a": "@> — левый содержит все элементы правого, <@ — наоборот, && — есть хотя бы один общий элемент. = / < / > сравнивают поэлементно.",
+    "anchor": "операторы-работы-с-массивами",
+    "src": "PostgreSQL",
+    "section": "7. Массивы и пользовательские типы",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что такое домен в PostgreSQL?",
+    "a": "Пользовательский тип с ограничениями: CREATE DOMAIN name AS TEXT NOT NULL CHECK (…). Новое ограничение можно добавить NOT VALID и позже VALIDATE CONSTRAINT.",
+    "anchor": "домены",
+    "src": "PostgreSQL",
+    "section": "7. Массивы и пользовательские типы",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что такое композитный тип?",
+    "a": "CREATE TYPE t AS (f1 type, f2 type). Экземпляр — ROW(…), поле — (col).field. Ограничений не поддерживает, обычно используется для возврата из функций, а не для хранения.",
+    "anchor": "композитные-типы-данных-в-postgresql",
+    "src": "PostgreSQL",
+    "section": "7. Массивы и пользовательские типы",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как работает ENUM в PostgreSQL?",
+    "a": "CREATE TYPE t AS ENUM ('a', 'b'). Значения регистрозависимы, вставка чужого значения — ошибка. Новое значение: ALTER TYPE t ADD VALUE 'x' BEFORE/AFTER 'y'; список — enum_range(NULL::t).",
+    "anchor": "перечисления-enum-в-postgresql",
+    "src": "PostgreSQL",
+    "section": "7. Массивы и пользовательские типы",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Чем COUNT(*) отличается от COUNT(DISTINCT col)?",
+    "a": "COUNT(*) считает все строки, COUNT(col) — не-NULL значения, COUNT(DISTINCT col) — уникальные не-NULL значения.",
+    "anchor": "count",
+    "src": "PostgreSQL",
+    "section": "8. Агрегация и группировка",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Чем WHERE отличается от HAVING?",
+    "a": "WHERE фильтрует строки до группировки, HAVING — группы после GROUP BY, поэтому в HAVING можно использовать агрегаты.",
+    "anchor": "group-by-having",
+    "src": "PostgreSQL",
+    "section": "8. Агрегация и группировка",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что делает FILTER у агрегатной функции?",
+    "a": "Условие для отдельного агрегата: COUNT(*) FILTER (WHERE price > 50) — несколько разных подсчётов в одном запросе.",
+    "anchor": "filter",
+    "src": "PostgreSQL",
+    "section": "8. Агрегация и группировка",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Чем отличаются GROUPING SETS, ROLLUP и CUBE?",
+    "a": "GROUPING SETS — явный список группировок. ROLLUP(a, b) — иерархия подытогов ((a, b), (a), ()). CUBE(a, b) — все комбинации ((a, b), (a), (b), ()). NULL в итогах означает «по всем».",
+    "anchor": "grouping-sets-rollup-cube",
+    "src": "PostgreSQL",
+    "section": "8. Агрегация и группировка",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что такое JOIN?",
+    "a": "Операция, объединяющая строки двух и более таблиц по связанным столбцам.",
+    "anchor": "join",
+    "src": "PostgreSQL",
+    "section": "9. Объединение данных",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что возвращает INNER JOIN?",
+    "a": "Только строки, для которых есть соответствие в обеих таблицах.",
+    "anchor": "inner-join",
+    "src": "PostgreSQL",
+    "section": "9. Объединение данных",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Чем LEFT JOIN отличается от RIGHT JOIN?",
+    "a": "LEFT — все строки левой таблицы, недостающие поля правой = NULL. RIGHT — то же для правой таблицы.",
+    "anchor": "left-join-left-outer-join",
+    "src": "PostgreSQL",
+    "section": "9. Объединение данных",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что возвращает FULL OUTER JOIN?",
+    "a": "Все строки обеих таблиц: совпавшие соединены, у несовпавших недостающая сторона заполнена NULL.",
+    "anchor": "full-outer-join",
+    "src": "PostgreSQL",
+    "section": "9. Объединение данных",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что такое CROSS JOIN?",
+    "a": "Декартово произведение: каждая строка первой таблицы с каждой строкой второй.",
+    "anchor": "cross-join",
+    "src": "PostgreSQL",
+    "section": "9. Объединение данных",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что такое SELF JOIN и когда он нужен?",
+    "a": "Соединение таблицы с самой собой через разные алиасы — например, сотрудник и его менеджер в одной таблице.",
+    "anchor": "self-join",
+    "src": "PostgreSQL",
+    "section": "9. Объединение данных",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Чем JOIN USING отличается от NATURAL JOIN?",
+    "a": "USING(col) соединяет по явно указанному одноимённому столбцу. NATURAL JOIN — автоматически по всем одноимённым столбцам; неявен и опасен, его избегают.",
+    "anchor": "using-natural-join",
+    "src": "PostgreSQL",
+    "section": "9. Объединение данных",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Где можно использовать псевдонимы столбцов, а где нельзя?",
+    "a": "Можно в SELECT и ORDER BY. Нельзя в WHERE и HAVING — они выполняются до SELECT. В GROUP BY PostgreSQL допускает как расширение стандарта.",
+    "anchor": "псевдонимы-as",
+    "src": "PostgreSQL",
+    "section": "9. Объединение данных",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Чем UNION отличается от UNION ALL, INTERSECT и EXCEPT?",
+    "a": "UNION — объединение без дублей, UNION ALL — с дублями (быстрее), INTERSECT — пересечение, EXCEPT — строки первого запроса, которых нет во втором.",
+    "anchor": "union-intersect-except",
+    "src": "PostgreSQL",
+    "section": "9. Объединение данных",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Где можно использовать подзапросы?",
+    "a": "В WHERE / HAVING (фильтрация), в SELECT (вычисляемый столбец), в FROM (виртуальная таблица, нужен алиас), даже в LIMIT.",
+    "anchor": "подзапросы",
+    "src": "PostgreSQL",
+    "section": "9. Объединение данных",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как работает EXISTS?",
+    "a": "WHERE [NOT] EXISTS (SELECT 1 … WHERE t2.x = t1.x) — true, если подзапрос вернул хотя бы одну строку (NOT — ни одной). Проверка наличия связанных данных.",
+    "anchor": "where-not-exists",
+    "src": "PostgreSQL",
+    "section": "9. Объединение данных",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Чем ANY отличается от ALL?",
+    "a": "col > ANY(подзапрос) — истинно, если условие выполняется хотя бы для одного значения; ALL — для всех значений.",
+    "anchor": "any-all",
+    "src": "PostgreSQL",
+    "section": "9. Объединение данных",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что такое коррелированный подзапрос?",
+    "a": "Подзапрос, ссылающийся на столбцы внешнего запроса; выполняется для каждой строки внешнего запроса.",
+    "anchor": "коррелированные-подзапросы",
+    "src": "PostgreSQL",
+    "section": "9. Объединение данных",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что такое CTE и как PostgreSQL 12+ их выполняет?",
+    "a": "WITH name AS (…) — именованный подзапрос для читаемости. С PG 12 CTE, используемый один раз, встраивается в запрос, несколько раз — материализуется; можно явно MATERIALIZED / NOT MATERIALIZED. Внутри допустимы INSERT / UPDATE / DELETE.",
+    "anchor": "общие-табличные-выражения-cte-в-sql",
+    "src": "PostgreSQL",
+    "section": "9. Объединение данных",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как устроен рекурсивный CTE?",
+    "a": "WITH RECURSIVE: начальная часть UNION ALL рекурсивная часть, ссылающаяся на сам CTE. Для иерархий: сотрудники и менеджеры, деревья.",
+    "anchor": "рекурсивные-cte",
+    "src": "PostgreSQL",
+    "section": "9. Объединение данных",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что такое оконная функция и из чего состоит OVER()?",
+    "a": "Считает по набору строк, связанных с текущей, и возвращает значение для каждой строки без схлопывания. OVER([PARTITION BY …] [ORDER BY …] [ROWS|RANGE …]); OVER() — окно = вся выборка.",
+    "anchor": "основные-элементы-оконных-функций",
+    "src": "PostgreSQL",
+    "section": "10. Оконные функции",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Какие бывают оконные функции?",
+    "a": "Агрегатные (SUM, COUNT, AVG, MIN, MAX), ранжирующие (ROW_NUMBER, RANK, DENSE_RANK), смещения (LAG, LEAD, FIRST_VALUE, LAST_VALUE).",
+    "anchor": "основные-оконные-функции",
+    "src": "PostgreSQL",
+    "section": "10. Оконные функции",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Чем отличаются ROW_NUMBER, RANK и DENSE_RANK?",
+    "a": "ROW_NUMBER — уникальный номер (1, 2, 3, 4). RANK — равным одинаковый ранг с пропуском (1, 2, 2, 4). DENSE_RANK — без пропуска (1, 2, 2, 3). Топ-N в группе: ROW_NUMBER() OVER (PARTITION BY …) в CTE + WHERE rn <= N.",
+    "anchor": "rownumber-vs-rank-vs-denserank",
+    "src": "PostgreSQL",
+    "section": "10. Оконные функции",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Чем ROWS отличается от RANGE и какая рамка по умолчанию?",
+    "a": "ROWS — физическое число строк, RANGE — по значениям ORDER BY. С ORDER BY без рамки окно = RANGE UNBOUNDED PRECEDING … CURRENT ROW, поэтому LAST_VALUE возвращает текущую строку — рамку задают явно.",
+    "anchor": "окна-и-диапазоны",
+    "src": "PostgreSQL",
+    "section": "10. Оконные функции",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Какие бывают границы окна?",
+    "a": "UNBOUNDED PRECEDING, N PRECEDING, CURRENT ROW, N FOLLOWING, UNBOUNDED FOLLOWING. Скользящая сумма: SUM(x) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND CURRENT ROW).",
+    "anchor": "границы-окон",
+    "src": "PostgreSQL",
+    "section": "10. Оконные функции",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "В каком порядке выполняется SELECT-запрос?",
+    "a": "FROM / JOIN → WHERE → GROUP BY → HAVING → SELECT (и оконные функции) → DISTINCT → ORDER BY → LIMIT. Поэтому фильтровать по оконной функции можно только во внешнем запросе.",
+    "anchor": "порядок-выполнения-запроса",
+    "src": "PostgreSQL",
+    "section": "10. Оконные функции",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что такое представление и зачем оно нужно?",
+    "a": "Виртуальная таблица поверх запроса, данных не хранит. Прячет сложный запрос и ограничивает доступ. Бывают временные, материализованные (кэшируют результат), обновляемые, рекурсивные.",
+    "anchor": "представления-view",
+    "src": "PostgreSQL",
+    "section": "11. Объекты БД",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что делает WITH CHECK OPTION у представления?",
+    "a": "Не даёт вставить или обновить через view строки, которые не проходят его WHERE.",
+    "anchor": "ограничение-через-with-check-option",
+    "src": "PostgreSQL",
+    "section": "11. Объекты БД",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что можно менять в представлении и когда через него можно изменять данные?",
+    "a": "CREATE OR REPLACE VIEW может только добавить столбцы в конец — не удалить, не переименовать, не переставить. Данные менять можно, если view по одной таблице без GROUP BY, HAVING, UNION и т.п.",
+    "anchor": "изменение-представлений",
+    "src": "PostgreSQL",
+    "section": "11. Объекты БД",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Зачем нужны функции в БД и что в них нельзя делать?",
+    "a": "Логика на сервере: меньше round-trip'ов, одна реализация для всех клиентов. Бывают SQL, PL/pgSQL и на C. Внутри нельзя COMMIT, SAVEPOINT и утилитарные команды вроде VACUUM.",
+    "anchor": "зачем-нужны-функции-в-sql",
+    "src": "PostgreSQL",
+    "section": "11. Объекты БД",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Какие бывают виды аргументов функции?",
+    "a": "IN — входной (по умолчанию), OUT — выходной, INOUT — оба (не рекомендуется), VARIADIC — переменное число как массив, DEFAULT — значение по умолчанию.",
+    "anchor": "in-out-default",
+    "src": "PostgreSQL",
+    "section": "11. Объекты БД",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как функция может вернуть набор строк?",
+    "a": "RETURNS SETOF type, RETURNS SETOF table, RETURNS SETOF record (типы задаются при вызове, не рекомендуется), RETURNS TABLE (col type, …) или через OUT-параметры.",
+    "anchor": "возврат-наборов-данных",
+    "src": "PostgreSQL",
+    "section": "11. Объекты БД",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как устроена функция на PL/pgSQL?",
+    "a": "DECLARE — переменные, BEGIN … END — тело, присваивание :=, IF / CASE, циклы, обработка исключений; RETURN или RETURN QUERY.",
+    "anchor": "введение-в-plpgsql",
+    "src": "PostgreSQL",
+    "section": "11. Объекты БД",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Какие циклы есть в PL/pgSQL?",
+    "a": "WHILE cond LOOP … END LOOP; LOOP … EXIT WHEN cond … END LOOP; FOR i IN a..b [BY step] LOOP … END LOOP; FOREACH x IN ARRAY arr LOOP.",
+    "anchor": "циклы",
+    "src": "PostgreSQL",
+    "section": "11. Объекты БД",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что делает RETURN NEXT?",
+    "a": "Построчно добавляет запись в результат функции RETURNS SETOF. Медленнее декларативного SQL — по возможности циклов избегают.",
+    "anchor": "return-next",
+    "src": "PostgreSQL",
+    "section": "11. Объекты БД",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как сгенерировать ошибку или сообщение в PL/pgSQL?",
+    "a": "RAISE level 'msg %', param USING HINT = …, ERRCODE = …. Уровни DEBUG, LOG, INFO, NOTICE, WARNING, EXCEPTION (прерывает выполнение).",
+    "anchor": "структура-raise",
+    "src": "PostgreSQL",
+    "section": "11. Объекты БД",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как перехватить ошибку в PL/pgSQL?",
+    "a": "BEGIN … EXCEPTION WHEN condition THEN … WHEN OTHERS THEN … END; текст ошибки в SQLERRM.",
+    "anchor": "блок-обработки-исключений-exception",
+    "src": "PostgreSQL",
+    "section": "11. Объекты БД",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что такое триггер и для чего он используется?",
+    "a": "Объект, выполняющий функцию при INSERT / UPDATE / DELETE: аудит, дополнительные операции, проверки целостности. Срабатывает на каждую строку или один раз на оператор.",
+    "anchor": "основы-триггеров",
+    "src": "PostgreSQL",
+    "section": "11. Объекты БД",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как создать триггер?",
+    "a": "Функция RETURNS trigger на plpgsql + CREATE TRIGGER name BEFORE|AFTER INSERT|UPDATE|DELETE ON table FOR EACH ROW EXECUTE FUNCTION func().",
+    "anchor": "создание-и-использование-триггеров",
+    "src": "PostgreSQL",
+    "section": "11. Объекты БД",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что такое OLD и NEW в триггере?",
+    "a": "OLD — строка до изменения (UPDATE, DELETE), NEW — новая строка (INSERT, UPDATE).",
+    "anchor": "аргументы-функции-триггера",
+    "src": "PostgreSQL",
+    "section": "11. Объекты БД",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Чем BEFORE-триггер отличается от AFTER?",
+    "a": "BEFORE может изменить NEW или вернуть NULL и отменить операцию. AFTER выполняется после операции, его возврат игнорируется, отменить можно только RAISE EXCEPTION.",
+    "anchor": "особенности-работы-триггеров",
+    "src": "PostgreSQL",
+    "section": "11. Объекты БД",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что такое триггер на утверждение (FOR EACH STATEMENT)?",
+    "a": "Срабатывает один раз на весь оператор; все затронутые строки доступны через REFERENCING NEW TABLE / OLD TABLE AS name.",
+    "anchor": "триггеры-на-утверждения",
+    "src": "PostgreSQL",
+    "section": "11. Объекты БД",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как PostgreSQL хранит данные на диске?",
+    "a": "Кластер БД — каталог PGDATA, у каждой базы папка в PGDATA/base, у каждой таблицы и индекса свой файл. Heap file — массив страниц по 8 КБ.",
+    "anchor": "устройство-базы-данных-postgresql",
+    "src": "PostgreSQL",
+    "section": "12. Индексы и производительность",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что такое TOAST, FSM и Visibility Map?",
+    "a": "TOAST — большие значения (> 8 КБ) режутся на куски по 2 КБ в отдельной таблице. FSM — карта свободного места для вставок. VM — флаги видимости страниц (нужна для Index Only Scan).",
+    "anchor": "структура-таблиц-postgresql",
+    "src": "PostgreSQL",
+    "section": "12. Индексы и производительность",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что делают VACUUM, VACUUM FULL и autovacuum?",
+    "a": "VACUUM удаляет мёртвые версии строк, освобождая место для новых. VACUUM FULL перестраивает таблицу (тяжёлый). VACUUM ANALYZE ещё обновляет статистику. autovacuum запускает это автоматически.",
+    "anchor": "поддержка-и-очистка-данных",
+    "src": "PostgreSQL",
+    "section": "12. Индексы и производительность",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Какие есть методы сканирования таблиц и когда какой выбирается?",
+    "a": "Index Scan — мало строк. Index Only Scan — все нужные столбцы в индексе. Bitmap Scan — средне строк, каждая страница читается один раз. Seq Scan — большая часть таблицы.",
+    "anchor": "основные-методы-сканирования-таблиц",
+    "src": "PostgreSQL",
+    "section": "12. Индексы и производительность",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Чем B-tree отличается от Hash-индекса?",
+    "a": "B-tree — по умолчанию, =, <, >, диапазоны, LIKE 'abc%' (в локали C или с text_pattern_ops), O(log N). Hash — только =, с PG 10 пишется в WAL; имеет смысл для длинных ключей.",
+    "anchor": "виды-индексов-в-postgresql",
+    "src": "PostgreSQL",
+    "section": "12. Индексы и производительность",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Для чего нужны GiST, GIN, SP-GiST и BRIN?",
+    "a": "GiST — геометрия, полнотекстовый поиск. GIN — массивы, JSONB, полнотекстовый поиск. SP-GiST — несбалансированные данные с естественным порядком. BRIN — огромные упорядоченные данные (время).",
+    "anchor": "виды-индексов-в-postgresql",
+    "src": "PostgreSQL",
+    "section": "12. Индексы и производительность",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Чем EXPLAIN отличается от EXPLAIN ANALYZE и что делает ANALYZE?",
+    "a": "EXPLAIN — план без выполнения, EXPLAIN ANALYZE — выполняет запрос и показывает реальные затраты. ANALYZE собирает статистику распределения для планировщика (его делает и autovacuum).",
+    "anchor": "explain-и-analyze",
+    "src": "PostgreSQL",
+    "section": "12. Индексы и производительность",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Когда работает составной индекс (a, b)?",
+    "a": "Для фильтра по a и b или только по первой колонке a. Фильтр только по b индекс почти не ускорит — порядок колонок важен.",
+    "anchor": "2-создание-составного-индекса-по-двум-и-более-колонкам",
+    "src": "PostgreSQL",
+    "section": "12. Индексы и производительность",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Почему индекс не используется для WHERE LOWER(col) = …?",
+    "a": "Индекс построен по col, а не по выражению. Нужен индекс по выражению: CREATE INDEX ON t (LOWER(col)). Если условие отбирает большую часть таблицы, всё равно будет Seq Scan.",
+    "anchor": "индексы-по-выражениям-и-их-особенности",
+    "src": "PostgreSQL",
+    "section": "12. Индексы и производительность",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как ускорить LIKE '%substring%'?",
+    "a": "Расширение pg_trgm + GIN-индекс: CREATE INDEX … USING gin (col gin_trgm_ops). Ускоряет LIKE '%…%' и ILIKE.",
+    "anchor": "индексы-для-полнотекстового-поиска",
+    "src": "PostgreSQL",
+    "section": "12. Индексы и производительность",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что такое транзакция и ACID?",
+    "a": "Группа операций, выполняемая целиком или никак. Atomicity — всё или ничего, Consistency — ограничения соблюдены, Isolation — параллельные транзакции не мешают, Durability — результат переживает сбой.",
+    "anchor": "13-транзакции",
+    "src": "PostgreSQL",
+    "section": "13. Транзакции",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как управлять транзакциями и можно ли COMMIT внутри функции?",
+    "a": "BEGIN, COMMIT, ROLLBACK, SAVEPOINT name, ROLLBACK TO name. В функциях нельзя — они в транзакции вызывающего; с PG 11 COMMIT / ROLLBACK можно в процедурах (вызов через CALL).",
+    "anchor": "13-транзакции",
+    "src": "PostgreSQL",
+    "section": "13. Транзакции",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Какие аномалии параллельности бывают?",
+    "a": "Грязное чтение (незафиксированные данные), неповторяемое чтение (строка изменилась), фантомное чтение (появились новые строки), аномалия сериализации (результат не совпадает ни с одним последовательным порядком).",
+    "anchor": "уровни-изоляции",
+    "src": "PostgreSQL",
+    "section": "13. Транзакции",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Какие уровни изоляции есть в PostgreSQL и что они предотвращают?",
+    "a": "Read Committed (по умолчанию) — нет грязного чтения. Repeatable Read — нет неповторяемого и (в PG) фантомного. Serializable — нет ничего, при конфликте ошибка 40001 и повтор. Read Uncommitted в PG = Read Committed.",
+    "anchor": "сравнение-уровней",
+    "src": "PostgreSQL",
+    "section": "13. Транзакции",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что такое MVCC?",
+    "a": "Multiversion Concurrency Control: хранятся версии строк, каждая транзакция видит свой снимок данных — изоляция без лишних блокировок.",
+    "anchor": "сравнение-уровней",
+    "src": "PostgreSQL",
+    "section": "13. Транзакции",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Чем роль отличается от пользователя в PostgreSQL?",
+    "a": "Роль — набор прав, может включать другие роли. Пользователь — роль с LOGIN и паролем. Роли создаются на уровне экземпляра, а не базы.",
+    "anchor": "роли-и-пользователи",
+    "src": "PostgreSQL",
+    "section": "14. Безопасность",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Какие уровни безопасности есть в PostgreSQL?",
+    "a": "Экземпляр (подключения, аутентификация), база данных, схемы, таблицы, колонки, строки (row-level security).",
+    "anchor": "уровни-безопасности",
+    "src": "PostgreSQL",
+    "section": "14. Безопасность",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как создать роль и какие у неё бывают атрибуты?",
+    "a": "CREATE ROLE name WITH LOGIN PASSWORD '…'. Атрибуты: LOGIN, SUPERUSER, CREATEDB, CREATEROLE, REPLICATION. Список — SELECT rolname FROM pg_roles.",
+    "anchor": "создание-и-управление-ролями",
+    "src": "PostgreSQL",
+    "section": "14. Безопасность",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Какие лучшие практики по ролям?",
+    "a": "Не работать под SUPERUSER, заводить роли под сценарии (read_only, read_write), выдавать минимально необходимые права.",
+    "anchor": "лучшие-практики",
+    "src": "PostgreSQL",
+    "section": "14. Безопасность",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как выдать права на таблицу, колонку и строки?",
+    "a": "GRANT SELECT, INSERT ON t TO role; GRANT SELECT (col) ON t TO role; для строк — ALTER TABLE t ENABLE ROW LEVEL SECURITY + CREATE POLICY … USING (условие).",
+    "anchor": "управление-доступом",
+    "src": "PostgreSQL",
+    "section": "14. Безопасность",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Как удалить роль?",
+    "a": "Сначала REVOKE ALL PRIVILEGES … FROM role и переназначить объекты (ALTER … OWNER TO или DROP OWNED BY), потом DROP ROLE IF EXISTS role.",
+    "anchor": "удаление-ролей-и-прав",
+    "src": "PostgreSQL",
+    "section": "14. Безопасность",
+    "level": 3
+  },
+  {
+    "ch": "PostgreSQL",
+    "q": "Что происходит после включения Row-Level Security?",
+    "a": "Доступ к строкам по умолчанию закрыт — нужны явные политики CREATE POLICY.",
+    "anchor": "важные-моменты",
+    "src": "PostgreSQL",
+    "section": "14. Безопасность",
+    "level": 3
+  }
+]
