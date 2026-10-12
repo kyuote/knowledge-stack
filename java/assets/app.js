@@ -737,6 +737,21 @@ function detectAndWrapCode(container) {
       });
   }
 
+  function loadPdf(btn) {
+    setActive(btn);
+    const src = encodeURI(btn.dataset.pdf);
+    const title = btn.textContent.replace(/^[^\p{L}\p{N}]+/u, '').trim();
+    root.innerHTML = `
+      <div class="pdf-view">
+        <p style="margin:0 0 12px;color:var(--text-dim);font-size:14px">
+          ${title} · <a href="${src}" target="_blank" rel="noopener">открыть PDF в новой вкладке</a>
+        </p>
+        <iframe src="${src}" title="${title}"
+          style="width:100%;height:calc(100vh - 120px);border:1px solid var(--border);border-radius:12px;background:#fff"></iframe>
+      </div>`;
+    window.scrollTo(0, 0);
+  }
+
   function initFlashcards() {
     fetch('assets/flashcards.json?v=' + Date.now())
       .then(r => r.json())
@@ -1097,6 +1112,7 @@ function detectAndWrapCode(container) {
   chBtns.forEach(btn => btn.addEventListener('click', () => loadChapter(btn)));
   matBtns.forEach(btn => btn.addEventListener('click', () => loadDocx(btn)));
   document.querySelectorAll('.ch[data-md]').forEach(btn => btn.addEventListener('click', () => loadMarkdown(btn)));
+  document.querySelectorAll('.ch[data-pdf]').forEach(btn => btn.addEventListener('click', () => loadPdf(btn)));
 
   // subnav anchor clicks
   document.querySelectorAll('.subnav a').forEach(a => {
