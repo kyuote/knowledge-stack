@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 478" width="1000" height="478">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#868E96"/></marker><marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#F76707"/></marker></defs>
+<rect x="1" y="1" width="998" height="476" rx="18" fill="#FCFCFD" stroke="#E9ECEF" stroke-width="2"/>
+<text x="36" y="42" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="20" font-weight="700" fill="#212529">Parallel stream</text>
+<text x="200" y="42" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="13" fill="#868E96">list.parallelStream().filter(n -&gt; n &gt; 2).map(n -&gt; n * 10).toList()</text>
+<circle cx="46" cy="74" r="10" fill="#4C6EF5"/><text x="46" y="78.5" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#fff">1</text>
+<text x="64" y="79" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#4C6EF5">Разбиение</text>
+<circle cx="380" cy="74" r="10" fill="#0CA678"/><text x="380" y="78.5" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#fff">2</text>
+<text x="398" y="79" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#0CA678">Параллельное выполнение</text>
+<circle cx="800" cy="74" r="10" fill="#7048E8"/><text x="800" y="78.5" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#fff">3</text>
+<text x="818" y="79" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#7048E8">Объединение</text>
+<rect x="36" y="213" width="74" height="34" rx="8" fill="#EDF2FF" stroke="#4C6EF5" stroke-width="1.8"/>
+<text x="73.0" y="234.5" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#212529">1 … 8</text>
+<path d="M110,230 C124.0,230 124.0,170 138,170" fill="none" stroke="#868E96" stroke-width="1.6"/>
+<rect x="138" y="154" width="66" height="32" rx="8" fill="#EDF2FF" stroke="#4C6EF5" stroke-width="1.8"/>
+<text x="171.0" y="174.5" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#212529">1 … 4</text>
+<path d="M110,230 C124.0,230 124.0,290 138,290" fill="none" stroke="#868E96" stroke-width="1.6"/>
+<rect x="138" y="274" width="66" height="32" rx="8" fill="#EDF2FF" stroke="#4C6EF5" stroke-width="1.8"/>
+<text x="171.0" y="294.5" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#212529">5 … 8</text>
+<path d="M204,170 C220.0,170 220.0,140 236,140" fill="none" stroke="#868E96" stroke-width="1.6"/>
+<rect x="236" y="125" width="58" height="30" rx="8" fill="#EDF2FF" stroke="#4C6EF5" stroke-width="1.8"/>
+<text x="265.0" y="144.5" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12.5" font-weight="600" fill="#212529">1, 2</text>
+<path d="M204,170 C220.0,170 220.0,200 236,200" fill="none" stroke="#868E96" stroke-width="1.6"/>
+<rect x="236" y="185" width="58" height="30" rx="8" fill="#EDF2FF" stroke="#4C6EF5" stroke-width="1.8"/>
+<text x="265.0" y="204.5" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12.5" font-weight="600" fill="#212529">3, 4</text>
+<path d="M204,290 C220.0,290 220.0,260 236,260" fill="none" stroke="#868E96" stroke-width="1.6"/>
+<rect x="236" y="245" width="58" height="30" rx="8" fill="#EDF2FF" stroke="#4C6EF5" stroke-width="1.8"/>
+<text x="265.0" y="264.5" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12.5" font-weight="600" fill="#212529">5, 6</text>
+<path d="M204,290 C220.0,290 220.0,320 236,320" fill="none" stroke="#868E96" stroke-width="1.6"/>
+<rect x="236" y="305" width="58" height="30" rx="8" fill="#EDF2FF" stroke="#4C6EF5" stroke-width="1.8"/>
+<text x="265.0" y="324.5" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12.5" font-weight="600" fill="#212529">7, 8</text>
+<text x="36" y="372" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12.5" font-weight="600" fill="#4C6EF5">Spliterator.trySplit()</text>
+<text x="36" y="392" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" fill="#868E96">делит источник пополам,</text>
+<text x="36" y="409" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" fill="#868E96">пока куски не станут мелкими</text>
+<rect x="328" y="96" width="432" height="262" rx="14" fill="#F8FFFC" stroke="#0CA678" stroke-width="2"/>
+<text x="344" y="116" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12.5" font-weight="700" fill="#0CA678">ForkJoinPool.commonPool()</text>
+<path d="M294,140 C315.0,140 315.0,140 336,140" fill="none" stroke="#868E96" stroke-width="1.6"/>
+<rect x="338" y="119" width="412" height="42" rx="9" fill="#fff" stroke="#D3F9D8" stroke-width="1.5"/>
+<text x="350" y="139" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12" font-weight="600" fill="#F76707">main</text>
+<text x="350" y="153" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="10" fill="#F76707">вызывающий</text>
+<rect x="438" y="126" width="56" height="28" rx="8" fill="#EDF2FF" stroke="#4C6EF5" stroke-width="1.8"/>
+<text x="466.0" y="144.5" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12" font-weight="600" fill="#212529">1, 2</text>
+<line x1="498" y1="140" x2="524" y2="140" stroke="#868E96" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="578" y="144.5" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12" fill="#212529">filter→map</text>
+<line x1="632" y1="140" x2="658" y2="140" stroke="#868E96" stroke-width="1.6" marker-end="url(#a)"/>
+<rect x="662" y="126" width="80" height="28" rx="8" fill="#E6FCF5" stroke="#0CA678" stroke-width="1.8"/>
+<text x="702.0" y="144.5" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12" font-weight="600" fill="#212529">[ ]</text>
+<path d="M294,200 C315.0,200 315.0,200 336,200" fill="none" stroke="#868E96" stroke-width="1.6"/>
+<rect x="338" y="179" width="412" height="42" rx="9" fill="#fff" stroke="#D3F9D8" stroke-width="1.5"/>
+<text x="350" y="204.5" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12" font-weight="600" fill="#0CA678">worker-1</text>
+<rect x="438" y="186" width="56" height="28" rx="8" fill="#EDF2FF" stroke="#4C6EF5" stroke-width="1.8"/>
+<text x="466.0" y="204.5" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12" font-weight="600" fill="#212529">3, 4</text>
+<line x1="498" y1="200" x2="524" y2="200" stroke="#868E96" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="578" y="204.5" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12" fill="#212529">filter→map</text>
+<line x1="632" y1="200" x2="658" y2="200" stroke="#868E96" stroke-width="1.6" marker-end="url(#a)"/>
+<rect x="662" y="186" width="80" height="28" rx="8" fill="#E6FCF5" stroke="#0CA678" stroke-width="1.8"/>
+<text x="702.0" y="204.5" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12" font-weight="600" fill="#212529">[30, 40]</text>
+<path d="M294,260 C315.0,260 315.0,260 336,260" fill="none" stroke="#868E96" stroke-width="1.6"/>
+<rect x="338" y="239" width="412" height="42" rx="9" fill="#fff" stroke="#D3F9D8" stroke-width="1.5"/>
+<text x="350" y="264.5" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12" font-weight="600" fill="#0CA678">worker-2</text>
+<rect x="438" y="246" width="56" height="28" rx="8" fill="#EDF2FF" stroke="#4C6EF5" stroke-width="1.8"/>
+<text x="466.0" y="264.5" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12" font-weight="600" fill="#212529">5, 6</text>
+<line x1="498" y1="260" x2="524" y2="260" stroke="#868E96" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="578" y="264.5" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12" fill="#212529">filter→map</text>
+<line x1="632" y1="260" x2="658" y2="260" stroke="#868E96" stroke-width="1.6" marker-end="url(#a)"/>
+<rect x="662" y="246" width="80" height="28" rx="8" fill="#E6FCF5" stroke="#0CA678" stroke-width="1.8"/>
+<text x="702.0" y="264.5" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12" font-weight="600" fill="#212529">[50, 60]</text>
+<path d="M294,320 C315.0,320 315.0,320 336,320" fill="none" stroke="#868E96" stroke-width="1.6"/>
+<rect x="338" y="299" width="412" height="42" rx="9" fill="#fff" stroke="#D3F9D8" stroke-width="1.5"/>
+<text x="350" y="324.5" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12" font-weight="600" fill="#0CA678">worker-3</text>
+<rect x="438" y="306" width="56" height="28" rx="8" fill="#EDF2FF" stroke="#4C6EF5" stroke-width="1.8"/>
+<text x="466.0" y="324.5" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12" font-weight="600" fill="#212529">7, 8</text>
+<line x1="498" y1="320" x2="524" y2="320" stroke="#868E96" stroke-width="1.6" marker-end="url(#a)"/>
+<text x="578" y="324.5" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12" fill="#212529">filter→map</text>
+<line x1="632" y1="320" x2="658" y2="320" stroke="#868E96" stroke-width="1.6" marker-end="url(#a)"/>
+<rect x="662" y="306" width="80" height="28" rx="8" fill="#E6FCF5" stroke="#0CA678" stroke-width="1.8"/>
+<text x="702.0" y="324.5" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12" font-weight="600" fill="#212529">[70, 80]</text>
+<path d="M432,274 C406,294 406,286 432,306" fill="none" stroke="#F76707" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#o)"/>
+<text x="344" y="295" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#F76707">steal</text>
+<text x="344" y="380" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" fill="#868E96"><tspan fill="#F76707" font-weight="700">work-stealing:</tspan> свободный воркер забирает</text>
+<text x="344" y="397" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" fill="#868E96">задачу из очереди занятого</text>
+<path d="M742,140 C771.0,140 771.0,170.0 800,170.0" fill="none" stroke="#868E96" stroke-width="1.6"/>
+<path d="M742,200 C771.0,200 771.0,170.0 800,170.0" fill="none" stroke="#868E96" stroke-width="1.6"/>
+<rect x="800" y="155.0" width="82" height="30" rx="8" fill="#F3F0FF" stroke="#7048E8" stroke-width="1.8"/>
+<text x="841.0" y="174.5" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12" font-weight="600" fill="#212529">[30, 40]</text>
+<path d="M742,260 C771.0,260 771.0,290.0 800,290.0" fill="none" stroke="#868E96" stroke-width="1.6"/>
+<path d="M742,320 C771.0,320 771.0,290.0 800,290.0" fill="none" stroke="#868E96" stroke-width="1.6"/>
+<rect x="800" y="275.0" width="82" height="30" rx="8" fill="#F3F0FF" stroke="#7048E8" stroke-width="1.8"/>
+<text x="841.0" y="294.5" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12" font-weight="600" fill="#212529">[50 … 80]</text>
+<path d="M882,170.0 C890.0,170.0 890.0,230.0 898,230.0" fill="none" stroke="#868E96" stroke-width="1.6"/>
+<path d="M882,290.0 C890.0,290.0 890.0,230.0 898,230.0" fill="none" stroke="#868E96" stroke-width="1.6"/>
+<rect x="896" y="210.0" width="84" height="40" rx="8" fill="#F3F0FF" stroke="#7048E8" stroke-width="1.8"/>
+<text x="938.0" y="234.5" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12.5" font-weight="600" fill="#212529">[30…80]</text>
+<text x="938" y="202.0" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11" fill="#7048E8">результат</text>
+<text x="780" y="372" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#7048E8">combiner</text>
+<text x="780" y="392" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" fill="#868E96">склеивает частичные результаты;</text>
+<text x="780" y="409" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" fill="#868E96">порядок источника сохранён</text>
+<line x1="36" y1="424" x2="964" y2="424" stroke="#E9ECEF" stroke-width="1.5"/>
+<text x="36" y="446" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" fill="#495057"><tspan font-weight="700" fill="#212529">commonPool</tspan> — один на всё приложение: availableProcessors() − 1 воркеров + вызывающий поток.</text>
+<text x="36" y="465" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" fill="#495057">Блокирующий I/O внутри parallel-стрима занимает его воркеры и тормозит всех остальных пользователей пула.</text>
+</svg>

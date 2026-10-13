@@ -796,6 +796,7 @@ function detectAndWrapCode(container) {
     };
     const CHAPTER_MD = {
       'Concurrency': 'java-file/Java Concurrency.md',
+      'Stream API': 'java-file/Java Stream.md',
     };
     const containerCache = {};
 

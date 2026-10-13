@@ -3138,5 +3138,815 @@
     "src": "Java Concurrency",
     "section": "Паттерны и принципы",
     "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что такое Stream?",
+    "a": "Последовательность элементов, над которой декларативно описывается конвейер операций (java.util.stream.Stream<T>, Java 8). Стрим не хранит данные (это не коллекция), не изменяет источник и потребляется один раз.",
+    "anchor": "что-такое-stream",
+    "src": "Java Stream",
+    "section": "Основы",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Три ключевых свойства стрима?",
+    "a": "- Ленивость: промежуточные операции ничего не делают до терминальной.\n- Одноразовость: повторное использование → IllegalStateException.\n- Внутренняя итерация: цикл крутит библиотека, а не ваш for, поэтому возможны оптимизации и параллелизм.",
+    "anchor": "что-такое-stream",
+    "src": "Java Stream",
+    "section": "Основы",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что будет, если вызвать count() дважды на одном стриме? Как переиспользовать источник?",
+    "a": "Второй вызов бросит IllegalStateException: stream has already been operated upon or closed. Нужен новый стрим: снова list.stream() или Supplier<Stream<T>> src = () -> Stream.of(...); src.get().count().",
+    "anchor": "что-такое-stream",
+    "src": "Java Stream",
+    "section": "Основы",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Когда обычный for лучше стрима?",
+    "a": "Когда нужен ранний return/break, изменение нескольких переменных или работа с индексами — цикл читается проще.",
+    "anchor": "что-такое-stream",
+    "src": "Java Stream",
+    "section": "Основы",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Из чего состоит pipeline стрима?",
+    "a": "Источник → 0..N промежуточных операций → 1 терминальная.\n- Источник создаёт стрим (list.stream(), Stream.of()).\n- Промежуточная описывает преобразование лениво и возвращает Stream (filter, map, sorted).\n- Терминальная запускает вычисление и возвращает результат или void (toList, collect, count).",
+    "anchor": "устройство-конвейера",
+    "src": "Java Stream",
+    "section": "Основы",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Stateless vs stateful промежуточные операции?",
+    "a": "Stateless обрабатывают элемент независимо от других (filter, map). Stateful должны видеть другие элементы (sorted, distinct, limit) → буферизуют данные и хуже параллелятся.",
+    "anchor": "устройство-конвейера",
+    "src": "Java Stream",
+    "section": "Основы",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что такое short-circuiting операции и зачем они нужны?",
+    "a": "Операции, которые могут закончить, не обработав весь стрим: limit, takeWhile, findFirst, anyMatch и т.д. Только с ними можно безопасно работать с бесконечными стримами.",
+    "anchor": "устройство-конвейера",
+    "src": "Java Stream",
+    "section": "Основы",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что такое функциональный интерфейс?",
+    "a": "Интерфейс с одним абстрактным методом; реализацию можно передать лямбдой или ссылкой на метод. Все операции стримов принимают именно их (java.util.function).",
+    "anchor": "функциональные-интерфейсы-и-ссылки-на-методы",
+    "src": "Java Stream",
+    "section": "Основы",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Сигнатуры Predicate, Function, Consumer, Supplier и где они в стримах?",
+    "a": "- Predicate<T>: T → boolean — filter, anyMatch, takeWhile.\n- Function<T,R>: T → R — map, flatMap, groupingBy, toMap.\n- Consumer<T>: T → void — forEach, peek.\n- Supplier<T>: () → T — generate, orElseGet, toCollection.",
+    "anchor": "функциональные-интерфейсы-и-ссылки-на-методы",
+    "src": "Java Stream",
+    "section": "Основы",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Какой функциональный интерфейс принимают reduce, sorted, iterate, mapMulti?",
+    "a": "- reduce и merge-функция toMap — BinaryOperator<T>: (T, T) → T.\n- sorted, min, max — Comparator<T>: (T, T) → int.\n- iterate — UnaryOperator<T>: T → T.\n- mapMulti — BiConsumer<T, U>: (T, U) → void.",
+    "anchor": "функциональные-интерфейсы-и-ссылки-на-методы",
+    "src": "Java Stream",
+    "section": "Основы",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Какие бывают ссылки на методы?",
+    "a": "- Статический метод: Integer::parseInt (s -> Integer.parseInt(s)).\n- Метод элемента: String::length (s -> s.length()).\n- Метод конкретного объекта: System.out::println.\n- Конструктор: ArrayList::new (() -> new ArrayList<>()).",
+    "anchor": "функциональные-интерфейсы-и-ссылки-на-методы",
+    "src": "Java Stream",
+    "section": "Основы",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Зачем нужны IntPredicate, ToIntFunction и подобные?",
+    "a": "Это примитивные версии функциональных интерфейсов — работают без боксинга. Например, mapToInt принимает ToIntFunction<T>.",
+    "anchor": "функциональные-интерфейсы-и-ссылки-на-методы",
+    "src": "Java Stream",
+    "section": "Основы",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что выполнится в строке Stream.of(1, 2, 3).map(n -> n * 10); ?",
+    "a": "Ничего: нет терминальной операции, а промежуточные операции только описывают работу. Лямбда не вызовется ни разу.",
+    "anchor": "ленивость-и-порядок-выполнения",
+    "src": "Java Stream",
+    "section": "Основы",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "В каком порядке напечатаются map и forEach для Stream.of(1, 2, 3)?",
+    "a": "map 1, forEach 1, map 2, forEach 2, map 3, forEach 3. Стрим работает поэлементно: каждый элемент проходит всю цепочку, и только потом берётся следующий. Цикл дал бы сначала все map, потом все forEach.",
+    "anchor": "ленивость-и-порядок-выполнения",
+    "src": "Java Stream",
+    "section": "Основы",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Сколько раз вызовется filter в Stream.of(1, 2, 3, 4).filter(n -> n > 1).findFirst()?",
+    "a": "Два раза: для 1 и для 2. На 2 элемент найден, findFirst — short-circuit, поэтому 3 и 4 не проверяются.",
+    "anchor": "ленивость-и-порядок-выполнения",
+    "src": "Java Stream",
+    "section": "Основы",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Почему filter ставят перед дорогим map или sorted?",
+    "a": "Каждая операция выполняется для каждого дошедшего до неё элемента. Сначала отсекаем лишнее — потом считаем: filter → map, filter → sorted, а не наоборот.",
+    "anchor": "ленивость-и-порядок-выполнения",
+    "src": "Java Stream",
+    "section": "Основы",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Какими способами можно создать стрим?",
+    "a": "collection.stream(), Arrays.stream(arr), Stream.of(...), Stream.ofNullable(v), Stream.empty(), Stream.concat(s1, s2), Stream.iterate, Stream.generate, IntStream.range/rangeClosed, \"text\".chars(), map.entrySet().stream(), Files.lines(path).",
+    "anchor": "источники-стримов",
+    "src": "Java Stream",
+    "section": "Основы",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Stream.iterate с двумя и с тремя аргументами — в чём разница?",
+    "a": "iterate(seed, f) — бесконечный, нужен limit или другая short-circuit операция. iterate(seed, hasNext, next) (Java 9) — с условием остановки, как for: Stream.iterate(1, n -> n < 1000, n -> n * 2).",
+    "anchor": "источники-стримов",
+    "src": "Java Stream",
+    "section": "Основы",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "IntStream.range vs rangeClosed?",
+    "a": "range(0, 10) — полуинтервал [0, 10), без правой границы. rangeClosed(1, 10) — отрезок [1, 10], включая правую.",
+    "anchor": "источники-стримов",
+    "src": "Java Stream",
+    "section": "Основы",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что делает Stream.ofNullable?",
+    "a": "Java 9: стрим из 0 элементов, если значение null, иначе из 1. Удобно во flatMap, чтобы не писать проверку на null.",
+    "anchor": "источники-стримов",
+    "src": "Java Stream",
+    "section": "Основы",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Почему Files.lines нужно оборачивать в try-with-resources?",
+    "a": "Стрим держит файл открытым, пока его не закроют. Stream реализует AutoCloseable: try (Stream<String> lines = Files.lines(path)) { ... }.",
+    "anchor": "источники-стримов",
+    "src": "Java Stream",
+    "section": "Основы",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что будет при Stream.generate(...).count() или .sorted() без limit?",
+    "a": "Зависание: стрим бесконечный, а count и sorted должны увидеть все элементы. Бесконечному стриму нужна short-circuit операция — limit, takeWhile, findFirst, anyMatch.",
+    "anchor": "источники-стримов",
+    "src": "Java Stream",
+    "section": "Основы",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что будет при list.stream().forEach(n -> list.add(n))?",
+    "a": "ConcurrentModificationException: нельзя менять источник во время обхода.",
+    "anchor": "источники-стримов",
+    "src": "Java Stream",
+    "section": "Основы",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что делает map?",
+    "a": "Превращает каждый элемент в новый — 1 → 1. Stream.of(\"a\", \"bb\", \"ccc\").map(String::length).toList() → [1, 2, 3].",
+    "anchor": "map",
+    "src": "Java Stream",
+    "section": "Промежуточные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Почему paths.stream().map(Files::readString) не компилируется и как это обойти?",
+    "a": "Function.apply не объявляет throws, а readString бросает checked IOException. Обходят try/catch внутри лямбды с переупаковкой в unchecked: catch (IOException e) { throw new UncheckedIOException(e); }.",
+    "anchor": "map",
+    "src": "Java Stream",
+    "section": "Промежуточные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что делает flatMap?",
+    "a": "Превращает каждый элемент в стрим из 0..N элементов и склеивает их в один — 1 → много. Stream.of(List.of(1, 2), List.of(3)).flatMap(List::stream).toList() → [1, 2, 3].",
+    "anchor": "flatmap",
+    "src": "Java Stream",
+    "section": "Промежуточные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что получится, если в Stream.of(List.of(1, 2), List.of(3)) вместо flatMap(List::stream) написать map(List::stream)?",
+    "a": "Stream<Stream<Integer>> — стрим стримов, а не чисел. map не «распрямляет» вложенность; с map(l -> l) было бы [[1, 2], [3]].",
+    "anchor": "flatmap",
+    "src": "Java Stream",
+    "section": "Промежуточные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что такое mapMulti и когда он лучше flatMap?",
+    "a": "Java 16: то же, что flatMap, но элементы отдаются в sink.accept(...) напрямую, без промежуточного стрима. Выгоднее, когда на выходе 0–2 элемента. Тип часто приходится указывать явно: .<Integer>mapMulti((n, sink) -> ...).",
+    "anchor": "mapmulti-java-16",
+    "src": "Java Stream",
+    "section": "Промежуточные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "limit vs skip?",
+    "a": "limit(n) берёт первые n элементов и останавливает стрим (short-circuit, главный способ ограничить бесконечный стрим). skip(n) пропускает первые n. Пагинация: skip(page * size).limit(size).",
+    "anchor": "limit",
+    "src": "Java Stream",
+    "section": "Промежуточные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что вернут Stream.of(1, 2, 3, 1).takeWhile(n -> n < 3) и .filter(n -> n < 3)?",
+    "a": "takeWhile → [1, 2]: берёт, пока условие true, на первом false — стоп. filter → [1, 2, 1]: проверяет все элементы до конца.",
+    "anchor": "takewhile-java-9",
+    "src": "Java Stream",
+    "section": "Промежуточные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что делает dropWhile?",
+    "a": "Java 9: пропускает элементы, пока условие true; с первого false берёт всё остальное. Stream.of(1, 2, 3, 1).dropWhile(n -> n < 3) → [3, 1].",
+    "anchor": "dropwhile-java-9",
+    "src": "Java Stream",
+    "section": "Промежуточные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Почему distinct и sorted называют stateful и чем это грозит?",
+    "a": "Им нужно видеть другие элементы, поэтому они копят данные в буфере. Это лишняя память, хуже параллелится, а на бесконечном стриме операция не завершится.",
+    "anchor": "statefulоперации-distinct-sorted",
+    "src": "Java Stream",
+    "section": "Промежуточные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "По какому признаку distinct убирает дубликаты? Сохраняется ли порядок?",
+    "a": "По equals()/hashCode(). Порядок первого появления сохраняется: Stream.of(1, 1, 2, 3, 3).distinct() → [1, 2, 3].",
+    "anchor": "distinct",
+    "src": "Java Stream",
+    "section": "Промежуточные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Как отсортировать по убыванию и по нескольким полям?",
+    "a": "sorted(Comparator.reverseOrder()) — по убыванию естественного порядка. Несколько критериев: sorted(Comparator.comparing(User::age).thenComparing(User::name)). Без аргументов sorted() требует Comparable.",
+    "anchor": "sorted",
+    "src": "Java Stream",
+    "section": "Промежуточные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что делает peek и почему на нём нельзя строить логику?",
+    "a": "Выполняет действие над элементом и передаёт его дальше без изменений. Стрим вправе пропустить peek, если результат от него не зависит, поэтому peek — только для отладки.",
+    "anchor": "peek",
+    "src": "Java Stream",
+    "section": "Промежуточные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что напечатает List.of(1, 2, 3).stream().peek(System.out::println).count()?",
+    "a": "В Java 9+ — ничего: размер известен заранее, count() не прогоняет элементы через конвейер. Если добавить filter(x -> true) перед peek, напечатает 1 2 3.",
+    "anchor": "peek",
+    "src": "Java Stream",
+    "section": "Промежуточные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что такое терминальная операция и что происходит со стримом после неё?",
+    "a": "Запускает конвейер и возвращает результат (не стрим) или void: toList, collect, count, forEach, reduce. После неё стрим израсходован, повторное использование → IllegalStateException.",
+    "anchor": "терминальные-операции",
+    "src": "Java Stream",
+    "section": "Терминальные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что будет при list.add(4), если list получен через Stream.toList()?",
+    "a": "UnsupportedOperationException: Stream.toList() (Java 16) возвращает неизменяемый список.",
+    "anchor": "tolist-java-16",
+    "src": "Java Stream",
+    "section": "Терминальные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "stream.toList() vs Collectors.toList() vs Collectors.toUnmodifiableList()?",
+    "a": "- toList() (Java 16): неизменяемый, null можно.\n- Collectors.toList() (Java 8): изменяемость не гарантируется, по факту ArrayList.\n- Collectors.toUnmodifiableList() (Java 10): неизменяемый, null → NullPointerException.\nСовременный дефолт — .toList(); Collectors.toList() — если список дальше нужно менять.",
+    "anchor": "сбор-в-коллекцию-tolist-vs-collect",
+    "src": "Java Stream",
+    "section": "Терминальные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Как собрать стрим в TreeSet?",
+    "a": "collect(Collectors.toCollection(TreeSet::new)). toCollection принимает Supplier любой коллекции.",
+    "anchor": "collect",
+    "src": "Java Stream",
+    "section": "Терминальные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Как получить из стрима Integer[], а не Object[]?",
+    "a": "toArray(Integer[]::new) — передать генератор массива. Без аргумента toArray() вернёт Object[].",
+    "anchor": "toarray",
+    "src": "Java Stream",
+    "section": "Терминальные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "reduce с начальным значением и без — в чём разница?",
+    "a": "reduce(0, Integer::sum) возвращает T (на пустом стриме — identity, 0). reduce(Integer::max) без identity возвращает Optional<T>, потому что стрим может быть пустым.",
+    "anchor": "reduce",
+    "src": "Java Stream",
+    "section": "Терминальные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Какие требования к функции и начальному значению в reduce?",
+    "a": "Функция должна быть ассоциативной, а identity — нейтральным элементом (0 для +, 1 для *). Иначе в parallel результат будет неверным: identity подставляется в каждый кусок.",
+    "anchor": "reduce",
+    "src": "Java Stream",
+    "section": "Терминальные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Какой тип возвращает count()?",
+    "a": "long.",
+    "anchor": "count",
+    "src": "Java Stream",
+    "section": "Терминальные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Почему min и max возвращают Optional?",
+    "a": "Стрим может быть пустым — тогда минимума нет. Оба принимают Comparator: Stream.of(3, 1, 2).max(Integer::compare) → Optional[3].",
+    "anchor": "min-max",
+    "src": "Java Stream",
+    "section": "Терминальные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "findFirst vs findAny?",
+    "a": "findFirst — первый элемент в порядке источника. findAny — любой; в последовательном стриме обычно тоже первый, а в parallel — первый, до которого добрался любой поток. Поэтому в parallel findAny быстрее: не нужно соблюдать порядок.",
+    "anchor": "findfirst-findany",
+    "src": "Java Stream",
+    "section": "Терминальные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что вернут Stream.empty().allMatch(x -> false) и anyMatch(x -> true)?",
+    "a": "allMatch → true (на пустом стриме нет элемента, нарушающего условие), anyMatch → false, noneMatch → true. Все три — short-circuit: останавливаются, как только ответ ясен.",
+    "anchor": "anymatch-allmatch-nonematch",
+    "src": "Java Stream",
+    "section": "Терминальные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "forEach vs forEachOrdered?",
+    "a": "forEach в parallel не гарантирует порядок (например 231). forEachOrdered всегда идёт в порядке источника (123), но теряет часть выгоды параллелизма.",
+    "anchor": "foreach-vs-foreachordered",
+    "src": "Java Stream",
+    "section": "Терминальные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Почему не стоит собирать результат через forEach(x -> list.add(x))?",
+    "a": "Это побочный эффект: в parallel будет гонка данных (потеря элементов или исключение). Собирать нужно через toList() или collect(...).",
+    "anchor": "foreach-vs-foreachordered",
+    "src": "Java Stream",
+    "section": "Терминальные операции",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Из чего состоит Collector?",
+    "a": "supplier — во что собирать; accumulator — как добавить элемент; combiner — как слить части в parallel; finisher — как получить итог. Готовые коллекторы — в java.util.stream.Collectors.",
+    "anchor": "collectors",
+    "src": "Java Stream",
+    "section": "Collectors",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что будет в toMap при одинаковых ключах и как это решить?",
+    "a": "IllegalStateException (Duplicate key). Решается третьим аргументом — merge-функцией: toMap(String::length, s -> s, (x, y) -> x + y).",
+    "anchor": "tomap-2",
+    "src": "Java Stream",
+    "section": "Collectors",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Зачем четвёртый аргумент toMap и что будет со значением null?",
+    "a": "Четвёртый аргумент — фабрика Map: TreeMap::new, LinkedHashMap::new (сохранить порядок). Значение null → NullPointerException.",
+    "anchor": "tomap-2",
+    "src": "Java Stream",
+    "section": "Collectors",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что делает groupingBy?",
+    "a": "Раскладывает элементы по группам: ключ → List элементов с этим ключом. Stream.of(\"a\", \"bb\", \"cc\", \"ddd\").collect(groupingBy(String::length)) → {1=[a], 2=[bb, cc], 3=[ddd]}.",
+    "anchor": "groupingby",
+    "src": "Java Stream",
+    "section": "Collectors",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что такое downstream-коллектор? Примеры.",
+    "a": "Второй аргумент groupingBy — что сделать с каждой группой: counting(), mapping(f, toList()), joining(\"+\"), summingInt, averagingInt, maxBy, filtering (9), flatMapping (9), collectingAndThen.",
+    "anchor": "groupingby",
+    "src": "Java Stream",
+    "section": "Collectors",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Как получить groupingBy с отсортированными ключами?",
+    "a": "Передать фабрику Map: groupingBy(f, TreeMap::new, downstream).",
+    "anchor": "groupingby",
+    "src": "Java Stream",
+    "section": "Collectors",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "partitioningBy vs groupingBy?",
+    "a": "partitioningBy делит по Predicate ровно на две группы — ключи false и true есть всегда, даже пустые. groupingBy — по произвольному ключу, сколько угодно групп.",
+    "anchor": "partitioningby",
+    "src": "Java Stream",
+    "section": "Collectors",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Как склеить строки в \"[a, b, c]\"?",
+    "a": "collect(Collectors.joining(\", \", \"[\", \"]\")) — разделитель, префикс, суффикс.",
+    "anchor": "joining",
+    "src": "Java Stream",
+    "section": "Collectors",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что делает Collectors.teeing?",
+    "a": "Java 12: прогоняет элементы через два коллектора за один проход и объединяет результаты функцией. Например, среднее: teeing(counting(), summingInt(n -> n), (cnt, sum) -> (double) sum / cnt).",
+    "anchor": "teeing-java-12",
+    "src": "Java Stream",
+    "section": "Collectors",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Как за один проход получить count, sum, min, max и average?",
+    "a": "collect(Collectors.summarizingInt(...)) → IntSummaryStatistics. У IntStream то же даёт summaryStatistics().",
+    "anchor": "summarizingint",
+    "src": "Java Stream",
+    "section": "Collectors",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что делает collectingAndThen?",
+    "a": "Применяет функцию к результату другого коллектора: collectingAndThen(toList(), List::size), collectingAndThen(toList(), Collections::unmodifiableList).",
+    "anchor": "collectingandthen",
+    "src": "Java Stream",
+    "section": "Collectors",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Зачем нужны IntStream, LongStream, DoubleStream?",
+    "a": "Работают с примитивами без автобоксинга и дают числовые операции: sum, average, max, summaryStatistics. Stream<Integer> в горячем коде — лишний объект Integer на каждый элемент.",
+    "anchor": "примитивные-стримы",
+    "src": "Java Stream",
+    "section": "Примитивы и Optional",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Как перейти между Stream<T> и IntStream?",
+    "a": "Stream → IntStream: mapToInt (ещё mapToLong, mapToDouble). IntStream → Stream<Integer>: boxed(). IntStream → Stream<R>: mapToObj. IntStream → LongStream: asLongStream().",
+    "anchor": "примитивные-стримы",
+    "src": "Java Stream",
+    "section": "Примитивы и Optional",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что возвращает IntStream.average()?",
+    "a": "OptionalDouble, не Optional<Double>. max/min у IntStream возвращают OptionalInt.",
+    "anchor": "примитивные-стримы",
+    "src": "Java Stream",
+    "section": "Примитивы и Optional",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Какие терминальные операции возвращают Optional?",
+    "a": "Те, что могут ничего не найти: findFirst, findAny, min, max, reduce без identity.",
+    "anchor": "optional-как-результат-стрима",
+    "src": "Java Stream",
+    "section": "Примитивы и Optional",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Зачем Optional::stream?",
+    "a": "Java 9: превращает Optional в стрим из 0 или 1 элемента. Удобно во flatMap: ids.stream().map(repo::findById).flatMap(Optional::stream) — только найденные.",
+    "anchor": "optional-как-результат-стрима",
+    "src": "Java Stream",
+    "section": "Примитивы и Optional",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "orElse vs orElseGet?",
+    "a": "Аргумент orElse вычисляется всегда, даже если значение есть. orElseGet принимает Supplier и вызывает его, только когда Optional пуст. Для дорогих значений (запрос в БД, создание объекта) — orElseGet.",
+    "anchor": "orelse-vs-orelseget",
+    "src": "Java Stream",
+    "section": "Примитивы и Optional",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Как работает parallel stream и в каком пуле?",
+    "a": "Spliterator делит источник на части, они обрабатываются в ForkJoinPool.commonPool() — по умолчанию availableProcessors() - 1 воркеров плюс вызывающий поток. Частичные результаты сливает combiner.",
+    "anchor": "parallel-streams",
+    "src": "Java Stream",
+    "section": "Parallel Streams",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что будет, если вызвать .parallel(), а потом .sequential() в одном конвейере?",
+    "a": "Режим действует на весь конвейер, а не на участок: побеждает последний вызов. Здесь весь стрим будет последовательным.",
+    "anchor": "parallel-streams",
+    "src": "Java Stream",
+    "section": "Parallel Streams",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Когда parallel stream имеет смысл?",
+    "a": "Данных много и работа CPU-bound; источник хорошо делится (ArrayList, массивы, IntStream.range); операции stateless, без общего изменяемого состояния.",
+    "anchor": "parallel-streams",
+    "src": "Java Stream",
+    "section": "Parallel Streams",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Когда parallel stream вредит?",
+    "a": "- I/O и блокирующие вызовы: забивают общий commonPool, мешая остальным (и CompletableFuture по умолчанию).\n- Маленькие коллекции: разбиение дороже выигрыша.\n- Плохо делимые источники: LinkedList, Stream.iterate, Files.lines.\n- sorted, limit, findFirst, forEachOrdered на упорядоченных стримах — порядок дорого сохранять (unordered() может помочь).",
+    "anchor": "parallel-streams",
+    "src": "Java Stream",
+    "section": "Parallel Streams",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что не так с nums.parallelStream().forEach(res::add), где res — ArrayList?",
+    "a": "Гонка данных: ArrayList не потокобезопасен → потеря элементов или исключение. Правильно: nums.parallelStream().toList() или collect(...).",
+    "anchor": "parallel-streams",
+    "src": "Java Stream",
+    "section": "Parallel Streams",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Как выполнить parallel stream не в commonPool?",
+    "a": "Трюк: customPool.submit(() -> list.parallelStream()...).get() — задачи идут в ForkJoinPool, из которого вызван стрим. Спецификация это не гарантирует, это деталь реализации.",
+    "anchor": "как-работает-parallel-stream-и-когда-он-медленнее-обычного",
+    "src": "Java Stream",
+    "section": "Parallel Streams",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что такое Gatherer?",
+    "a": "Пользовательская промежуточная операция (java.util.stream.Gatherer, финализирован в Java 24, JEP 485) — аналог Collector для середины конвейера. Подключается через stream.gather(...). Закрывает окна и накопление с состоянием.",
+    "anchor": "gatherers-java-24",
+    "src": "Java Stream",
+    "section": "Gatherers",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "windowFixed vs windowSliding?",
+    "a": "windowFixed(2) на 1..5 → [[1, 2], [3, 4], [5]] — непересекающиеся окна. windowSliding(3) на 1..4 → [[1, 2, 3], [2, 3, 4]] — окно сдвигается на 1.",
+    "anchor": "gatherers-java-24",
+    "src": "Java Stream",
+    "section": "Gatherers",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Как получить нарастающий итог [1, 3, 6, 10] из 1..4?",
+    "a": "gather(Gatherers.scan(() -> 0, Integer::sum)). В отличие от reduce/fold, scan отдаёт каждое промежуточное значение.",
+    "anchor": "gatherers-java-24",
+    "src": "Java Stream",
+    "section": "Gatherers",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Что делает Gatherers.mapConcurrent?",
+    "a": "mapConcurrent(10, this::fetch) — выполняет функцию параллельно (до 10 одновременно) на виртуальных потоках и сохраняет порядок элементов. Подходит для I/O, в отличие от parallel stream.",
+    "anchor": "gatherers-java-24",
+    "src": "Java Stream",
+    "section": "Gatherers",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Чем Stream отличается от коллекции?",
+    "a": "Коллекция хранит элементы, её можно обходить сколько угодно раз. Стрим ничего не хранит: описывает вычисление над источником, выполняется лениво и один раз. Коллекция — про данные, стрим — про обработку.",
+    "anchor": "чем-stream-отличается-от-коллекции",
+    "src": "Java Stream",
+    "section": "Вопросы с собеседований",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Чем промежуточные операции отличаются от терминальных?",
+    "a": "Промежуточные (filter, map, sorted) возвращают Stream и только достраивают конвейер. Терминальная (toList, collect, count, forEach) запускает его и возвращает результат. Без терминальной код в лямбдах не вызовется.",
+    "anchor": "чем-промежуточные-операции-отличаются-от-терминальных",
+    "src": "Java Stream",
+    "section": "Вопросы с собеседований",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Почему стрим нельзя использовать повторно?",
+    "a": "Стрим — одноразовый конвейер над Spliterator источника; после терминальной операции он израсходован → IllegalStateException. Нужен новый: list.stream() или Supplier<Stream<T>>.",
+    "anchor": "почему-стрим-нельзя-использовать-повторно",
+    "src": "Java Stream",
+    "section": "Вопросы с собеседований",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "reduce vs collect?",
+    "a": "reduce — неизменяемая свёртка: каждый шаг создаёт новое значение, для чисел и immutable-объектов. collect — изменяемая свёртка: элементы добавляются в контейнер (ArrayList, StringBuilder, HashMap). Собирать коллекцию через reduce — новая коллекция на каждом шаге.",
+    "anchor": "reduce-vs-collect",
+    "src": "Java Stream",
+    "section": "Вопросы с собеседований",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Почему лямбды в стриме не должны менять внешнее состояние?",
+    "a": "Локальные переменные должны быть effectively final — компилятор не даст их менять. Поля и внешние коллекции менять можно, но это побочный эффект: в parallel — гонка данных, а из-за ленивости и short-circuit неизвестно, сколько раз и когда вызовется лямбда.",
+    "anchor": "почему-лямбды-в-стриме-не-должны-менять-внешнее-состояние",
+    "src": "Java Stream",
+    "section": "Вопросы с собеседований",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Как распрямить \"ab\", \"cd\" в [a, b, c, d] и что даст map вместо flatMap?",
+    "a": "flatMap(s -> Arrays.stream(s.split(\"\"))).toList() → [a, b, c, d]. map(s -> s.split(\"\")) даст Stream<String[]> — стрим массивов.",
+    "anchor": "в-чём-разница-между-map-и-flatmap",
+    "src": "Java Stream",
+    "section": "Вопросы с собеседований",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Посчитать частоту слов в строке",
+    "a": "Arrays.stream(text.split(\" \"))\n    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));\n// {java=3, stream=2, api=1}",
+    "anchor": "частота-слов",
+    "src": "Java Stream",
+    "section": "Код с собеседований",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Найти самое частое слово по Map<String, Long> частот",
+    "a": "freq.entrySet().stream()\n    .max(Map.Entry.comparingByValue())\n    .map(Map.Entry::getKey)\n    .orElseThrow();",
+    "anchor": "самое-частое-слово",
+    "src": "Java Stream",
+    "section": "Код с собеседований",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Отсортировать Map по значению по убыванию и сохранить порядок",
+    "a": "m.entrySet().stream()\n    .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())\n    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,\n                              (x, y) -> x, LinkedHashMap::new));\nLinkedHashMap — чтобы порядок не потерялся.",
+    "anchor": "отсортировать-map-по-значению-по-убыванию",
+    "src": "Java Stream",
+    "section": "Код с собеседований",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Найти первый неповторяющийся символ строки",
+    "a": "s.chars().mapToObj(c -> (char) c)\n    .collect(Collectors.groupingBy(Function.identity(), LinkedHashMap::new, Collectors.counting()))\n    .entrySet().stream()\n    .filter(e -> e.getValue() == 1)\n    .map(Map.Entry::getKey)\n    .findFirst();   // \"swiss\" → Optional[w]",
+    "anchor": "первый-неповторяющийся-символ",
+    "src": "Java Stream",
+    "section": "Код с собеседований",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Найти дубликаты в списке",
+    "a": "list.stream()\n    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))\n    .entrySet().stream()\n    .filter(e -> e.getValue() > 1)\n    .map(Map.Entry::getKey)\n    .toList();\nАльтернатива: Set<T> seen = new HashSet<>(); filter(x -> !seen.add(x)) — но это побочный эффект.",
+    "anchor": "дубликаты-в-списке",
+    "src": "Java Stream",
+    "section": "Код с собеседований",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Найти второе по величине число",
+    "a": "Stream.of(5, 1, 5, 3, 4)\n    .distinct()\n    .sorted(Comparator.reverseOrder())\n    .skip(1)\n    .findFirst();   // Optional[4]\ndistinct обязателен — иначе при двух пятёрках вернётся 5.",
+    "anchor": "второе-по-величине-число",
+    "src": "Java Stream",
+    "section": "Код с собеседований",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Сумма квадратов чётных чисел от 1 до 6",
+    "a": "IntStream.rangeClosed(1, 6)\n    .filter(n -> n % 2 == 0)\n    .map(n -> n * n)\n    .sum();   // 56",
+    "anchor": "сумма-квадратов-чётных-чисел",
+    "src": "Java Stream",
+    "section": "Код с собеседований",
+    "level": 3
+  },
+  {
+    "ch": "Stream API",
+    "q": "Имя сотрудника с максимальной зарплатой в каждом отделе",
+    "a": "emps.stream().collect(Collectors.groupingBy(Emp::dept,\n    Collectors.collectingAndThen(\n        Collectors.maxBy(Comparator.comparingInt(Emp::salary)),\n        e -> e.orElseThrow().name())));",
+    "anchor": "сотрудник-с-максимальной-зарплатой-в-каждом-отделе",
+    "src": "Java Stream",
+    "section": "Код с собеседований",
+    "level": 3
   }
 ]
