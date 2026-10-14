@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 400" width="1000" height="400">
+<defs><marker id="aM" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#868E96"/></marker><marker id="aR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#E03131"/></marker><marker id="aO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#F76707"/></marker><marker id="aG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0CA678"/></marker><marker id="aB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4C6EF5"/></marker><marker id="aP" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7048E8"/></marker></defs>
+<rect x="1" y="1" width="998" height="398" rx="18" fill="#FCFCFD" stroke="#E9ECEF" stroke-width="2"/>
+<text x="32" y="42" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="20" font-weight="700" fill="#212529">Жизненный цикл бина</text>
+<text x="32" y="66" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="13.5" fill="#868E96">что Spring делает с каждым singleton-бином — по порядку</text>
+<rect x="32" y="86" width="936" height="44" rx="14" fill="#F8F6FF" stroke="#7048E8" stroke-width="1.6"/>
+<text x="48" y="113" text-anchor="start" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#7048E8">0. BeanFactoryPostProcessor</text>
+<text x="300" y="113" text-anchor="start" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#495057">— до создания бинов: правит BeanDefinition (например, подставляет ${...} в настройки)</text>
+<rect x="32" y="152" width="172" height="74" rx="10" fill="#EDF2FF" stroke="#4C6EF5" stroke-width="1.8"/>
+<text x="118.0" y="184.625" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12.5" font-weight="600" fill="#212529">1. Конструктор</text>
+<text x="118.0" y="202.125" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="400" fill="#495057">создание объекта</text>
+<line x1="204" y1="189" x2="222" y2="189" stroke="#868E96" stroke-width="1.8" marker-end="url(#aM)"/>
+<rect x="223" y="152" width="172" height="74" rx="10" fill="#EDF2FF" stroke="#4C6EF5" stroke-width="1.8"/>
+<text x="309.0" y="184.625" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12.5" font-weight="600" fill="#212529">2. Зависимости</text>
+<text x="309.0" y="202.125" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="400" fill="#495057">поля / сеттеры</text>
+<line x1="395" y1="189" x2="413" y2="189" stroke="#868E96" stroke-width="1.8" marker-end="url(#aM)"/>
+<rect x="414" y="152" width="172" height="74" rx="10" fill="#EDF2FF" stroke="#4C6EF5" stroke-width="1.8"/>
+<text x="500.0" y="175.875" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12.5" font-weight="600" fill="#212529">3. Aware</text>
+<text x="500.0" y="193.375" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="400" fill="#495057">BeanNameAware,</text>
+<text x="500.0" y="210.875" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="400" fill="#495057">ApplicationContextAware</text>
+<line x1="586" y1="189" x2="604" y2="189" stroke="#868E96" stroke-width="1.8" marker-end="url(#aM)"/>
+<rect x="605" y="152" width="172" height="74" rx="10" fill="#E6FCF5" stroke="#0CA678" stroke-width="1.8"/>
+<text x="691.0" y="175.875" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12.5" font-weight="600" fill="#212529">4. BPP.before…</text>
+<text x="691.0" y="193.375" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="400" fill="#495057">здесь вызывается</text>
+<text x="691.0" y="210.875" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="400" fill="#495057">@PostConstruct</text>
+<line x1="777" y1="189" x2="795" y2="189" stroke="#868E96" stroke-width="1.8" marker-end="url(#aM)"/>
+<rect x="796" y="152" width="172" height="74" rx="10" fill="#E6FCF5" stroke="#0CA678" stroke-width="1.8"/>
+<text x="882.0" y="175.875" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12.5" font-weight="600" fill="#212529">5. Init</text>
+<text x="882.0" y="193.375" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="400" fill="#495057">afterPropertiesSet()</text>
+<text x="882.0" y="210.875" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="400" fill="#495057">initMethod</text>
+<line x1="882" y1="226" x2="882" y2="258" stroke="#868E96" stroke-width="1.8" marker-end="url(#aM)"/>
+<rect x="748" y="262" width="220" height="80" rx="10" fill="#FFF4E6" stroke="#F76707" stroke-width="1.8"/>
+<text x="858.0" y="288.875" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12.5" font-weight="600" fill="#212529">6. BPP.after…</text>
+<text x="858.0" y="306.375" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="400" fill="#495057">здесь создаются прокси:</text>
+<text x="858.0" y="323.875" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="400" fill="#495057">@Transactional, @Async, AOP</text>
+<rect x="508" y="262" width="208" height="80" rx="10" fill="#E6FCF5" stroke="#0CA678" stroke-width="1.8"/>
+<text x="612.0" y="288.875" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12.5" font-weight="600" fill="#212529">7. Бин готов</text>
+<text x="612.0" y="306.375" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="400" fill="#495057">лежит в контексте,</text>
+<text x="612.0" y="323.875" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="400" fill="#495057">отдаётся другим бинам</text>
+<rect x="268" y="262" width="208" height="80" rx="10" fill="#F1F3F5" stroke="#495057" stroke-width="1.8"/>
+<text x="372.0" y="288.875" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12.5" font-weight="600" fill="#212529">8. @PreDestroy</text>
+<text x="372.0" y="306.375" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="400" fill="#495057">при закрытии</text>
+<text x="372.0" y="323.875" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="400" fill="#495057">контекста</text>
+<rect x="32" y="262" width="204" height="80" rx="10" fill="#F1F3F5" stroke="#495057" stroke-width="1.8"/>
+<text x="134.0" y="288.875" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12.5" font-weight="600" fill="#212529">9. destroy()</text>
+<text x="134.0" y="306.375" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="400" fill="#495057">DisposableBean /</text>
+<text x="134.0" y="323.875" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="400" fill="#495057">destroyMethod</text>
+<line x1="748" y1="302" x2="718" y2="302" stroke="#868E96" stroke-width="1.8" marker-end="url(#aM)"/>
+<line x1="508" y1="302" x2="478" y2="302" stroke="#868E96" stroke-width="1.8" marker-end="url(#aM)"/>
+<line x1="268" y1="302" x2="238" y2="302" stroke="#868E96" stroke-width="1.8" marker-end="url(#aM)"/>
+<text x="32" y="372" text-anchor="start" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#495057">BPP = BeanPostProcessor. Prototype-бины: шаги 1–7 выполняются, а 8–9 Spring не вызывает — объект он не хранит.</text>
+</svg>

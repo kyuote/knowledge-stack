@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300" width="1000" height="300">
+<defs><marker id="aM" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#868E96"/></marker><marker id="aR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#E03131"/></marker><marker id="aO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#F76707"/></marker><marker id="aG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0CA678"/></marker><marker id="aB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4C6EF5"/></marker><marker id="aP" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7048E8"/></marker></defs>
+<rect x="1" y="1" width="998" height="298" rx="18" fill="#FCFCFD" stroke="#E9ECEF" stroke-width="2"/>
+<text x="32" y="42" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="20" font-weight="700" fill="#212529">Тесты в Spring: от быстрых к полным</text>
+<text x="32" y="66" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="13.5" fill="#868E96">чем шире контекст, тем медленнее тест — бери самый узкий, который проверяет нужное</text>
+<rect x="32" y="104" width="216" height="96" rx="10" fill="#F1F3F5" stroke="#495057" stroke-width="1.8"/>
+<text x="140.0" y="138.225" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="13.5" font-weight="600" fill="#212529">Unit</text>
+<text x="140.0" y="156.725" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.0" font-weight="400" fill="#495057">JUnit 5 + Mockito</text>
+<text x="140.0" y="175.225" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.0" font-weight="400" fill="#495057">без Spring, мс</text>
+<line x1="248" y1="152" x2="272" y2="152" stroke="#868E96" stroke-width="1.8" marker-end="url(#aM)"/>
+<rect x="272" y="104" width="216" height="96" rx="10" fill="#EDF2FF" stroke="#4C6EF5" stroke-width="1.8"/>
+<text x="380.0" y="138.225" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="13.5" font-weight="600" fill="#212529">@WebMvcTest</text>
+<text x="380.0" y="156.725" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.0" font-weight="400" fill="#495057">контроллер + MockMvc</text>
+<text x="380.0" y="175.225" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.0" font-weight="400" fill="#495057">сервисы — @MockitoBean</text>
+<line x1="488" y1="152" x2="512" y2="152" stroke="#868E96" stroke-width="1.8" marker-end="url(#aM)"/>
+<rect x="512" y="104" width="216" height="96" rx="10" fill="#E3FAFC" stroke="#1098AD" stroke-width="1.8"/>
+<text x="620.0" y="138.225" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="13.5" font-weight="600" fill="#212529">@DataJpaTest</text>
+<text x="620.0" y="156.725" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.0" font-weight="400" fill="#495057">репозитории + JPA</text>
+<text x="620.0" y="175.225" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.0" font-weight="400" fill="#495057">транзакция → rollback</text>
+<line x1="728" y1="152" x2="752" y2="152" stroke="#868E96" stroke-width="1.8" marker-end="url(#aM)"/>
+<rect x="752" y="104" width="216" height="96" rx="10" fill="#FFF4E6" stroke="#F76707" stroke-width="1.8"/>
+<text x="860.0" y="138.225" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="13.5" font-weight="600" fill="#212529">@SpringBootTest</text>
+<text x="860.0" y="156.725" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.0" font-weight="400" fill="#495057">весь контекст</text>
+<text x="860.0" y="175.225" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.0" font-weight="400" fill="#495057">+ Testcontainers</text>
+<defs><linearGradient id="gr" x1="0" x2="1"><stop offset="0" stop-color="#ADB5BD"/><stop offset="1" stop-color="#F76707"/></linearGradient></defs><rect x="32" y="222" width="936" height="6" rx="3" fill="url(#gr)"/>
+<text x="32" y="252" text-anchor="start" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#868E96">быстро · узко</text>
+<text x="968" y="252" text-anchor="end" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#F76707">медленно · шире · ближе к продакшену</text>
+<text x="32" y="280" text-anchor="start" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#495057">Контекст кэшируется между тестами с одинаковой конфигурацией — @MockitoBean и @DirtiesContext создают новый контекст.</text>
+</svg>

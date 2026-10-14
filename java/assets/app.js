@@ -709,7 +709,10 @@ function detectAndWrapCode(container) {
       .then(r => r.text())
       .then(md => {
         // convert Obsidian wikilinks ![[img]] → standard markdown with encoded path
-        md = md.replace(/!\[\[([^\]]+)\]\]/g, (_, name) => `![](${imgsBase}${encodeURIComponent(name)})`);
+        md = md.replace(/!\[\[([^\]|]+?)\s*(?:\|\s*(\d+)\s*)?\]\]/g, (_, name, w) => {
+          const src = `${imgsBase}${encodeURIComponent(name.trim())}`;
+          return w ? `<img src="${src}" alt="" width="${w}">` : `![](${src})`;  // Obsidian ![[img | 300]] → width
+        });
         // convert Obsidian internal links [[#Heading|Display]] and [[#Heading]] → [Display](#slug)
         // slug logic must match fixInternalLinks ID assignment
         const wikiSlug = s => s.trim().toLowerCase().replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-');
@@ -797,6 +800,7 @@ function detectAndWrapCode(container) {
     const CHAPTER_MD = {
       'Concurrency': 'java-file/Java Concurrency.md',
       'Stream API': 'java-file/Java Stream.md',
+      'Spring': 'java-file/Java Spring.md',
     };
     const containerCache = {};
 
@@ -824,7 +828,10 @@ function detectAndWrapCode(container) {
         containerCache[ch] = fetch(mdPath + '?cb=' + Date.now())
           .then(r => r.text())
           .then(md => {
-            md = md.replace(/!\[\[([^\]]+)\]\]/g, (_, name) => `![](${mdImgs}${encodeURIComponent(name)})`);
+            md = md.replace(/!\[\[([^\]|]+?)\s*(?:\|\s*(\d+)\s*)?\]\]/g, (_, name, w) => {
+              const src = `${mdImgs}${encodeURIComponent(name.trim())}`;
+              return w ? `<img src="${src}" alt="" width="${w}">` : `![](${src})`;  // Obsidian ![[img | 300]] → width
+            });
             const wikiSlug = s => s.trim().toLowerCase().replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-');
             md = md.replace(/\[\[#([^\]|]+)\|([^\]]+)\]\]/g, (_, anchor, display) => `[${display}](#${wikiSlug(anchor)})`);
             md = md.replace(/\[\[#([^\]]+)\]\]/g, (_, anchor) => `[${anchor}](#${wikiSlug(anchor)})`);

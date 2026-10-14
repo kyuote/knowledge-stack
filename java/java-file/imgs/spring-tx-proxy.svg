@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 430" width="1000" height="430">
+<defs><marker id="aM" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#868E96"/></marker><marker id="aR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#E03131"/></marker><marker id="aO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#F76707"/></marker><marker id="aG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0CA678"/></marker><marker id="aB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4C6EF5"/></marker><marker id="aP" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7048E8"/></marker></defs>
+<rect x="1" y="1" width="998" height="428" rx="18" fill="#FCFCFD" stroke="#E9ECEF" stroke-width="2"/>
+<text x="32" y="42" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="20" font-weight="700" fill="#212529">Как работает @Transactional</text>
+<text x="32" y="66" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="13.5" fill="#868E96">вызов идёт через прокси — только он открывает и закрывает транзакцию</text>
+<rect x="32" y="110" width="190" height="70" rx="10" fill="#F1F3F5" stroke="#495057" stroke-width="1.8"/>
+<text x="127.0" y="140.55" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#212529">OrderController</text>
+<text x="127.0" y="158.55" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#495057">→ paymentService.pay()</text>
+<line x1="222" y1="145" x2="262" y2="145" stroke="#868E96" stroke-width="1.8" marker-end="url(#aM)"/>
+<rect x="262" y="94" width="330" height="170" rx="14" fill="#F4FFFA" stroke="#0CA678" stroke-width="1.6"/>
+<text x="278" y="116" text-anchor="start" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#0CA678">ПРОКСИ (CGLIB-наследник)</text>
+<rect x="280" y="128" width="294" height="40" rx="10" fill="#E6FCF5" stroke="#0CA678" stroke-width="1.8"/>
+<text x="427.0" y="152.55" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#212529">TransactionInterceptor</text>
+<text x="296" y="192" text-anchor="start" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#495057">1. begin — взять соединение из пула</text>
+<text x="296" y="212" text-anchor="start" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#495057">2. вызвать настоящий метод</text>
+<text x="296" y="232" text-anchor="start" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#495057">3. commit — или rollback при RuntimeException</text>
+<line x1="592" y1="145" x2="652" y2="145" stroke="#868E96" stroke-width="1.8" marker-end="url(#aM)"/>
+<rect x="652" y="110" width="316" height="70" rx="10" fill="#EDF2FF" stroke="#4C6EF5" stroke-width="1.8"/>
+<text x="810.0" y="140.55" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#212529">PaymentService (настоящий бин)</text>
+<text x="810.0" y="158.55" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#495057">pay() — @Transactional</text>
+<line x1="810" y1="180" x2="810" y2="226" stroke="#4C6EF5" stroke-width="1.8" marker-end="url(#aB)"/>
+<rect x="730" y="228" width="160" height="40" rx="10" fill="#E3FAFC" stroke="#1098AD" stroke-width="1.8"/>
+<text x="810.0" y="252.55" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#212529">PostgreSQL</text>
+<rect x="32" y="300" width="936" height="104" rx="14" fill="#FFFAFA" stroke="#E03131" stroke-width="1.6" stroke-dasharray="6 5"/>
+<text x="48" y="326" text-anchor="start" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#E03131">Ловушка: self-invocation</text>
+<rect x="56" y="340" width="250" height="46" rx="10" fill="#F1F3F5" stroke="#495057" stroke-width="1.8"/>
+<text x="181.0" y="367.375" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12.5" font-weight="600" fill="#212529">process() — без транзакции</text>
+<rect x="420" y="340" width="250" height="46" rx="10" fill="#FFF5F5" stroke="#E03131" stroke-width="1.8"/>
+<text x="545.0" y="367.375" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12.5" font-weight="600" fill="#212529">this.pay() — @Transactional</text>
+<line x1="306" y1="363" x2="418" y2="363" stroke="#E03131" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#aR)"/>
+<text x="320" y="355" text-anchor="start" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#E03131">this.…</text>
+<text x="690" y="358" text-anchor="start" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#E03131">вызов внутри объекта идёт мимо прокси →</text>
+<text x="690" y="378" text-anchor="start" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#E03131">транзакция НЕ откроется</text>
+</svg>

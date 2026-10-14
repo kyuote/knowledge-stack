@@ -3948,5 +3948,1688 @@
     "src": "Java Stream",
     "section": "Код с собеседований",
     "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое IoC (Inversion of Control)?",
+    "a": "Инверсия управления: объекты не создают зависимости сами (new MyService()), этот контроль отдаётся фреймворку. Spring решает, когда создать объект, как настроить и куда внедрить.",
+    "anchor": "ioc-inversion-of-control-container",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое ApplicationContext и бин?",
+    "a": "ApplicationContext — IoC-контейнер: создаёт, настраивает и связывает объекты приложения. Бин — любой объект под управлением контейнера. Инструкции контейнеру дают аннотациями, Java-конфигурацией или XML.",
+    "anchor": "container-overview",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Почему не стоит доставать бины через getBean() в рабочем коде?",
+    "a": "Код жёстко привязывается к Spring и сам ищет зависимости (service locator). Объекты должны приходить через DI.",
+    "anchor": "container-overview",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Три способа внедрения зависимостей и какой рекомендуется?",
+    "a": "- Через конструктор — рекомендуется: поля final, легко тестировать.\n- Через поле (@Autowired над полем) — рефлексия, поле не может быть final.\n- Через сеттер с @Autowired.",
+    "anchor": "способы-внедрения-зависимостей-dependency-injection",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Нужно ли ставить @Autowired на конструктор?",
+    "a": "Если конструктор в классе один — нет, Spring использует его автоматически. При нескольких конструкторах нужный помечают @Autowired.",
+    "anchor": "способы-внедрения-зависимостей-dependency-injection",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что будет, если бина нужного типа нет, и как сделать зависимость необязательной?",
+    "a": "Контекст не стартует (NoSuchBeanDefinitionException). Для необязательной зависимости — @Autowired(required = false) (придёт null), ObjectProvider<T> или Optional<T>.",
+    "anchor": "2-частые-проблемы-при-внедрении-зависимостей-и-их-решения",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как решить неоднозначность, когда есть два бина одного типа?",
+    "a": "@Qualifier(\"beanName\") в месте внедрения — точный выбор. @Primary на одном из бинов — выбор по умолчанию. @Qualifier сильнее @Primary.",
+    "anchor": "2-частые-проблемы-при-внедрении-зависимостей-и-их-решения",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как работает @Lazy на зависимости?",
+    "a": "Spring внедряет не сам объект, а прокси. Настоящий бин создаётся при первом обращении. Так разрывают цикл зависимостей.",
+    "anchor": "2-частые-проблемы-при-внедрении-зависимостей-и-их-решения",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Singleton vs prototype scope?",
+    "a": "Singleton (по умолчанию) — один экземпляр на ApplicationContext, хранится в контексте. Prototype — новый экземпляр при каждом запросе или внедрении, Spring его не хранит и @PreDestroy не вызывает.",
+    "anchor": "области-видимости-бинов-bean-scope-singleton-prototype-scope",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Какие scope есть для веб-приложений?",
+    "a": "request — бин на HTTP-запрос, session — на сессию пользователя, application — на ServletContext, websocket — на websocket-сессию.",
+    "anchor": "области-видимости-бинов-bean-scope-singleton-prototype-scope",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Почему prototype, внедрённый в singleton, всегда один и тот же?",
+    "a": "Внедрение происходит один раз — при создании singleton. Решения: ObjectProvider<T>.getObject() на каждый вызов (рекомендуется), @Lookup-метод или scoped proxy (proxyMode = ScopedProxyMode.TARGET_CLASS).",
+    "anchor": "prototype-внутри-singleton-и-scoped-proxy",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Почему request-бин можно внедрить в singleton-контроллер?",
+    "a": "@RequestScope и @SessionScope уже включают proxyMode = TARGET_CLASS: внедряется прокси, который на каждый вызов берёт бин текущего запроса.",
+    "anchor": "prototype-внутри-singleton-и-scoped-proxy",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Основные этапы жизненного цикла бина?",
+    "a": "Сканирование и определение бинов → конструктор → внедрение зависимостей → @PostConstruct → работа → закрытие контекста → @PreDestroy → остановка контейнера.",
+    "anchor": "жизненный-цикл-бинов-bean-lifecycle-postconstruct-predestroy",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Когда вызывается @PostConstruct и какие требования к методу?",
+    "a": "После создания и внедрения всех зависимостей, до того как бин отдадут другим. Метод без аргументов, возвращает void. Аннотации из jakarta.annotation-api.",
+    "anchor": "жизненный-цикл-бинов-bean-lifecycle-postconstruct-predestroy",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое BeanPostProcessor и как через него появляются прокси?",
+    "a": "Специальный бин, который Spring вызывает для каждого бина до и после инициализации. Он может вернуть вместо бина обёртку — так создаются прокси для @Transactional, @Async, AOP.",
+    "anchor": "полный-жизненный-цикл-и-beanpostprocessor",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Почему BeanFactoryPostProcessor объявляют через static @Bean?",
+    "a": "BFPP работает до создания обычных бинов. Если метод не static, Spring создаст конфигурационный класс слишком рано, и часть BPP к нему не применится.",
+    "anchor": "полный-жизненный-цикл-и-beanpostprocessor",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что не перехватит JDK-прокси, а что — CGLIB?",
+    "a": "JDK-прокси реализует интерфейсы — не видит методы вне интерфейса. CGLIB наследует класс — не перехватит final и private методы, final-класс не проксирует вовсе. В Spring Boot по умолчанию CGLIB.",
+    "anchor": "прокси-в-spring-jdk-vs-cglib",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "На каких методах работает @Transactional с CGLIB в Spring 6+?",
+    "a": "На public, protected и package-private. На private — нет: прокси не может их переопределить.",
+    "anchor": "прокси-в-spring-jdk-vs-cglib",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как исправить self-invocation, от лучшего к худшему?",
+    "a": "Вынести метод в отдельный бин → TransactionTemplate → внедрить прокси самого себя через @Lazy и вызывать self.method().",
+    "anchor": "прокси-в-spring-jdk-vs-cglib",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что даёт @Configuration(proxyBeanMethods = false)?",
+    "a": "Класс не проксируется — старт быстрее. Вызов одного @Bean-метода из другого создаст новый объект, поэтому зависимости передают параметрами @Bean-метода. Так написаны автоконфигурации Boot.",
+    "anchor": "configuration-vs-component-для-bean",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как держать состояние в singleton-бине безопасно?",
+    "a": "Лучше — stateless. Данные запроса — в локальных переменных и параметрах; общий кэш или счётчик — ConcurrentHashMap, AtomicLong, LongAdder; состояние на запрос — @RequestScope-бин; ThreadLocal — осторожно, с очисткой.",
+    "anchor": "потокобезопасность-singletonбинов",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что изменилось с циклическими зависимостями в Spring Boot 2.6?",
+    "a": "Циклы запрещены по умолчанию — приложение не стартует даже при внедрении через поля и сеттеры. Решения: перепроектировать (третий бин или событие), @Lazy на одной зависимости, костыль spring.main.allow-circular-references=true.",
+    "anchor": "циклические-зависимости-в-spring-boot-26",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как внедрить значение из properties через @Value?",
+    "a": "@Value(\"${task.name}\") — из подключённого файла свойств. Значение по умолчанию: ${key:default}. Список через SpEL: #{'${list.values}'.split(',')}.",
+    "anchor": "файлы-свойств-properties-propertysource-и-value",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Зачем @PropertySource?",
+    "a": "Указывает Spring, из какого файла брать значения для ${...}: @PropertySource(\"classpath:app.properties\") над @Configuration-классом. В Spring Boot application.properties/yml подключается автоматически.",
+    "anchor": "файлы-свойств-properties-propertysource-и-value",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое AOP и какую проблему он решает?",
+    "a": "Аспектно-ориентированное программирование: отделяет сквозную функциональность (логирование, транзакции, права, метрики) от бизнес-логики, чтобы не дублировать её в каждом методе. В Spring реализовано через прокси.",
+    "anchor": "spring-aop-aspectoriented-programming",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Aspect, Advice, Join point, Pointcut — что есть что?",
+    "a": "- Aspect — класс со сквозной логикой (@Aspect).\n- Advice — действие: до, после или вместо метода.\n- Join point — точка, где можно применить аспект (вызов метода).\n- Pointcut — выражение, к каким методам применять advice.",
+    "anchor": "spring-aop-aspectoriented-programming",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Какие типы advice есть в Spring AOP?",
+    "a": "@Before — до метода; @AfterReturning — после успеха, есть результат; @AfterThrowing — при исключении; @After — всегда, как finally; @Around — оборачивает вызов целиком через ProceedingJoinPoint.proceed(): может замерить время, подменить результат.",
+    "anchor": "spring-aop-aspectoriented-programming",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как применить аспект только к методам с кастомной аннотацией?",
+    "a": "В pointcut указать @annotation(...), например @Around(\"@annotation(loggable)\"). Через поля аннотации можно передавать параметры аспекту.",
+    "anchor": "spring-aop-aspectoriented-programming",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "@EventListener vs @TransactionalEventListener(AFTER_COMMIT)?",
+    "a": "@EventListener — синхронно, в том же потоке и транзакции. @TransactionalEventListener(AFTER_COMMIT) — только после успешного коммита. @Async на слушателе — в другом потоке.",
+    "anchor": "события-applicationevent",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Гарантирует ли AFTER_COMMIT-слушатель доставку события?",
+    "a": "Нет: если приложение упадёт между коммитом и обработкой, событие потеряется. Для гарантии — Transactional Outbox.",
+    "anchor": "события-applicationevent",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое IoC и DI?",
+    "a": "IoC — принцип: объекты не создают зависимости сами, этим управляет контейнер. DI — способ реализации IoC: контейнер передаёт зависимости через конструктор, сеттер или поле.",
+    "anchor": "что-такое-ioc-и-di",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Какой способ DI лучше и почему?",
+    "a": "Через конструктор: поля final, объект нельзя создать в неполном состоянии, легко тестировать без Spring, циклы видны сразу.",
+    "anchor": "какой-способ-di-лучше-и-почему",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Чем ApplicationContext отличается от BeanFactory?",
+    "a": "ApplicationContext расширяет BeanFactory: создаёт singleton-бины сразу при старте, сам регистрирует BeanPostProcessor-ы, умеет события, i18n, интеграцию с AOP. BeanFactory — минимальный контейнер с ленивым созданием.",
+    "anchor": "чем-applicationcontext-отличается-от-beanfactory",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Какие бывают scope бинов?",
+    "a": "singleton (по умолчанию), prototype, а в веб-приложениях — request, session, application, websocket.",
+    "anchor": "какие-бывают-scope-бинов",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Потокобезопасен ли singleton-бин?",
+    "a": "Нет. Один объект на все потоки — код должен быть stateless или использовать потокобезопасные структуры. Подробнее: «Потокобезопасность singleton-бинов».",
+    "anchor": "потокобезопасен-ли-singletonбин",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как внедрить prototype в singleton, чтобы каждый раз был новый объект?",
+    "a": "ObjectProvider<T>, @Lookup или scoped proxy. Подробнее: «Prototype внутри singleton и scoped proxy».",
+    "anchor": "как-внедрить-prototype-в-singleton-чтобы-каждый-раз-был-новый-объект",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое BeanPostProcessor и BeanFactoryPostProcessor?",
+    "a": "BFPP меняет описания бинов до их создания, BPP обрабатывает готовые объекты до и после инициализации и может подменить их прокси.",
+    "anchor": "что-такое-beanpostprocessor-и-beanfactorypostprocessor",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "В каком порядке вызываются init-методы?",
+    "a": "@PostConstruct → afterPropertiesSet() → initMethod. Для уничтожения: @PreDestroy → destroy() → destroyMethod. У prototype-бинов destroy-колбэки Spring не вызывает.",
+    "anchor": "в-каком-порядке-вызываются-initметоды",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "JDK-прокси или CGLIB — в чём разница?",
+    "a": "JDK — через интерфейсы, CGLIB — через наследование класса. Spring Boot по умолчанию использует CGLIB. CGLIB не перехватывает final и private методы.",
+    "anchor": "jdkпрокси-или-cglib-в-чём-разница",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Почему аннотация не срабатывает при вызове метода из того же класса?",
+    "a": "Self-invocation: this.method() вызывает настоящий объект, а не прокси. Решение — вынести метод в другой бин.",
+    "anchor": "почему-аннотация-не-срабатывает-при-вызове-метода-из-того-же-класса",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Чем @Configuration отличается от @Component с @Bean-методами?",
+    "a": "@Configuration проксируется, и вызов @Bean-метода возвращает singleton из контекста. В @Component это обычный вызов — получится новый объект.",
+    "anchor": "чем-configuration-отличается-от-component-с-beanметодами",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что будет при циклической зависимости?",
+    "a": "С Spring Boot 2.6 приложение не стартует. Лечится перепроектированием, временно — @Lazy.",
+    "anchor": "что-будет-при-циклической-зависимости",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "@Primary или @Qualifier?",
+    "a": "@Primary — бин по умолчанию среди нескольких кандидатов. @Qualifier — точный выбор в месте внедрения, он сильнее @Primary.",
+    "anchor": "primary-или-qualifier",
+    "src": "Java Spring",
+    "section": "Spring Core",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что делает SpringApplication.run?",
+    "a": "Создаёт ApplicationContext, загружает настройки, применяет автоконфигурацию, поднимает встроенный Tomcat и запускает CommandLineRunner/ApplicationRunner.",
+    "anchor": "spring-vs-spring-boot",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Где регистрируется своя автоконфигурация?",
+    "a": "Класс с @AutoConfiguration прописывают в META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports. Способ через spring.factories для автоконфигураций убран в Boot 3.",
+    "anchor": "автоконфигурация",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Основные @Conditional-аннотации автоконфигурации?",
+    "a": "@ConditionalOnClass — класс есть в classpath; @ConditionalOnMissingBean — такого бина ещё нет (твой бин побеждает); @ConditionalOnProperty — задано свойство; @ConditionalOnWebApplication — веб-приложение.",
+    "anchor": "автоконфигурация",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как отключить конкретную автоконфигурацию?",
+    "a": "@SpringBootApplication(exclude = DataSourceAutoConfiguration.class) или свойство spring.autoconfigure.exclude=...",
+    "anchor": "автоконфигурация",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Почему в pom.xml не указывают версии стартеров?",
+    "a": "Версии согласованы в BOM Spring Boot (spring-boot-starter-parent или dependencies BOM) — библиотеки гарантированно совместимы.",
+    "anchor": "стартеры-и-версии-зависимостей",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Какие стартеры переименованы в Spring Boot 4?",
+    "a": "spring-boot-starter-web → spring-boot-starter-webmvc, …-oauth2-resource-server → …-security-oauth2-resource-server, …-aop → …-aspectj. Старые имена пока работают, но устарели.",
+    "anchor": "стартеры-и-версии-зависимостей",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое профиль и как его включить?",
+    "a": "Именованный набор настроек и бинов: application-dev.yml, application-prod.yml. Включается spring.profiles.active=prod; бин только для профиля — @Profile(\"dev\").",
+    "anchor": "конфигурация-applicationyml-и-профили",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Где хранить пароли и ключи приложения?",
+    "a": "Не в application.yml в репозитории: передавать через переменные окружения (${DB_PASSWORD}) или хранилище секретов — Vault, Kubernetes Secrets.",
+    "anchor": "конфигурация-applicationyml-и-профили",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как проверить настройки при старте приложения?",
+    "a": "@ConfigurationProperties + @Validated + Bean Validation (@NotNull, @Min) — при неверном значении приложение не стартует. Регистрация: @ConfigurationPropertiesScan или @EnableConfigurationProperties.",
+    "anchor": "configurationproperties-vs-value",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое relaxed binding?",
+    "a": "Гибкое связывание в @ConfigurationProperties: max-retries, maxRetries и MAX_RETRIES — одно и то же свойство. В @Value ключ пишется точно.",
+    "anchor": "configurationproperties-vs-value",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Зачем приложению встроенный сервер?",
+    "a": "Tomcat или Jetty внутри jar: приложение запускается как java -jar app.jar, отдельный сервер приложений не нужен.",
+    "anchor": "встроенный-сервер-и-graceful-shutdown",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Какие эндпоинты Actuator нельзя открывать наружу?",
+    "a": "env, heapdump, configprops — раскрывают секреты и память процесса. Наружу — только health и метрики (management.endpoints.web.exposure.include), остальное — за авторизацией или на отдельном management.server.port.",
+    "anchor": "actuator-и-наблюдаемость",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как добавить свою метрику?",
+    "a": "Через Micrometer: внедрить MeterRegistry и создать Counter/Timer — registry.counter(\"payments.failed\").increment(). Метрики отдаются через /actuator/prometheus.",
+    "anchor": "actuator-и-наблюдаемость",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что переводит spring.threads.virtual.enabled=true на виртуальные потоки?",
+    "a": "Spring Boot 3.2+: обработку запросов Tomcat, @Async и планировщик задач.",
+    "anchor": "виртуальные-потоки-в-spring-boot",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое HTTP service clients в Spring Boot 4?",
+    "a": "Интерфейсы с @HttpExchange: реализацию генерирует Spring, а Boot 4 настраивает их через свойства (base URL, таймауты).",
+    "anchor": "что-нового-в-spring-boot-4-и-spring-framework-7",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Чем Spring Boot отличается от Spring?",
+    "a": "Spring — фреймворк, Boot — способ быстро собрать на нём приложение: автоконфигурация, стартеры, встроенный сервер, Actuator, внешняя конфигурация.",
+    "anchor": "чем-spring-boot-отличается-от-spring",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Из чего состоит @SpringBootApplication?",
+    "a": "@SpringBootConfiguration + @EnableAutoConfiguration + @ComponentScan (пакет главного класса и вложенные).",
+    "anchor": "из-чего-состоит-springbootapplication",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как работает автоконфигурация?",
+    "a": "Boot читает список классов из AutoConfiguration.imports во всех jar-ах и применяет те, чьи @Conditional…-условия выполнены. Подробнее: «Автоконфигурация».",
+    "anchor": "как-работает-автоконфигурация",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как переопределить бин из автоконфигурации?",
+    "a": "Объявить свой бин того же типа: автоконфиг помечен @ConditionalOnMissingBean и отступит.",
+    "anchor": "как-переопределить-бин-из-автоконфигурации",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как понять, почему бин не создался?",
+    "a": "Запустить с --debug и посмотреть Condition Evaluation Report или открыть /actuator/conditions.",
+    "anchor": "как-понять-почему-бин-не-создался",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое стартер?",
+    "a": "Зависимость, которая подтягивает набор библиотек и их автоконфигурацию с согласованными версиями.",
+    "anchor": "что-такое-стартер",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Какой приоритет у источников настроек?",
+    "a": "Командная строка → системные свойства → переменные окружения → профильный application-{profile}.yml → application.yml.",
+    "anchor": "какой-приоритет-у-источников-настроек",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "@Value или @ConfigurationProperties?",
+    "a": "Для группы настроек — @ConfigurationProperties: типизация, валидация на старте, гибкое связывание. @Value — для одиночного значения или SpEL.",
+    "anchor": "value-или-configurationproperties",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое liveness и readiness?",
+    "a": "Liveness — живо ли приложение (если нет — перезапуск пода). Readiness — готово ли принимать трафик (если нет — под временно убирают из балансировки).",
+    "anchor": "что-такое-liveness-и-readiness",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое graceful shutdown?",
+    "a": "Остановка с дожиданием текущих запросов. В Boot 3.4+ включён по умолчанию, время ожидания — spring.lifecycle.timeout-per-shutdown-phase.",
+    "anchor": "что-такое-graceful-shutdown",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как включить виртуальные потоки и что может пойти не так?",
+    "a": "spring.threads.virtual.enabled=true. Узкое место — пул соединений к БД; до Java 24 — pinning на synchronized.",
+    "anchor": "как-включить-виртуальные-потоки-и-что-может-пойти-не-так",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что нового в Spring Boot 4?",
+    "a": "Java 17+/25, Jakarta EE 11, модульность, JSpecify, версионирование API, HTTP service clients, Jackson 3, Spring Security 7.",
+    "anchor": "что-нового-в-spring-boot-4",
+    "src": "Java Spring",
+    "section": "Spring Boot",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое DispatcherServlet?",
+    "a": "Front controller Spring MVC: единая точка входа. Находит нужный метод контроллера, вызывает его и превращает результат в HTTP-ответ.",
+    "anchor": "dispatcherservlet-и-путь-запроса",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Роли HandlerMapping, HandlerAdapter и HttpMessageConverter?",
+    "a": "HandlerMapping — какой метод обрабатывает запрос. HandlerAdapter — готовит аргументы и вызывает метод. HttpMessageConverter (Jackson) — JSON ↔ объект.",
+    "anchor": "dispatcherservlet-и-путь-запроса",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "@PathVariable, @RequestParam, @RequestBody, @RequestHeader — откуда берут данные?",
+    "a": "@PathVariable — часть пути /payments/{id}; @RequestParam — query-параметр ?accountId=…; @RequestBody — тело (JSON → объект); @RequestHeader — заголовок.",
+    "anchor": "контроллеры-и-маппинг",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как вернуть 201 Created с заголовком Location?",
+    "a": "ResponseEntity.created(URI.create(\"/api/payments/\" + id)).body(p). ResponseEntity даёт полный контроль над статусом, заголовками и телом.",
+    "anchor": "контроллеры-и-маппинг",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Какое исключение и статус при ошибке @Valid на @RequestBody?",
+    "a": "MethodArgumentNotValidException → 400. Ограничения на параметрах (@PathVariable @Positive) Spring 6.1+ проверяет сам → HandlerMethodValidationException. Нужен spring-boot-starter-validation.",
+    "anchor": "валидация-входных-данных",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как провалидировать вложенный объект в DTO?",
+    "a": "Поставить @Valid на поле с вложенным объектом — без этого его ограничения не проверяются.",
+    "anchor": "валидация-входных-данных",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Почему суммы денег хранят в BigDecimal?",
+    "a": "double теряет точность: 0.1 + 0.2 != 0.3. Для сумм — BigDecimal и @Digits, в БД — numeric(14,2).",
+    "anchor": "валидация-входных-данных",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое ProblemDetail?",
+    "a": "Стандартный формат ошибки по RFC 9457 (application/problem+json): type, title, status, detail, instance. Есть в Spring 6+, возвращается из @ExceptionHandler.",
+    "anchor": "обработка-ошибок-и-problemdetail",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как отдавать встроенные ошибки Spring в формате ProblemDetail?",
+    "a": "spring.mvc.problemdetails.enabled=true — тогда 400 валидации, 405 и другие ответы Spring тоже будут problem+json.",
+    "anchor": "обработка-ошибок-и-problemdetail",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Filter, Interceptor или AOP — где что делать?",
+    "a": "Filter — до Spring MVC, сырой запрос: безопасность, CORS, request-id. Interceptor — внутри DispatcherServlet, знает метод контроллера: проверка заголовков, метрики эндпоинтов. AOP — любой бин: транзакции, кэш, аудит сервисов.",
+    "anchor": "filter-vs-interceptor-vs-aop",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Безопасный vs идемпотентный HTTP-метод?",
+    "a": "Безопасный не меняет состояние (GET). Идемпотентный — повтор даёт тот же результат (GET, PUT, DELETE). POST ни то ни другое, PATCH — не обязательно идемпотентен.",
+    "anchor": "rest-методы-коды-идемпотентность",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Коды 409, 422 и 429 — когда какой?",
+    "a": "409 Conflict — конфликт состояния (дубль, версия). 422 Unprocessable Entity — бизнес-ошибка при корректном запросе (не хватает денег). 429 Too Many Requests — превышен лимит запросов.",
+    "anchor": "rest-методы-коды-идемпотентность",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Почему HTTP-клиенту обязательно нужны таймауты?",
+    "a": "Зависший внешний сервис держит потоки, пока не встанет всё приложение. Плюс ретраи с backoff и circuit breaker (Resilience4j).",
+    "anchor": "httpклиенты",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое HTTP interface (@HttpExchange)?",
+    "a": "Декларативный клиент: описываешь только интерфейс с @GetExchange/@PostExchange, реализацию генерирует Spring (6+). В Boot 4 есть автоконфигурация.",
+    "anchor": "httpклиенты",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Spring MVC vs WebFlux — модель и драйвер БД?",
+    "a": "MVC: поток на запрос (Tomcat), блокирующий код, JDBC/JPA. WebFlux: event loop (Netty), Mono/Flux, R2DBC. С виртуальными потоками MVC держит большую нагрузку, WebFlux нужен реже.",
+    "anchor": "spring-mvc-vs-webflux",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как версионировать API в Spring 7?",
+    "a": "Из коробки: @GetMapping(path = \"/accounts/{id}\", version = \"1.1\"), источник версии — например spring.mvc.apiversion.use.header=API-Version. Раньше — вручную через путь /api/v1/....",
+    "anchor": "версионирование-api-в-spring-7",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как запрос доходит до метода контроллера?",
+    "a": "Фильтры → DispatcherServlet → HandlerMapping находит метод → HandlerAdapter готовит аргументы → интерсепторы → метод → HttpMessageConverter пишет ответ. Подробнее: «DispatcherServlet и путь запроса».",
+    "anchor": "как-запрос-доходит-до-метода-контроллера",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "@Controller vs @RestController?",
+    "a": "@RestController добавляет @ResponseBody — ответ сериализуется в тело, без представления (шаблона).",
+    "anchor": "controller-vs-restcontroller",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как обработать исключения централизованно?",
+    "a": "@RestControllerAdvice + @ExceptionHandler, ответ — ProblemDetail.",
+    "anchor": "как-обработать-исключения-централизованно",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как валидировать входные данные?",
+    "a": "Ограничения Bean Validation на DTO + @Valid на @RequestBody; ошибка → 400.",
+    "anchor": "как-валидировать-входные-данные",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Чем Filter отличается от Interceptor?",
+    "a": "Filter — уровень Servlet-контейнера, до Spring MVC. Interceptor — внутри DispatcherServlet и знает, какой метод контроллера будет вызван.",
+    "anchor": "чем-filter-отличается-от-interceptor",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Какие HTTP-методы идемпотентны?",
+    "a": "GET, PUT, DELETE (и HEAD, OPTIONS). POST — нет, PATCH — не обязательно.",
+    "anchor": "какие-httpметоды-идемпотентны",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как сделать POST платежа идемпотентным?",
+    "a": "Ключ Idempotency-Key от клиента, уникальный индекс в БД, на повтор — сохранённый ответ.",
+    "anchor": "как-сделать-post-платежа-идемпотентным",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "401 vs 403?",
+    "a": "401 — не аутентифицирован (нет или неверный токен). 403 — аутентифицирован, но нет прав.",
+    "anchor": "401-vs-403",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "PUT vs PATCH?",
+    "a": "PUT заменяет ресурс целиком, PATCH меняет часть полей.",
+    "anchor": "put-vs-patch",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "RestTemplate, RestClient или WebClient?",
+    "a": "В новом синхронном коде — RestClient или HTTP interface, в реактивном — WebClient. RestTemplate — для старого кода.",
+    "anchor": "resttemplate-restclient-или-webclient",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Когда нужен WebFlux?",
+    "a": "Очень много одновременных соединений или стриминг. В остальных случаях — MVC, особенно с виртуальными потоками.",
+    "anchor": "когда-нужен-webflux",
+    "src": "Java Spring",
+    "section": "Spring MVC и REST",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "К чему привязана транзакция Spring?",
+    "a": "К текущему потоку: соединение хранится в TransactionSynchronizationManager (ThreadLocal), поэтому все репозитории в этом потоке работают в одной транзакции.",
+    "anchor": "как-работает-transactional",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Spring @Transactional vs jakarta.transaction.Transactional?",
+    "a": "Spring понимает обе, но у своей больше настроек: propagation, isolation, readOnly, timeout, rollbackFor.",
+    "anchor": "как-работает-transactional",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Почему @Transactional на @PostConstruct-методе не работает?",
+    "a": "Прокси ещё не создан — метод вызывается на самом объекте. Транзакционную инициализацию делают через ApplicationReadyEvent или TransactionTemplate.",
+    "anchor": "почему-transactional-не-работает",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что будет, если поймать исключение внутри @Transactional-метода?",
+    "a": "Прокси исключения не увидит и сделает commit.",
+    "anchor": "почему-transactional-не-работает",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как настроить откат на checked-исключении и отменить откат на runtime?",
+    "a": "@Transactional(rollbackFor = Exception.class) — откат и на checked. @Transactional(noRollbackFor = X.class) — без отката на X. Вручную: TransactionAspectSupport.currentTransactionStatus().setRollbackOnly().",
+    "anchor": "откат-rollbackfor-и-rollbackonly",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "MANDATORY, NEVER, SUPPORTS, NOT_SUPPORTED — что делают?",
+    "a": "- MANDATORY — нужна текущая транзакция, иначе исключение.\n- NEVER — исключение, если транзакция есть.\n- SUPPORTS — присоединиться, если есть, иначе без транзакции.\n- NOT_SUPPORTED — приостановить текущую и работать без.",
+    "anchor": "propagation-распространение-транзакции",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Чем опасен REQUIRES_NEW для пула соединений?",
+    "a": "Берёт второе соединение. Если все потоки держат по соединению и ждут второе — пул исчерпан, приложение встаёт.",
+    "anchor": "propagation-распространение-транзакции",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Особенности уровней изоляции в PostgreSQL?",
+    "a": "По умолчанию READ COMMITTED; READ UNCOMMITTED работает как READ COMMITTED; REPEATABLE READ — снимок без фантомов, при конкурентном изменении строки — ошибка сериализации и ретрай; SERIALIZABLE — SSI, тоже с ретраями.",
+    "anchor": "isolation-уровни-изоляции",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как списать деньги атомарно одним запросом?",
+    "a": "@Modifying @Query(\"update Account a set a.balance = a.balance - :amount where a.id = :id and a.balance >= :amount\") — вернёт 0, если денег не хватило. Защищает от lost update.",
+    "anchor": "isolation-уровни-изоляции",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что делает @Transactional(timeout = 5)?",
+    "a": "Ограничивает транзакцию 5 секундами — дольше → откат.",
+    "anchor": "readonly-и-timeout",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что даёт readOnly на уровне драйвера и инфраструктуры?",
+    "a": "Connection.setReadOnly(true) — PostgreSQL отклонит запись. По флагу можно направлять запросы на реплику (AbstractRoutingDataSource).",
+    "anchor": "readonly-и-timeout",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Когда нужен TransactionTemplate?",
+    "a": "Нужны мелкие границы транзакций (каждый элемент цикла в своей) или обход self-invocation: tx.executeWithoutResult(status -> ...).",
+    "anchor": "программные-транзакции-transactiontemplate",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как работает Transactional Outbox?",
+    "a": "Событие пишется в таблицу outbox в той же транзакции, что и бизнес-данные. Отдельный процесс (поллер или CDC, Debezium) читает outbox и публикует в Kafka. Консьюмеры идемпотентны.",
+    "anchor": "транзакции-и-внешний-мир-outbox",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как работает @Transactional под капотом?",
+    "a": "Прокси вызывает TransactionInterceptor, тот через PlatformTransactionManager открывает транзакцию, привязывает соединение к потоку, вызывает метод, затем commit или rollback.",
+    "anchor": "как-работает-transactional-под-капотом",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Почему @Transactional может не сработать?",
+    "a": "Self-invocation, private/final-метод, объект не бин, исключение поймано внутри, checked-исключение, работа в другом потоке. Подробнее: «Почему @Transactional не работает».",
+    "anchor": "почему-transactional-может-не-сработать",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "На каких исключениях откатывается транзакция?",
+    "a": "На RuntimeException и Error. На checked — commit, если не указать rollbackFor.",
+    "anchor": "на-каких-исключениях-откатывается-транзакция",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое UnexpectedRollbackException?",
+    "a": "Внутренний метод с REQUIRED пометил общую транзакцию rollback-only, а внешний поймал исключение и попытался закоммитить.",
+    "anchor": "что-такое-unexpectedrollbackexception",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "REQUIRED vs REQUIRES_NEW?",
+    "a": "REQUIRED присоединяется к текущей транзакции, REQUIRES_NEW приостанавливает её и открывает новую на другом соединении — коммитится независимо, но может исчерпать пул.",
+    "anchor": "required-vs-requiresnew",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое NESTED?",
+    "a": "Вложенная транзакция через savepoint: откат вложенной части не откатывает внешнюю. Работает с JDBC, с JPA ограниченно.",
+    "anchor": "что-такое-nested",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Какие уровни изоляции и какие аномалии они предотвращают?",
+    "a": "Read uncommitted → read committed (нет dirty read) → repeatable read (нет non-repeatable read) → serializable (нет phantom). В PostgreSQL по умолчанию read committed.",
+    "anchor": "какие-уровни-изоляции-и-какие-аномалии-они-предотвращают",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое lost update и как защититься?",
+    "a": "Две транзакции перезаписывают изменения друг друга. Атомарный UPDATE с условием, SELECT … FOR UPDATE или @Version.",
+    "anchor": "что-такое-lost-update-и-как-защититься",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что даёт readOnly = true?",
+    "a": "Оптимизацию Hibernate (без dirty checking и flush) и read-only соединение. Блокировок и изоляции не даёт.",
+    "anchor": "что-даёт-readonly-true",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Можно ли в одной транзакции записать в БД и отправить сообщение в Kafka?",
+    "a": "Атомарно — нет. Используют Transactional Outbox и идемпотентных консьюмеров.",
+    "anchor": "можно-ли-в-одной-транзакции-записать-в-бд-и-отправить-сообщение-в-kafka",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Передаётся ли транзакция в @Async-метод?",
+    "a": "Нет: транзакция привязана к потоку, у @Async поток другой.",
+    "anchor": "передаётся-ли-транзакция-в-asyncметод",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Почему нельзя делать HTTP-вызов внутри транзакции?",
+    "a": "Соединение с БД занято всё время ожидания ответа, а откатить внешний вызов при rollback невозможно.",
+    "anchor": "почему-нельзя-делать-httpвызов-внутри-транзакции",
+    "src": "Java Spring",
+    "section": "Spring Transactions",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Иерархия репозиториев Spring Data?",
+    "a": "Repository → CrudRepository / ListCrudRepository → PagingAndSortingRepository → JpaRepository (+ flush, batch-удаление, getReferenceById). Реализация — SimpleJpaRepository.",
+    "anchor": "репозитории-spring-data",
+    "src": "Java Spring",
+    "section": "Spring Data JPA",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Транзакционны ли методы SimpleJpaRepository?",
+    "a": "Да: класс помечен @Transactional(readOnly = true), изменяющие методы — @Transactional.",
+    "anchor": "репозитории-spring-data",
+    "src": "Java Spring",
+    "section": "Spring Data JPA",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Зачем JPA-сущности конструктор без аргументов?",
+    "a": "Hibernate создаёт объект рефлексией и потом заполняет поля. Конструктор может быть protected.",
+    "anchor": "репозитории-spring-data",
+    "src": "Java Spring",
+    "section": "Spring Data JPA",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Derived query, @Query и nativeQuery — когда что?",
+    "a": "Derived — запрос из имени метода (findByCurrencyAndBalanceGreaterThan) для простых условий. @Query — JPQL по сущностям для сложных. nativeQuery = true — SQL, когда нужны возможности конкретной СУБД.",
+    "anchor": "запросы-derived-query-проекции-пагинация",
+    "src": "Java Spring",
+    "section": "Spring Data JPA",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое проекция?",
+    "a": "Выборка только нужных полей в DTO/record вместо сущности: select new com.x.PaymentView(p.id, p.amount) from Payment p. Быстрее и без ленивых связей.",
+    "anchor": "запросы-derived-query-проекции-пагинация",
+    "src": "Java Spring",
+    "section": "Spring Data JPA",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как обнаружить N+1?",
+    "a": "logging.level.org.hibernate.SQL=debug и смотреть число запросов; в тестах — считать запросы через Hibernate statistics.",
+    "anchor": "проблема-n1",
+    "src": "Java Spring",
+    "section": "Spring Data JPA",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Почему JOIN FETCH коллекции с пагинацией опасен?",
+    "a": "Hibernate не может применить LIMIT к строкам join-а и пагинирует в памяти — загрузит всё. Решения: сначала id страницы, потом fetch по ним, или batch fetching.",
+    "anchor": "проблема-n1",
+    "src": "Java Spring",
+    "section": "Spring Data JPA",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Какой fetch type у связей по умолчанию?",
+    "a": "@OneToMany и @ManyToMany — LAZY; @ManyToOne и @OneToOne — EAGER (лучше явно ставить LAZY).",
+    "anchor": "ленивая-загрузка-и-openinview",
+    "src": "Java Spring",
+    "section": "Spring Data JPA",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "persist vs merge в save()?",
+    "a": "save() вызывает isNew(): новая сущность → persist (только INSERT), иначе → merge (SELECT, потом UPDATE или INSERT).",
+    "anchor": "save-persist-или-merge",
+    "src": "Java Spring",
+    "section": "Spring Data JPA",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Почему save() делает лишний SELECT при UUID, сгенерированном в коде?",
+    "a": "id не null и нет @Version → Spring считает сущность не новой и вызывает merge. Решения: @Version Long version (null у новой) или Persistable<UUID> с собственным isNew().",
+    "anchor": "save-persist-или-merge",
+    "src": "Java Spring",
+    "section": "Spring Data JPA",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как избежать дедлока при переводе между двумя счетами?",
+    "a": "Блокировать счета всегда в одном порядке, например по возрастанию id. Иначе два встречных перевода заблокируют друг друга.",
+    "anchor": "блокировки-optimistic-и-pessimistic",
+    "src": "Java Spring",
+    "section": "Spring Data JPA",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что произойдёт при конфликте optimistic lock?",
+    "a": "UPDATE … WHERE id = ? AND version = ? не обновит ни одной строки → ObjectOptimisticLockingFailureException, операцию повторяют.",
+    "anchor": "блокировки-optimistic-и-pessimistic",
+    "src": "Java Spring",
+    "section": "Spring Data JPA",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как автоматически заполнять createdAt и createdBy?",
+    "a": "@EnableJpaAuditing + @EntityListeners(AuditingEntityListener.class) на сущности и поля @CreatedDate, @LastModifiedDate, @CreatedBy. Для @CreatedBy нужен бин AuditorAware.",
+    "anchor": "аудит-сущностей",
+    "src": "Java Spring",
+    "section": "Spring Data JPA",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как Spring создаёт реализацию репозитория?",
+    "a": "При старте генерирует прокси на базе SimpleJpaRepository, а derived-методы разбирает по имени и строит JPQL.",
+    "anchor": "как-spring-создаёт-реализацию-репозитория",
+    "src": "Java Spring",
+    "section": "Spring Data JPA",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "CrudRepository vs JpaRepository?",
+    "a": "JpaRepository расширяет CRUD + пагинацию и добавляет JPA-специфику: flush, batch-удаление, getReferenceById.",
+    "anchor": "crudrepository-vs-jparepository",
+    "src": "Java Spring",
+    "section": "Spring Data JPA",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое N+1 и как его решить?",
+    "a": "Лишние запросы на ленивые связи в цикле. JOIN FETCH, @EntityGraph, batch fetching, DTO-проекции. Подробнее: «Проблема N+1».",
+    "anchor": "что-такое-n1-и-как-его-решить",
+    "src": "Java Spring",
+    "section": "Spring Data JPA",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Откуда LazyInitializationException?",
+    "a": "Ленивая связь читается вне открытой сессии Hibernate. Загружать нужное явно внутри транзакции.",
+    "anchor": "откуда-lazyinitializationexception",
+    "src": "Java Spring",
+    "section": "Spring Data JPA",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое open-in-view и почему его выключают?",
+    "a": "Сессия открыта на весь HTTP-запрос: скрытые запросы в контроллере и при сериализации, соединение занято дольше.",
+    "anchor": "что-такое-openinview-и-почему-его-выключают",
+    "src": "Java Spring",
+    "section": "Spring Data JPA",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как save() отличает новую сущность?",
+    "a": "По null в @Id или @Version. Иначе вызывается merge с лишним SELECT.",
+    "anchor": "как-save-отличает-новую-сущность",
+    "src": "Java Spring",
+    "section": "Spring Data JPA",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Нужно ли вызывать save() для изменённой сущности в транзакции?",
+    "a": "Нет: управляемая сущность сохранится при коммите через dirty checking.",
+    "anchor": "нужно-ли-вызывать-save-для-изменённой-сущности-в-транзакции",
+    "src": "Java Spring",
+    "section": "Spring Data JPA",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Optimistic vs pessimistic locking?",
+    "a": "Optimistic — проверка @Version при записи и ретрай, когда конфликты редки. Pessimistic — SELECT … FOR UPDATE, когда конфликты частые.",
+    "anchor": "optimistic-vs-pessimistic-locking",
+    "src": "Java Spring",
+    "section": "Spring Data JPA",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Зачем @Modifying и clearAutomatically?",
+    "a": "@Modifying нужен для UPDATE/DELETE в @Query. clearAutomatically очищает контекст, где после массового обновления остались устаревшие сущности.",
+    "anchor": "зачем-modifying-и-clearautomatically",
+    "src": "Java Spring",
+    "section": "Spring Data JPA",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Page vs Slice?",
+    "a": "Page знает общее число элементов (лишний count), Slice — только есть ли следующая страница.",
+    "anchor": "page-vs-slice",
+    "src": "Java Spring",
+    "section": "Spring Data JPA",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Роли DelegatingFilterProxy и FilterChainProxy?",
+    "a": "DelegatingFilterProxy — обычный Servlet-фильтр, передаёт управление в Spring. FilterChainProxy выбирает подходящую SecurityFilterChain по URL; цепочек может быть несколько.",
+    "anchor": "архитектура-цепочка-фильтров",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что делает AuthenticationManager?",
+    "a": "Проверяет учётные данные. Основная реализация ProviderManager перебирает список AuthenticationProvider.",
+    "anchor": "архитектура-цепочка-фильтров",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Почему anyRequest() в authorizeHttpRequests ставят последним?",
+    "a": "Правила проверяются сверху вниз, срабатывает первое подходящее. anyRequest() выше конкретных правил перекроет их.",
+    "anchor": "настройка-securityfilterchain",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как настроить приложение как resource server для JWT?",
+    "a": ".oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults())) и spring.security.oauth2.resourceserver.jwt.issuer-uri — оттуда берутся ключи для проверки подписи. Для stateless — SessionCreationPolicy.STATELESS.",
+    "anchor": "настройка-securityfilterchain",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что содержит объект Authentication?",
+    "a": "principal — пользователь; credentials — пароль или токен (после проверки обычно стираются); authorities — права (GrantedAuthority).",
+    "anchor": "аутентификация-и-авторизация",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Во что превращается scope из JWT?",
+    "a": "В authority с префиксом SCOPE_: scope payments:write → SCOPE_payments:write, проверка hasAuthority(\"SCOPE_payments:write\").",
+    "anchor": "аутентификация-и-авторизация",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Почему в @Async-методе SecurityContext пустой?",
+    "a": "Он хранится в ThreadLocal, а @Async выполняется в другом потоке. Нужен DelegatingSecurityContextExecutor или явная передача данных пользователя.",
+    "anchor": "аутентификация-и-авторизация",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как проверить в @PreAuthorize, что объект принадлежит пользователю?",
+    "a": "Вызвать бин из SpEL: @PreAuthorize(\"@accountAccess.isOwner(#accountId, authentication)\"). Работает через прокси — с той же ловушкой self-invocation.",
+    "anchor": "method-security",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Зашифрован ли JWT?",
+    "a": "Нет — подписан, но не зашифрован: payload в Base64URL прочитает любой. Секреты туда не кладут.",
+    "anchor": "jwt",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Почему для JWT берут асимметричную подпись и короткий срок жизни?",
+    "a": "RS256/ES256: сервисы проверяют токен публичным ключом, но не могут выпустить свой. Короткий access token (5–15 мин) + refresh — потому что JWT нельзя отозвать до истечения.",
+    "anchor": "jwt",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Зачем у хеша пароля префикс {bcrypt}?",
+    "a": "DelegatingPasswordEncoder по префиксу понимает алгоритм. Можно перейти на Argon2, не ломая старые пароли.",
+    "anchor": "хранение-паролей",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Почему пароли нельзя хешировать MD5 или SHA-256?",
+    "a": "Они быстрые — перебор дешёвый. Нужен медленный хеш с солью: bcrypt, Argon2.",
+    "anchor": "хранение-паролей",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Защищает ли CORS от запросов через curl или Postman?",
+    "a": "Нет: CORS — политика браузера, разрешает ли сайт с другого домена читать ответы. Это не аутентификация и не защита от запросов вне браузера.",
+    "anchor": "csrf-и-cors",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как устроен Spring Security в веб-приложении?",
+    "a": "Цепочка фильтров: DelegatingFilterProxy → FilterChainProxy → SecurityFilterChain. Фильтры аутентифицируют запрос, кладут Authentication в SecurityContextHolder, AuthorizationFilter проверяет права. Подробнее: «Архитектура: цепочка фильтров».",
+    "anchor": "как-устроен-spring-security-в-вебприложении",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Аутентификация vs авторизация?",
+    "a": "Аутентификация — кто ты, авторизация — что тебе можно.",
+    "anchor": "аутентификация-vs-авторизация",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "401 vs 403?",
+    "a": "401 — нет или неверная аутентификация, 403 — аутентифицирован, но прав нет. Оба формирует ExceptionTranslationFilter.",
+    "anchor": "401-vs-403-2",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Role vs authority?",
+    "a": "Role — authority с префиксом ROLE_. hasRole(\"ADMIN\") = hasAuthority(\"ROLE_ADMIN\").",
+    "anchor": "role-vs-authority",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как настроить безопасность в Spring Security 6/7?",
+    "a": "Бин SecurityFilterChain с лямбда-DSL. WebSecurityConfigurerAdapter удалён.",
+    "anchor": "как-настроить-безопасность-в-spring-security-67",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Где хранится текущий пользователь?",
+    "a": "В SecurityContextHolder, по умолчанию в ThreadLocal — в других потоках его нет.",
+    "anchor": "где-хранится-текущий-пользователь",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое JWT и как его проверяют?",
+    "a": "Подписанный токен header.payload.signature. Проверяют подпись, срок exp и издателя iss. Отозвать до истечения нельзя — поэтому короткий срок жизни.",
+    "anchor": "что-такое-jwt-и-как-его-проверяют",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Нужно ли отключать CSRF?",
+    "a": "Для stateless API с Bearer-токеном — можно. Для cookie-сессий — нельзя.",
+    "anchor": "нужно-ли-отключать-csrf",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Чем CORS отличается от CSRF?",
+    "a": "CORS — разрешение браузеру читать ответы с другого домена. CSRF — атака через автоматически отправленные cookie. Это разные механизмы.",
+    "anchor": "чем-cors-отличается-от-csrf",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как хранить пароли?",
+    "a": "Через PasswordEncoder с bcrypt или Argon2 — медленный хеш с солью.",
+    "anchor": "как-хранить-пароли",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое IDOR и как защититься?",
+    "a": "Доступ к чужому объекту подменой id. Проверять владельца объекта: @PreAuthorize с проверкой или фильтр в запросе по текущему пользователю.",
+    "anchor": "что-такое-idor-и-как-защититься",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как работает @PreAuthorize?",
+    "a": "Через прокси метод-секьюрити: SpEL-выражение вычисляется до вызова метода. Нужен @EnableMethodSecurity.",
+    "anchor": "как-работает-preauthorize",
+    "src": "Java Spring",
+    "section": "Spring Security",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое test slice?",
+    "a": "Аннотация, поднимающая не весь контекст, а только нужный слой (@WebMvcTest, @DataJpaTest, @JsonTest). Тест быстрее и точнее показывает, что сломалось.",
+    "anchor": "виды-тестов-в-spring",
+    "src": "Java Spring",
+    "section": "Spring Testing",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "@Mock и @InjectMocks — что делают?",
+    "a": "С @ExtendWith(MockitoExtension.class): @Mock создаёт мок, @InjectMocks создаёт тестируемый объект и внедряет в него моки. Spring не запускается.",
+    "anchor": "unitтесты-junit-5-mockito",
+    "src": "Java Spring",
+    "section": "Spring Testing",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Почему constructor injection упрощает unit-тесты?",
+    "a": "Сервис собирается обычным new TransferService(mock) без Spring и рефлексии.",
+    "anchor": "unitтесты-junit-5-mockito",
+    "src": "Java Spring",
+    "section": "Spring Testing",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что поднимает @WebMvcTest и как в нём подменить сервис?",
+    "a": "Контроллеры, фильтры, MockMvc, Jackson, валидацию. Сервисы — через @MockitoBean. Запросы — mvc.perform(...) без реального HTTP.",
+    "anchor": "webmvctest-тест-контроллера",
+    "src": "Java Spring",
+    "section": "Spring Testing",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое MockMvcTester?",
+    "a": "Spring 6.2: тот же MockMvc, но с проверками в стиле AssertJ.",
+    "anchor": "webmvctest-тест-контроллера",
+    "src": "Java Spring",
+    "section": "Spring Testing",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что делает @DataJpaTest с транзакциями и как не подменять БД на H2?",
+    "a": "Каждый тест в транзакции с откатом в конце. @AutoConfigureTestDatabase(replace = Replace.NONE) — использовать настроенную БД, например Testcontainers.",
+    "anchor": "datajpatest-и-testcontainers",
+    "src": "Java Spring",
+    "section": "Spring Testing",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как поднять один PostgreSQL на все интеграционные тесты?",
+    "a": "Общая @TestConfiguration с бином-контейнером и @ServiceConnection, подключаемая через @Import. Одинаковая конфигурация — один кэшированный контекст.",
+    "anchor": "springboottest-интеграционный-тест",
+    "src": "Java Spring",
+    "section": "Spring Testing",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Откатится ли вместе с тестом метод с REQUIRES_NEW?",
+    "a": "Нет: эта транзакция реально коммитится независимо от тестовой. Данные останутся в БД.",
+    "anchor": "ловушки-транзакций-в-тестах",
+    "src": "Java Spring",
+    "section": "Spring Testing",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Почему тест с @Transactional может не поймать нарушение ограничения БД?",
+    "a": "INSERT мог не выполниться: не было flush, а в конце откат. Вызывай flush() явно.",
+    "anchor": "ловушки-транзакций-в-тестах",
+    "src": "Java Spring",
+    "section": "Spring Testing",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Какие виды тестов есть в Spring и когда какой брать?",
+    "a": "Unit — логика без Spring; @WebMvcTest — контроллеры; @DataJpaTest — репозитории; @SpringBootTest — весь контекст. Брать самый узкий, который проверяет нужное.",
+    "anchor": "какие-виды-тестов-есть-в-spring-и-когда-какой-брать",
+    "src": "Java Spring",
+    "section": "Spring Testing",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "@MockBean vs @MockitoBean?",
+    "a": "@MockitoBean из Spring Framework 6.2 — замена @MockBean, который устарел в Spring Boot 3.4. Оба кладут мок в контекст вместо настоящего бина.",
+    "anchor": "mockbean-vs-mockitobean",
+    "src": "Java Spring",
+    "section": "Spring Testing",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "@Mock vs @MockitoBean?",
+    "a": "@Mock — чистый Mockito в unit-тесте без Spring. @MockitoBean заменяет бин в контексте Spring.",
+    "anchor": "mock-vs-mockitobean",
+    "src": "Java Spring",
+    "section": "Spring Testing",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Зачем Testcontainers, если есть H2?",
+    "a": "H2 — другая СУБД: другой SQL, типы, поведение блокировок. Testcontainers даёт настоящий PostgreSQL.",
+    "anchor": "зачем-testcontainers-если-есть-h2",
+    "src": "Java Spring",
+    "section": "Spring Testing",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое кэш контекста и что его ломает?",
+    "a": "Spring переиспользует контекст между тестами с одинаковой конфигурацией. Новый контекст создают разные @MockitoBean, профили, свойства и @DirtiesContext.",
+    "anchor": "что-такое-кэш-контекста-и-что-его-ломает",
+    "src": "Java Spring",
+    "section": "Spring Testing",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Почему @Transactional в тестах может обмануть?",
+    "a": "Откат в конце скрывает ошибки flush и коммита, ленивую загрузку и слушателей AFTER_COMMIT. Подробнее: «Ловушки транзакций в тестах».",
+    "anchor": "почему-transactional-в-тестах-может-обмануть",
+    "src": "Java Spring",
+    "section": "Spring Testing",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Как протестировать контроллер с Spring Security?",
+    "a": "@WebMvcTest + @WithMockUser или .with(jwt()), при CSRF — .with(csrf()).",
+    "anchor": "как-протестировать-контроллер-с-spring-security",
+    "src": "Java Spring",
+    "section": "Spring Testing",
+    "level": 3
+  },
+  {
+    "ch": "Spring",
+    "q": "Что такое @ServiceConnection?",
+    "a": "Аннотация Boot 3.1+: берёт адрес и логин из Testcontainers-контейнера и настраивает подключение без @DynamicPropertySource.",
+    "anchor": "что-такое-serviceconnection",
+    "src": "Java Spring",
+    "section": "Spring Testing",
+    "level": 3
   }
 ]
