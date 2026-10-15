@@ -788,16 +788,15 @@ function detectAndWrapCode(container) {
 
     const CHAPTER_DOCX = {
       'Collections': 'java-file/JavaCollectionsFramework.docx',
-      'Java Core': 'java-file/java-core.docx',
       'JVM': 'java-file/JVM-DOC.docx',
       'Java IO / NIO': 'java-file/JavaIO.docx',
-      'Java 8': 'java-file/java8 (1).docx',
     };
 
     const CHAPTER_HTML = {
       'Сериализация': 'materials/serialization.html',
     };
     const CHAPTER_MD = {
+      'Java Core': 'java-file/Java Core.md',
       'Concurrency': 'java-file/Java Concurrency.md',
       'Stream API': 'java-file/Java Stream.md',
       'Spring': 'java-file/Java Spring.md',
