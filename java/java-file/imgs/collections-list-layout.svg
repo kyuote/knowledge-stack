@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 390" width="1000" height="390">
+<defs><marker id="aM" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#868E96"/></marker><marker id="aB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4C6EF5"/></marker><marker id="aG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0CA678"/></marker><marker id="aO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#F76707"/></marker><marker id="aP" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7048E8"/></marker></defs>
+<rect x="1" y="1" width="998" height="388" rx="18" fill="#FCFCFD" stroke="#E9ECEF" stroke-width="2"/>
+<text x="32" y="42" text-anchor="start" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="20" font-weight="700" fill="#212529">ArrayList vs LinkedList в памяти</text>
+<text x="32" y="66" text-anchor="start" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="13.5" font-weight="400" fill="#868E96">массив ссылок рядом в памяти vs узлы, разбросанные по куче</text>
+<text x="40" y="110" text-anchor="start" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="14" font-weight="700" fill="#212529">ArrayList</text>
+<text x="150" y="110" text-anchor="start" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#868E96">Object[] elementData — capacity 10, size 6</text>
+<rect x="40" y="125" width="62" height="38" fill="#E6FCF5" stroke="#0CA678" stroke-width="1.5"/>
+<text x="71.0" y="149" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#212529">A</text>
+<text x="71.0" y="181" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#868E96">0</text>
+<rect x="102" y="125" width="62" height="38" fill="#E6FCF5" stroke="#0CA678" stroke-width="1.5"/>
+<text x="133.0" y="149" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#212529">B</text>
+<text x="133.0" y="181" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#868E96">1</text>
+<rect x="164" y="125" width="62" height="38" fill="#E6FCF5" stroke="#0CA678" stroke-width="1.5"/>
+<text x="195.0" y="149" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#212529">C</text>
+<text x="195.0" y="181" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#868E96">2</text>
+<rect x="226" y="125" width="62" height="38" fill="#E6FCF5" stroke="#0CA678" stroke-width="1.5"/>
+<text x="257.0" y="149" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#212529">D</text>
+<text x="257.0" y="181" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#868E96">3</text>
+<rect x="288" y="125" width="62" height="38" fill="#E6FCF5" stroke="#0CA678" stroke-width="1.5"/>
+<text x="319.0" y="149" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#212529">E</text>
+<text x="319.0" y="181" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#868E96">4</text>
+<rect x="350" y="125" width="62" height="38" fill="#E6FCF5" stroke="#0CA678" stroke-width="1.5"/>
+<text x="381.0" y="149" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#212529">F</text>
+<text x="381.0" y="181" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#868E96">5</text>
+<rect x="412" y="125" width="62" height="38" fill="#FFFFFF" stroke="#CED4DA" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="443.0" y="149" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#212529"></text>
+<text x="443.0" y="181" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#868E96">6</text>
+<rect x="474" y="125" width="62" height="38" fill="#FFFFFF" stroke="#CED4DA" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="505.0" y="149" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#212529"></text>
+<text x="505.0" y="181" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#868E96">7</text>
+<rect x="536" y="125" width="62" height="38" fill="#FFFFFF" stroke="#CED4DA" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="567.0" y="149" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#212529"></text>
+<text x="567.0" y="181" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#868E96">8</text>
+<rect x="598" y="125" width="62" height="38" fill="#FFFFFF" stroke="#CED4DA" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="629.0" y="149" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#212529"></text>
+<text x="629.0" y="181" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#868E96">9</text>
+<path d="M40,195 L40,201 L412,201 L412,195" fill="none" stroke="#0CA678" stroke-width="1.6"/>
+<text x="226" y="217" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12" font-weight="600" fill="#0CA678">size = 6</text>
+<path d="M412,195 L412,201 L660,201 L660,195" fill="none" stroke="#ADB5BD" stroke-width="1.6"/>
+<text x="536" y="217" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#868E96">запас ёмкости</text>
+<text x="700" y="137" text-anchor="start" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#212529">get(i) — O(1): адрес = начало + i</text>
+<text x="700" y="157" text-anchor="start" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#212529">add в конец — O(1)*, рост ×1.5</text>
+<text x="700" y="177" text-anchor="start" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#212529">вставка в середину — сдвиг хвоста</text>
+<text x="700" y="197" text-anchor="start" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#868E96">System.arraycopy</text>
+<text x="40" y="262" text-anchor="start" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="14" font-weight="700" fill="#212529">LinkedList</text>
+<text x="160" y="262" text-anchor="start" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#868E96">Node { item; next; prev } — 24 байта на узел</text>
+<rect x="190" y="278" width="150" height="44" rx="9" fill="#E6FCF5" stroke="#0CA678" stroke-width="1.8"/>
+<text x="215" y="304" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="11.5" font-weight="600" fill="#495057">prev</text>
+<line x1="240" y1="278" x2="240" y2="322" stroke="#0CA678" stroke-width="1.2"/>
+<text x="265" y="304" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="14" font-weight="600" fill="#212529">A</text>
+<line x1="290" y1="278" x2="290" y2="322" stroke="#0CA678" stroke-width="1.2"/>
+<text x="315" y="304" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="11.5" font-weight="600" fill="#495057">next</text>
+<rect x="400" y="278" width="150" height="44" rx="9" fill="#E6FCF5" stroke="#0CA678" stroke-width="1.8"/>
+<text x="425" y="304" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="11.5" font-weight="600" fill="#495057">prev</text>
+<line x1="450" y1="278" x2="450" y2="322" stroke="#0CA678" stroke-width="1.2"/>
+<text x="475" y="304" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="14" font-weight="600" fill="#212529">B</text>
+<line x1="500" y1="278" x2="500" y2="322" stroke="#0CA678" stroke-width="1.2"/>
+<text x="525" y="304" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="11.5" font-weight="600" fill="#495057">next</text>
+<line x1="342" y1="292" x2="397" y2="292" stroke="#0CA678" stroke-width="1.6" marker-end="url(#aG)"/>
+<line x1="398" y1="308" x2="343" y2="308" stroke="#868E96" stroke-width="1.6" marker-end="url(#aM)"/>
+<rect x="610" y="278" width="150" height="44" rx="9" fill="#E6FCF5" stroke="#0CA678" stroke-width="1.8"/>
+<text x="635" y="304" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="11.5" font-weight="600" fill="#495057">prev</text>
+<line x1="660" y1="278" x2="660" y2="322" stroke="#0CA678" stroke-width="1.2"/>
+<text x="685" y="304" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="14" font-weight="600" fill="#212529">C</text>
+<line x1="710" y1="278" x2="710" y2="322" stroke="#0CA678" stroke-width="1.2"/>
+<text x="735" y="304" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="11.5" font-weight="600" fill="#495057">next</text>
+<line x1="552" y1="292" x2="607" y2="292" stroke="#0CA678" stroke-width="1.6" marker-end="url(#aG)"/>
+<line x1="608" y1="308" x2="553" y2="308" stroke="#868E96" stroke-width="1.6" marker-end="url(#aM)"/>
+<rect x="40.0" y="285.0" width="90" height="30" rx="9" fill="#EDF2FF" stroke="#4C6EF5" stroke-width="1.8"/><text x="85" y="304.32" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12" font-weight="600" fill="#212529">first</text>
+<line x1="132" y1="300" x2="187" y2="300" stroke="#4C6EF5" stroke-width="1.6" marker-end="url(#aB)"/>
+<rect x="815.0" y="285.0" width="90" height="30" rx="9" fill="#EDF2FF" stroke="#4C6EF5" stroke-width="1.8"/><text x="860" y="304.32" text-anchor="middle" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="12" font-weight="600" fill="#212529">last</text>
+<line x1="813" y1="300" x2="763" y2="300" stroke="#4C6EF5" stroke-width="1.6" marker-end="url(#aB)"/>
+<text x="40" y="362" text-anchor="start" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#495057">начало и конец — O(1) · get(i) — проход от ближайшего конца, O(n) · узлы не рядом в памяти → промахи кэша</text>
+</svg>

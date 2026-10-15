@@ -787,7 +787,6 @@ function detectAndWrapCode(container) {
     }
 
     const CHAPTER_DOCX = {
-      'Collections': 'java-file/JavaCollectionsFramework.docx',
       'JVM': 'java-file/JVM-DOC.docx',
       'Java IO / NIO': 'java-file/JavaIO.docx',
     };
@@ -797,6 +796,7 @@ function detectAndWrapCode(container) {
     };
     const CHAPTER_MD = {
       'Java Core': 'java-file/Java Core.md',
+      'Collections': 'java-file/Java Collections.md',
       'Concurrency': 'java-file/Java Concurrency.md',
       'Stream API': 'java-file/Java Stream.md',
       'Spring': 'java-file/Java Spring.md',
