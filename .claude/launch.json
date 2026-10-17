@@ -4,13 +4,13 @@
     {
       "name": "go-notes",
       "runtimeExecutable": "/opt/homebrew/bin/python3",
-      "runtimeArgs": ["-m", "http.server", "4321"],
+      "runtimeArgs": ["scripts/serve.py", "4321"],
       "port": 4321
     },
     {
       "name": "java-notes",
       "runtimeExecutable": "/opt/homebrew/bin/python3",
-      "runtimeArgs": ["-m", "http.server", "4322", "--directory", "java"],
+      "runtimeArgs": ["scripts/serve.py", "4322", "java"],
       "port": 4322
     }
   ]

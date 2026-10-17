@@ -650,6 +650,42 @@ function detectAndWrapCode(container) {
     });
   }
 
+  // video at the top of a material: <button data-video="…mp4" data-video-chapters="…json">
+  function prependVideo(container, btn) {
+    if (!btn.dataset.video) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'mat-video';
+    const video = document.createElement('video');
+    video.controls = true;
+    video.preload = 'metadata';
+    video.playsInline = true;
+    video.src = btn.dataset.video;
+    const secs = document.createElement('div');
+    secs.className = 'audio-sections';
+    wrap.append(video, secs);
+    container.prepend(wrap);
+    // don't play over the material's audio track
+    video.addEventListener('play', () => { const a = document.getElementById('audioEl'); if (a) a.pause(); });
+    if (!btn.dataset.videoChapters) return;
+    fetch(btn.dataset.videoChapters + '?v=' + Date.now())
+      .then(r => r.json())
+      .then(chapters => {
+        chapters.forEach(c => {
+          const b = document.createElement('button');
+          b.className = 'audio-sec-btn';
+          b.textContent = c.title;
+          b.addEventListener('click', () => { video.currentTime = c.start; video.play(); });
+          secs.appendChild(b);
+        });
+        video.addEventListener('timeupdate', () => {
+          let idx = 0;
+          chapters.forEach((c, i) => { if (video.currentTime >= c.start) idx = i; });
+          secs.querySelectorAll('.audio-sec-btn').forEach((b, i) => b.classList.toggle('is-active', i === idx));
+        });
+      })
+      .catch(() => {});
+  }
+
   function loadDocx(btn) {
     setActive(btn);
     root.innerHTML = '<p style="color:var(--text-dim);padding:40px">Загрузка документа…</p>';
@@ -670,6 +706,7 @@ function detectAndWrapCode(container) {
           });
           container.prepend(imgWrap);
         }
+        prependVideo(container, btn);
         root.innerHTML = '';
         root.appendChild(container);
         window.scrollTo(0, 0);
@@ -731,6 +768,7 @@ function detectAndWrapCode(container) {
         addHeadingAnchors(container);
         if (!btn.dataset.skipToc) buildMdToc(container);
         fixInternalLinks(container);
+        prependVideo(container, btn);
         root.innerHTML = '';
         root.appendChild(container);
         window.scrollTo(0, 0);
@@ -1286,6 +1324,7 @@ function detectAndWrapCode(container) {
     if (audioEl.paused) audioEl.play(); else audioEl.pause();
   });
   audioEl.addEventListener('play',  () => { playBtn.textContent = '⏸'; });
+  audioEl.addEventListener('play',  () => { document.querySelectorAll('.mat-video video').forEach(v => v.pause()); });
   audioEl.addEventListener('pause', () => { playBtn.textContent = '▶'; });
 
   // seek bar

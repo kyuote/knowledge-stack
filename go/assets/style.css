@@ -806,6 +806,16 @@
 }
 #chapter-root img, .docx-mammoth img { cursor: zoom-in; }
 
+/* ── Material video ── */
+.mat-video { display: flex; flex-direction: column; gap: 8px; margin: 0 0 28px; }
+.mat-video video {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
 /* ── Audio player ── */
 .audio-player {
   position: fixed;
