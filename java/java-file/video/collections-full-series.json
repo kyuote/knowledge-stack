@@ -1,0 +1,27 @@
+[
+  {
+    "title": "Карта коллекций",
+    "start": 0,
+    "duration": 134.17
+  },
+  {
+    "title": "List",
+    "start": 134.17,
+    "duration": 129.57
+  },
+  {
+    "title": "HashMap",
+    "start": 263.73,
+    "duration": 129.77
+  },
+  {
+    "title": "Set",
+    "start": 393.5,
+    "duration": 131.83
+  },
+  {
+    "title": "Queue и Deque",
+    "start": 525.33,
+    "duration": 147.07
+  }
+]

@@ -1224,12 +1224,9 @@ function detectAndWrapCode(container) {
 
 // ── Audio player ──
 (function() {
-  const AUDIO_MAP = {
-    'java-file/JVM-DOC.docx': {
-      mp3:  'java-file/audio/JVM-DOC.mp3',
-      json: 'java-file/audio/JVM-DOC.json'
-    }
-  };
+  // docx path → { mp3, json }. JVM audio (java-file/audio/JVM-DOC.*) is kept in the repo
+  // but not shown: the JVM material has a video instead.
+  const AUDIO_MAP = {};
 
   const player   = document.getElementById('audioPlayer');
   if (!player) return;
