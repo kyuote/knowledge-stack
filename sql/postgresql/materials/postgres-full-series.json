@@ -1,0 +1,57 @@
+[
+  {
+    "title": "Реляционная БД",
+    "start": 0,
+    "duration": 126.53
+  },
+  {
+    "title": "Нормальные формы",
+    "start": 126.53,
+    "duration": 134.17
+  },
+  {
+    "title": "Таблицы и ограничения",
+    "start": 260.7,
+    "duration": 147.87
+  },
+  {
+    "title": "SELECT",
+    "start": 408.57,
+    "duration": 136.97
+  },
+  {
+    "title": "Группировка и агрегаты",
+    "start": 545.53,
+    "duration": 124.0
+  },
+  {
+    "title": "JOIN",
+    "start": 669.53,
+    "duration": 127.77
+  },
+  {
+    "title": "Подзапросы и CTE",
+    "start": 797.3,
+    "duration": 143.03
+  },
+  {
+    "title": "Оконные функции",
+    "start": 940.33,
+    "duration": 148.2
+  },
+  {
+    "title": "Индексы и EXPLAIN",
+    "start": 1088.53,
+    "duration": 149.5
+  },
+  {
+    "title": "Транзакции и MVCC",
+    "start": 1238.03,
+    "duration": 165.17
+  },
+  {
+    "title": "Объекты и доступ",
+    "start": 1403.2,
+    "duration": 127.3
+  }
+]
